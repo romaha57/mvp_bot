@@ -14,3 +14,8 @@ class CommandHandler(Handler):
         @self.router.message(Command('start'))
         async def start(message: Message):
             await message.answer('Hello')
+
+        @self.router.message(Command('id'))
+        async def get_tg_id(message: Message):
+            user_id = str(message.from_user.id)
+            await message.answer(f'Ваш id - {user_id}')

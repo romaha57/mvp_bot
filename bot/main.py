@@ -11,7 +11,7 @@ from bot.settings import settings
 class MainBot:
 
     def __init__(self):
-        self.bot = Bot(token=settings.bot_token)
+        self.bot = Bot(token=settings.bot_token, parse_mode='html')
         self.dp = Dispatcher()
         self.handler = MainHandler(self.bot)
 
@@ -19,8 +19,9 @@ class MainBot:
         """Подключение всех роутеров/старт отлова сообщений/логгирование"""
 
         self.dp.include_routers(self.handler.command_handler.router)
+        self.dp.include_routers(self.handler.text_handler.router)
         self.handler.handle()
-        logging.basicConfig(level=logging.INFO, stream=sys.stdout)
+        # logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 
     async def main(self):
         """Основная точка входа в бота и его запуск"""
