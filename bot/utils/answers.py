@@ -16,4 +16,3 @@ async def get_file_id_by_content_type(message: Message):
         return message.sticker.file_id
     elif message.voice:
         return message.voice.file_id
-

@@ -18,8 +18,12 @@ class MainBot:
     async def start(self):
         """Подключение всех роутеров/старт отлова сообщений/логгирование"""
 
-        self.dp.include_routers(self.handler.command_handler.router)
-        self.dp.include_routers(self.handler.text_handler.router)
+        self.dp.include_router(self.handler.command_handler.router)
+        self.dp.include_router(self.handler.text_handler.router)
+        self.dp.include_router(self.handler.course_handler.router)
+        self.dp.include_router(self.handler.lesson_handler.router)
+        self.dp.include_router(self.handler.quiz_handler.router)
+        self.dp.include_router(self.handler.user_handler.router)
         self.handler.handle()
         # logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 

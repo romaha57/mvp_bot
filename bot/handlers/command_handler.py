@@ -13,7 +13,15 @@ class CommandHandler(Handler):
     def handle(self):
         @self.router.message(Command('start'))
         async def start(message: Message):
-            await message.answer('Hello')
+            msg = message.text.split()
+
+            # если у пользователя есть в ссылку промокод, то получаем его
+            if len(msg) >= 2:
+                promocode = msg[-1]
+            else:
+                promocode = '-'
+            await message.answer('Я такой-то бот, делаю то-то и то-то\n'
+                                 f'Ваш промокод: {promocode}')
 
         @self.router.message(Command('id'))
         async def get_tg_id(message: Message):
