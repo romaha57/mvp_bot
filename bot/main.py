@@ -5,7 +5,7 @@ import sys
 from aiogram import Bot, Dispatcher
 
 from bot.handlers.main_handler import MainHandler
-from bot.settings import settings
+from bot.settings_bot import settings
 
 
 class MainBot:

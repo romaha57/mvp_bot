@@ -28,4 +28,3 @@ class MainHandler:
         self.lesson_handler.handle()
         self.quiz_handler.handle()
         self.user_handler.handle()
-
