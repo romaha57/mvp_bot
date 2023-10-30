@@ -4,6 +4,7 @@ from sqlalchemy import select, insert, delete, Row
 from sqlalchemy.ext.asyncio import AsyncMappingResult
 
 from bot.db_connect import async_session
+from bot.settings.model import Settings
 
 
 class BaseService:
@@ -58,3 +59,13 @@ class BaseService:
             query = delete(cls.model).filter_by(id=id)
             await session.execute(query)
             await session.commit()
+
+    @classmethod
+    async def get_msg_by_key(cls, key: str):
+        """Получение сообщение бота по его ключу"""
+
+        async with async_session() as session:
+            query = select(Settings.value).filter_by(key=key)
+            result = await session.execute(query)
+
+            return str(result.scalar())

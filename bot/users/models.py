@@ -5,7 +5,7 @@ from bot.db_connect import Base
 
 
 class Users(Base):
-    __tablename__ = '$_clients'
+    __tablename__ = '$_users'
     __tableargs__ = {
         'comment': 'Пользователи'
     }
@@ -23,13 +23,12 @@ class Users(Base):
     created_at = Column(DateTime, server_default=func.now())
 
     account = relationship('UserAccount', back_populates='user')
-    bot = relationship('Bots', back_populates='user')
-    course_history = relationship('CourseHistory', back_populates='user')
-
-    lesson_history = relationship('LessonHistory', back_populates='user')
-    test_lesson_history = relationship('TestLessonHistory', back_populates='user')
 
     quiz_attempts = relationship('QuizAttempts', back_populates='user')
+    lesson_history = relationship('LessonHistory', back_populates='user')
+    course_history = relationship('CourseHistory', back_populates='user')
+    bot = relationship('Bots', back_populates='user')
+    test_lesson_history = relationship('TestLessonHistory', back_populates='user')
 
     def __str__(self):
         return f'{self.username} - {self.external_id}'
@@ -62,9 +61,9 @@ class Promocodes(Base):
     }
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    bot_id = Column(Integer, ForeignKey('$_bots'))
-    course_id = Column(Integer, ForeignKey('$_courses'))
-    quiz_id = Column(Integer, ForeignKey('$_quizes'))
+    bot_id = Column(Integer, ForeignKey('$_bots.id'))
+    course_id = Column(Integer, ForeignKey('$_courses.id'))
+    quiz_id = Column(Integer, ForeignKey('$_quizes.id'))
     code = Column(String)
     updated_at = Column(DateTime, onupdate=func.now)
     created_at = Column(DateTime, server_default=func.now())

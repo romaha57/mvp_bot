@@ -22,6 +22,7 @@ class Course(Base):
     course_history = relationship('CourseHistory', back_populates='course')
 
     lesson = relationship('Lessons', back_populates='course')
+    promocode = relationship('Promocodes', back_populates='course')
 
     def __str__(self):
         return f'{self.id} - {self.title}'
@@ -39,7 +40,7 @@ class CourseBots(Base):
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, onupdate=func.now())
 
-    bot = relationship('Bots', back_populates='bot_course')
+    bots_course = relationship('Bots', back_populates='bots_course')
     course = relationship('Course', back_populates='bot_course')
 
     def __str__(self):
@@ -64,8 +65,6 @@ class CourseHistory(Base):
     user = relationship('Users', back_populates='course_history')
 
     lesson_history = relationship('LessonHistory', back_populates='course_history')
-
-    promocode = relationship('Promocodes', back_populates='course')
 
 
     def __str__(self):

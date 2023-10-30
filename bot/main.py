@@ -36,4 +36,5 @@ class MainBot:
 
 if __name__ == '__main__':
     bot = MainBot()
+    print('START BOT')
     asyncio.run(bot.main())

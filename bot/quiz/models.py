@@ -69,7 +69,7 @@ class QuizQuestions(Base):
 class QuizQuestionOptions(Base):
     __tablename__ = '$_quiz_question_options'
     __tableargs__ = {
-        'comment': 'Настройки вопросов для квиз'
+        'comment': 'Варинты ответов на вопросы для квиз'
     }
 
     id = Column(Integer, primary_key=True, autoincrement=True)
