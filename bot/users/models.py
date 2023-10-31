@@ -13,6 +13,7 @@ class Users(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     account_id = Column(Integer, ForeignKey('$_user_accounts.id'))
     bot_id = Column(Integer, ForeignKey('$_bots.id'))
+    promocode_id = Column(Integer, ForeignKey('$_promocodes.id'))
     external_id = Column(String)
     last_action = Column(DateTime)
     locked = Column(Text)
@@ -29,6 +30,7 @@ class Users(Base):
     course_history = relationship('CourseHistory', back_populates='user')
     bot = relationship('Bots', back_populates='user')
     test_lesson_history = relationship('TestLessonHistory', back_populates='user')
+    promocode = relationship('Promocodes', back_populates='user')
 
     def __str__(self):
         return f'{self.username} - {self.external_id}'
@@ -64,13 +66,15 @@ class Promocodes(Base):
     bot_id = Column(Integer, ForeignKey('$_bots.id'))
     course_id = Column(Integer, ForeignKey('$_courses.id'))
     quiz_id = Column(Integer, ForeignKey('$_quizes.id'))
-    code = Column(String)
+
+    code = Column(String, nullable=False)
     updated_at = Column(DateTime, onupdate=func.now)
     created_at = Column(DateTime, server_default=func.now())
 
     bot = relationship('Bots', back_populates='promocode')
     course = relationship('Course', back_populates='promocode')
     quiz = relationship('Quizes', back_populates='promocode')
+    user = relationship('Users', back_populates='promocode')
 
     def __str__(self):
         return f'{self.code}'

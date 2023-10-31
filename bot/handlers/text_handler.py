@@ -3,6 +3,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
 from bot.handlers.base_handler import Handler
+from bot.services.base_service import BaseService
 from bot.settings.keyboards import BaseKeyboard
 from bot.utils.answers import get_file_id_by_content_type
 from bot.utils.buttons import BUTTONS
@@ -15,6 +16,7 @@ class TextHandler(Handler):
         super().__init__(bot)
         self.router = Router()
         self.kb = BaseKeyboard()
+        self.db = BaseService()
 
     def handle(self):
         @self.router.message(F.content_type.in_(MEDIA_CONTENT_TYPE))
@@ -25,9 +27,11 @@ class TextHandler(Handler):
             await message.answer(f'{message.content_type} - {file_id}')
 
         @self.router.message(F.text == BUTTONS['MENU'])
-        async def get_menu(message: Message, state: FSMContext):
-            data = await state.get_data()
+        async def get_menu(message: Message):
+            user = await self.db.get_user_by_tg_id(message.from_user.id)
+            promocode = await self.db.get_promocode(user.promocode_id)
+
             await message.answer(
                 MESSAGES['MENU'],
-                reply_markup=await self.kb.start_btn(data['promocode'])
+                reply_markup=await self.kb.start_btn(promocode)
             )

@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncMappingResult
 
 from bot.db_connect import async_session
 from bot.settings.model import Settings
+from bot.users.models import Users, Promocodes
 
 
 class BaseService:
@@ -69,3 +70,21 @@ class BaseService:
             result = await session.execute(query)
 
             return str(result.scalar())
+
+    @classmethod
+    async def get_user_by_tg_id(cls, tg_id: int):
+        async with async_session() as session:
+            query = select(Users).filter_by(external_id=tg_id)
+            user = await session.execute(query)
+
+            return user.scalars().one()
+
+    @classmethod
+    async def get_promocode(cls, promocode_id: int):
+        """Получение промокода по его id"""
+
+        async with async_session() as session:
+            query = select(Promocodes).filter_by(id=promocode_id)
+            result = await session.execute(query)
+
+            return result.scalars().one()

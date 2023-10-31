@@ -23,16 +23,17 @@ async def get_file_id_by_content_type(message: Message):
         return message.voice.file_id
 
 
-async def format_quiz_results(answers: list[QuizAnswers]) -> str:
+async def format_quiz_results(answers: list[QuizAnswers.details]) -> str:
     """Формируем красивый ответ для вывода ответов пользователя на тестирование"""
-    result = ''
+    result = 'Ваши ответы:\n\n'
     date = ''
     for answer in answers:
-        date = f'<b>Дата прохождения тестирования: {answer.created_at.strftime("%d-%m-%Y %H:%M")}</b>'
+        answer_date = answer.created_at.strftime("%d-%m-%Y %H:%M")
+        date = f'<b>Дата прохождения тестирования: {answer_date}</b>'
         question = await QuizService.get_question_by_option(answer.option_id)
         result += f'{question}\n' \
                   f'<b>{answer.details}</b>\n\n'
 
-    result = date + '\n\n\n' + result
+    result = date + '\n\n' + result
 
     return result

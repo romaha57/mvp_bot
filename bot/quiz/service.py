@@ -1,8 +1,9 @@
-from sqlalchemy import select, insert, CursorResult, desc
+from sqlalchemy import select, insert, CursorResult, desc, update
 
 from bot.db_connect import async_session
 from bot.services.base_service import BaseService
 from bot.quiz.models import Quizes, QuizQuestions, QuizQuestionOptions, QuizAttempts, QuizAttemptStatuses, QuizAnswers
+from bot.users.models import Promocodes
 from bot.users.service import UserService
 
 
@@ -11,7 +12,7 @@ class QuizService(BaseService):
 
     @classmethod
     async def get_quiz_questions(cls, quiz_id: int):
-        """"Поучение всех вопросов определнного тестирования"""
+        """"Поучение всех вопросов определённого тестирования"""
 
         async with async_session() as session:
             query = select(QuizQuestions).filter_by(quiz_id=quiz_id).order_by(desc('id'))
@@ -19,12 +20,16 @@ class QuizService(BaseService):
 
             return result.scalars().all()
 
+
+
     @classmethod
-    async def get_quiz(cls, quiz_id: int):
+    async def get_quiz(cls, promocode_id: int):
         """Получение тестирования по его id"""
 
+        promocode = await cls.get_promocode(promocode_id)
+
         async with async_session() as session:
-            query = select(Quizes).filter_by(id=quiz_id)
+            query = select(Quizes).join(Promocodes, Promocodes.quiz_id == Quizes.id).where(Promocodes.id==promocode_id)
             result = await session.execute(query)
 
             return result.scalars().one()
@@ -51,6 +56,8 @@ class QuizService(BaseService):
 
     @classmethod
     async def create_attempt(cls, quiz_id: int, tg_id: int):
+        """Создание попытки прохождения теста"""
+
         user = await UserService.get_user_by_tg_id(tg_id)
         status = await cls.get_attempt_status('В процессе')
         async with async_session() as session:
@@ -62,6 +69,15 @@ class QuizService(BaseService):
             await session.execute(query)
             await session.commit()
 
+    @classmethod
+    async def mark_quiz_completion(cls, attempt_id: int):
+        """Отмечаем статус попытки на 'завершен' """
+
+        status = await cls.get_attempt_status('Завершен')
+        async with async_session() as session:
+            query = update(QuizAttempts).where(QuizAttempts.id==attempt_id).values(status_id=status.id)
+            await session.execute(query)
+            await session.commit()
 
     @classmethod
     async def get_attempt_status(cls, status_name: str):
@@ -125,7 +141,7 @@ class QuizService(BaseService):
                 QuizQuestionOptions, QuizQuestions.id == QuizQuestionOptions.question_id
             ).where(
                 QuizQuestionOptions.id == option_id
-            ).order_by()
+            )
 
             res = await session.execute(q)
 

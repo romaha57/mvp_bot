@@ -1,5 +1,3 @@
-import asyncio
-
 from aiogram import Bot, Router, F
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
@@ -27,14 +25,14 @@ class QuizHandler(Handler):
 
         @self.router.message(F.text == BUTTONS['QUIZ'])
         async def start_quiz(message: Message, state: FSMContext):
-            data = await state.get_data()
+            user = await self.db.get_user_by_tg_id(message.from_user.id)
 
             # стартовое сообщение при тестировании
             start_msg = await self.db.get_msg_by_key('start_quiz')
             await message.answer(start_msg)
 
             # получение тестирования
-            quiz = await self.db.get_quiz(data['quiz_id'])
+            quiz = await self.db.get_quiz(user.promocode_id)
             await message.answer(quiz.name)
 
             # запись в БД о начале тестирования данным пользователем
@@ -45,6 +43,7 @@ class QuizHandler(Handler):
             )
             attempt = await self.db.get_last_attempt()
             await state.update_data(attempt_id=attempt.id)
+            await state.update_data(quiz_id=quiz.id)
 
             # список вопросов по данному тестированию
             self.questions = await self.db.get_quiz_questions(quiz.id)
@@ -79,9 +78,13 @@ class QuizHandler(Handler):
             except IndexError:
                 # когда вопросов больше не будет, то удаляем состояние, но данные оставляем(нужен quiz_id)
                 await state.set_state(state=None)
-                msg = await self.db.get_msg_by_key('complete_quiz')
+
+                await self.db.mark_quiz_completion(data['attempt_id'])
+
+                # получаем финальное сообщение тестирования(о завершении)
+                quiz = await self.db.get_quiz(data['quiz_id'])
                 await callback.message.edit_text(
-                    msg)
+                    quiz.outro)
                 await callback.message.answer(
                     MESSAGES['GO_TO_MENU'],
                     reply_markup=await self.base_kb.menu_btn()
@@ -89,6 +92,8 @@ class QuizHandler(Handler):
 
         @self.router.message(F.text == BUTTONS['RESULTS_QUIZ'])
         async def get_results_quiz(message: Message):
+
+            # получаем все попытки текущего пользователя
             attempts = await self.db.get_attempts(
                 tg_id=message.from_user.id
             )

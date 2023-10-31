@@ -24,7 +24,7 @@ class Course(Base):
     lesson = relationship('Lessons', back_populates='course')
     promocode = relationship('Promocodes', back_populates='course')
 
-    def __str__(self):
+    def __repr__(self):
         return f'{self.id} - {self.title}'
 
 

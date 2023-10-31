@@ -3,6 +3,7 @@ import logging
 import sys
 
 from aiogram import Bot, Dispatcher
+from aiogram.fsm.storage.memory import MemoryStorage
 
 from bot.handlers.main_handler import MainHandler
 from bot.settings_bot import settings
@@ -12,7 +13,7 @@ class MainBot:
 
     def __init__(self):
         self.bot = Bot(token=settings.bot_token, parse_mode='html')
-        self.dp = Dispatcher()
+        self.dp = Dispatcher(storage=MemoryStorage())
         self.handler = MainHandler(self.bot)
 
     async def start(self):

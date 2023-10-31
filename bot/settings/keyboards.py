@@ -38,7 +38,8 @@ class BaseKeyboard:
             )
 
         builder.row(
-            KeyboardButton(text=await self._get_button('REFERAL'))
+            KeyboardButton(text=await self._get_button('REFERAL')),
+            KeyboardButton(text=await self._get_button('MENU'))
         )
 
         return builder.as_markup(
@@ -51,8 +52,11 @@ class BaseKeyboard:
         """Кнопка для обращения в службу поддержки"""
 
         builder = ReplyKeyboardBuilder()
-        builder.row(
-            KeyboardButton(text=await self._get_button('HELP')),
+        builder.button(
+           text=BUTTONS['HELP']
+        )
+        builder.button(
+            text=BUTTONS['MENU']
         )
         return builder.as_markup(
             resize_keyboard=True,

@@ -12,15 +12,7 @@ class UserService(BaseService):
     model = Users
 
     @classmethod
-    async def get_user_by_tg_id(cls, tg_id: int):
-        async with async_session() as session:
-            query = select(Users).filter_by(external_id=tg_id)
-            user = await session.execute(query)
-
-            return user.scalars().one()
-
-    @classmethod
-    async def get_or_create_user(cls, username: str, tg_id: int, bot_id: int):
+    async def get_or_create_user(cls, username: str, tg_id: int, bot_id: int = None, promocode_id: int = None):
         user = await cls.get_object_or_none(
             username=username
         )
@@ -29,10 +21,9 @@ class UserService(BaseService):
                 query = insert(Users).values(
                     username=username,
                     bot_id=bot_id,
-                    external_id=tg_id
+                    external_id=tg_id,
+                    promocode_id=promocode_id
                 )
                 await session.execute(query)
                 await session.commit()
-
-
 
