@@ -110,7 +110,7 @@ class QuizService(BaseService):
 
     @classmethod
     async def get_attempts(cls, tg_id: int):
-        user = await UserService.get_user_by_tg_id(tg_id)
+        user = await cls.get_user_by_tg_id(tg_id)
 
         async with async_session() as session:
             query = select(QuizAttempts).filter_by(

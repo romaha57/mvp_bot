@@ -6,6 +6,9 @@ from bot.courses.keyboards import CourseKeyboard
 from bot.courses.service import CourseService
 from bot.courses.states import CourseChooseState
 from bot.handlers.base_handler import Handler
+from bot.lessons.keyboards import LessonKeyboard
+from bot.lessons.service import LessonService
+from bot.lessons.states import LessonChooseState
 from bot.utils.buttons import BUTTONS
 from bot.services.base_service import BaseService
 from bot.utils.messages import MESSAGES
@@ -18,6 +21,7 @@ class CourseHandler(Handler):
         self.db = CourseService()
         self.base_db = BaseService()
         self.kb = CourseKeyboard()
+        self.lesson_kb = LessonKeyboard()
 
     def handle(self):
 
@@ -41,17 +45,23 @@ class CourseHandler(Handler):
 
         @self.router.message(CourseChooseState.course, F.text)
         async def get_lesson(message: Message, state: FSMContext):
-            await state.clear()
-
             course = await self.db.get_course_by_name(message.text)
+            if course:
+                await state.clear()
 
-            # создаем запись в истории прохождения курса со статусом 'Открыт'
-            await self.db.create_history(
-                course_id=course.id,
-                tg_id=message.from_user.id
-            )
-            await message.answer(course.title)
-            await message.answer(
-                course.intro,
-                reply_markup=await self.kb.lessons_btn(course.id)
-            )
+                # создаем запись в истории прохождения курса со статусом 'Открыт'
+                await self.db.create_history(
+                    course_id=course.id,
+                    tg_id=message.from_user.id
+                )
+                await message.answer(course.title)
+                await message.answer(
+                    course.intro,
+                    reply_markup=await self.lesson_kb.lessons_btn(course.id)
+                )
+
+                # устанавливаем отлов состояния на название урока
+                await state.set_state(LessonChooseState.lesson)
+
+            else:
+                await message.answer(MESSAGES['NOT_FOUND_COURSE'])

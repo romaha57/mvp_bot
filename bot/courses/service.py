@@ -1,4 +1,4 @@
-from sqlalchemy import select, update, insert
+from sqlalchemy import select, update, insert, desc
 
 from bot.db_connect import async_session
 from bot.services.base_service import BaseService
@@ -48,7 +48,7 @@ class CourseService(BaseService):
             query = select(Course).filter_by(title=course_name)
             result = await session.execute(query)
 
-            return result.scalars().first()
+            return result.scalars().one_or_none()
 
     @classmethod
     async def create_history(cls, course_id: int, tg_id: int):
@@ -72,4 +72,15 @@ class CourseService(BaseService):
             result = await session.execute(query)
 
             return result.scalars().first()
+
+    @classmethod
+    async def get_actual_course_attempt(cls, user_id: int, course_id: int):
+        """Получаем актуальную попытку прохождения курса"""
+
+        async with async_session() as session:
+            query = select(CourseHistory).filter_by(user_id=user_id, course_id=course_id).order_by(desc('id'))
+            result = await session.execute(query)
+
+            return result.scalars().first()
+
 

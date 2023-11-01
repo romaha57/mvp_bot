@@ -26,7 +26,6 @@ class QuizHandler(Handler):
         @self.router.message(F.text == BUTTONS['QUIZ'])
         async def start_quiz(message: Message, state: FSMContext):
             user = await self.db.get_user_by_tg_id(message.from_user.id)
-
             # стартовое сообщение при тестировании
             start_msg = await self.db.get_msg_by_key('start_quiz')
             await message.answer(start_msg)
