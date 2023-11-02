@@ -52,15 +52,36 @@ class LessonKeyboard:
             one_time_keyboard=True
         )
 
-    async def test_answers_btn(self, answers: list[dict]):
+    async def test_answers_btn(self, count_answers: int, selected: list[int] = None):
         builder = InlineKeyboardBuilder()
-
-        for answer in answers:
+        for num in range(1, count_answers + 1):
+            if selected and num in selected:
+                builder.button(
+                    text=f'{num} ✅',
+                    callback_data=f'test_answers_{num}'
+                )
+                continue
             builder.button(
-                text=answer['title'],
-                callback_data=f'test_answer/{answer["title"][:20]}/{answer["good"]}'
+                text=str(num),
+                callback_data=f'test_answers_{num}'
             )
+        builder.button(
+            text='Проверить ответ',
+            callback_data='check_answer'
+        )
+        builder.adjust(1)
 
+        return builder.as_markup(
+            resize_keyboard=True,
+            one_time_keyboard=True
+        )
+
+    async def next_question_btn(self):
+        builder = InlineKeyboardBuilder()
+        builder.button(
+            text='Следующий вопрос',
+            callback_data='next_question'
+        )
         builder.adjust(1)
 
         return builder.as_markup(

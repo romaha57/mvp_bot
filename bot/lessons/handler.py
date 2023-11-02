@@ -10,6 +10,7 @@ from bot.lessons.keyboards import LessonKeyboard
 from bot.lessons.service import LessonService
 from bot.lessons.states import LessonChooseState
 from bot.settings.keyboards import BaseKeyboard
+from bot.utils.answers import format_answers_text
 from bot.utils.messages import MESSAGES
 
 
@@ -44,6 +45,7 @@ class LessonHandler(Handler):
                 course_history_id=actual_course_attempt.id
             )
 
+            # вывод информации об уроке
             if lesson:
                 if lesson.video:
                     await message.answer_video(
@@ -111,38 +113,91 @@ class LessonHandler(Handler):
                 lesson_history_id=actual_lesson_history.id
             )
 
+            # берем первый вопрос, формируем сообщение с вопросом и вариантами ответа
+            # и записываем количество вариантов ответа для формирования кнопок с выбором
             first_question = self.test_questions.pop()
+            answers_text = await format_answers_text(first_question['questions'])
+            text = f"{first_question['title']} \n {answers_text}"
+            count_questions = len(first_question['questions'])
+
             await callback.message.answer(
-                first_question['title'],
-                reply_markup=await self.kb.test_answers_btn(first_question['questions'])
+                text,
+                reply_markup=await self.kb.test_answers_btn(count_questions)
             )
             await state.set_state(LessonChooseState.test_answer)
-            await state.update_data(answers=[])
+            await state.update_data(count_questions=count_questions)
+            await state.update_data(question=first_question)
+            await state.update_data(selected=[])
+            await state.update_data(inline_message_id=str(callback.inline_message_id))
             await state.update_data(lesson_history_id=actual_lesson_history.id)
 
         @self.router.callback_query(F.data.startswith('test_answer'), LessonChooseState.test_answer)
         async def save_test_answer(callback: CallbackQuery, state: FSMContext):
             data = await state.get_data()
-            args = callback.data.split('/')
-            answer = args[1]
-            data['answers'].append(answer)
+
+            # получаем выбранный вариант пользователя
+            selected = int(callback.data.split('_')[-1])
+            count_questions = len(data['question']['questions'])
+
+            # логика по отметке выбранных ответов(добавляем в список выбранные или убираем из него, если такой уж есть)
+            if selected in data['selected']:
+                data['selected'].remove(selected)
+            else:
+                data['selected'].append(selected)
+
+            await callback.message.edit_reply_markup(
+                data['inline_message_id'],
+                reply_markup=await self.kb.test_answers_btn(count_questions, selected=data['selected'])
+            )
+
+        @self.router.callback_query(F.data.startswith('check_answer'))
+        async def close_lesson(callback: CallbackQuery, state: FSMContext):
+            data = await state.get_data()
+
+            # получаем все выбранные пользователям ответы и сортируем по возрастанию цифр
+            data['selected'].sort()
+            selected = data['selected']
+
+            # получаем вопрос на который отвечал пользователь
+            question = data['question']
+            correct_answers = []
+
+            # получаем все правильные ответы на этот вопрос и сверяем с выбранными пользователем
+            for index, answer in enumerate(question['questions'], 1):
+                if answer['good']:
+                    correct_answers.append(index)
+            if correct_answers == selected:
+                await callback.message.answer('все верно',
+                                              reply_markup=await self.kb.next_question_btn())
+
+            else:
+                await callback.message.answer('ошибка', reply_markup=await self.kb.next_question_btn())
+
+        @self.router.callback_query(F.data.startswith('next_question'))
+        async def close_lesson(callback: CallbackQuery, state: FSMContext):
+            data = await state.get_data()
+
+            # убираем историю выбранных пользователем ответов
+            await state.update_data(selected=[])
 
             try:
+                # получаем следующий вопрос и записываем его в state
                 question = self.test_questions.pop()
+                await state.update_data(question=question)
+
+                # формируем текст ответа и записываем кол-во вариантов ответа для формирования кнопок
+                answers_text = await format_answers_text(question['questions'])
+                text = f"{question['title']} \n {answers_text}"
+                count_questions = len(question['questions'])
+
                 await callback.message.edit_text(
-                    question['title'],
-                    reply_markup=await self.kb.test_answers_btn(question['questions'])
-                )
+                    text,
+                    reply_markup=await self.kb.test_answers_btn(count_questions))
+
                 await state.set_state(LessonChooseState.test_answer)
             except IndexError:
-                # когда вопросов больше не будет, то удаляем состояние, но данные оставляем()
+                # когда вопросов больше не будет, то удаляем состояние, но данные оставляем
                 await state.set_state(state=None)
-
-                # сохраняем ответы пользователя в БД
-                await self.db.save_test_answers(
-                    answers=data['answers'],
-                    lesson_history_id=data['lesson_history_id']
-                )
 
                 # меняем статус на 'Пройден' у данной попытки прохождения теста
                 await self.db.mark_lesson_history_on_status_done(
@@ -150,11 +205,16 @@ class LessonHandler(Handler):
                 )
 
                 await callback.message.edit_text(
-                    'конец'
+                    MESSAGES['END_TEST']
                 )
                 await callback.message.answer(
                     MESSAGES['GO_TO_MENU'],
                     reply_markup=await self.base_kb.menu_btn()
                 )
+
+        @self.router.callback_query(F.data.startswith('close_lesson'))
+        async def close_lesson(callback: CallbackQuery, state: FSMContext):
+
+            await callback.message.answer('конец')
 
 

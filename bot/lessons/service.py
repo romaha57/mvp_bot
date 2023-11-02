@@ -21,7 +21,6 @@ class LessonService(BaseService):
 
     @classmethod
     async def get_lesson_by_name(cls, name: str):
-        print('name', name)
         async with async_session() as session:
             query = select(Lessons).filter_by(title=name)
             result = await session.execute(query)
@@ -125,3 +124,14 @@ class LessonService(BaseService):
                 values(answers=answers)
             await session.execute(query)
             await session.commit()
+
+    @classmethod
+    async def get_correct_answer_by_lesson(cls, lesson_id: int):
+        """Получаем правильные ответы на тесты к уроку"""
+
+        async with async_session() as session:
+            query = select(Lessons.questions).filter_by(id=lesson_id)
+            result = await session.execute(query)
+            await session.commit()
+
+            return result.scalars().all()

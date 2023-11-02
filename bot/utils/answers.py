@@ -37,3 +37,18 @@ async def format_quiz_results(answers: list[QuizAnswers.details]) -> str:
     result = date + '\n\n' + result
 
     return result
+
+
+async def format_answers_text(answers: list[str]):
+    """Формируем сообщение вида:
+    Вопрос:
+    1. ответ 1
+    2. ответ 2
+    """
+    result = ''
+
+    for number, answer in enumerate(answers, 1):
+        result += f'{str(number)}. '
+        result += answer['title'] + '\n'
+
+    return result

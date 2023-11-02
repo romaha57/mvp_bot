@@ -94,7 +94,7 @@ class TestLessonHistory(Base):
     user = relationship('Users', back_populates='test_lesson_history')
 
     def __str__(self):
-        return f'{self.name}'
+        return f'{self.lesson_id} - {self.user_id}'
 
 
 class TestLessonHistoryStatuses(Base):
