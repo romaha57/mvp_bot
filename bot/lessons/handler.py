@@ -23,6 +23,7 @@ class LessonHandler(Handler):
         self.kb = LessonKeyboard()
         self.base_kb = BaseKeyboard()
         self.test_questions = None
+        self.result_count = 0
 
     def handle(self):
 
@@ -92,6 +93,9 @@ class LessonHandler(Handler):
             # получаем все тестовые вопросы по данному уроку и переворачиваем список, чтобы начиналось с №1
             self.test_questions = json.loads(lesson.questions)
             self.test_questions.reverse()
+
+            # сохранить общее количество вопросов
+            await state.update_data(questions_count=len(self.test_questions))
 
             user = await self.db.get_user_by_tg_id(callback.message.chat.id)
 
@@ -166,7 +170,9 @@ class LessonHandler(Handler):
             for index, answer in enumerate(question['questions'], 1):
                 if answer['good']:
                     correct_answers.append(index)
+
             if correct_answers == selected:
+                self.result_count += 1
                 await callback.message.answer('все верно',
                                               reply_markup=await self.kb.next_question_btn())
 
@@ -204,9 +210,26 @@ class LessonHandler(Handler):
                     lesson_history_id=data['lesson_history_id']
                 )
 
-                await callback.message.edit_text(
-                    MESSAGES['END_TEST']
-                )
+                # вывод результат теста с подсчетом % правильных
+                user_percent_answer = int((self.result_count / data['questions_count']) * 100)
+                if user_percent_answer > data['lesson'].questions_percent:
+
+                    await callback.message.edit_text(
+                        MESSAGES['SUCCESS_TEST'].format(
+                            user_percent_answer
+                        )
+                    )
+                    await self.db.mark_lesson_history_on_status_done(data['lesson_history_id'])
+
+                else:
+                    await callback.message.edit_text(
+                        MESSAGES['FAIL_TEST']
+                    )
+                    await self.db.mark_lesson_history_on_status_fail_test(data['lesson_history_id'])
+
+                # обнуляем счетчик правильных ответов
+                self.result_count = 0
+
                 await callback.message.answer(
                     MESSAGES['GO_TO_MENU'],
                     reply_markup=await self.base_kb.menu_btn()

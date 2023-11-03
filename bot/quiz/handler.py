@@ -34,18 +34,29 @@ class QuizHandler(Handler):
             quiz = await self.db.get_quiz(user.promocode_id)
             await message.answer(quiz.name)
 
-            # запись в БД о начале тестирования данным пользователем
-            await self.db.create_attempt(
-                quiz_id=quiz.id,
-                tg_id=message.from_user.id
+            attempt = await self.db.get_last_attempt(user.id, quiz.id)
+            if not attempt:
+                # запись в БД о начале тестирования данным пользователем
+                await self.db.create_attempt(
+                    quiz_id=quiz.id,
+                    tg_id=user.external_id
 
-            )
-            attempt = await self.db.get_last_attempt()
+                )
+                attempt = await self.db.get_last_attempt(user.id, quiz.id)
+
             await state.update_data(attempt_id=attempt.id)
             await state.update_data(quiz_id=quiz.id)
 
-            # список вопросов по данному тестированию
-            self.questions = await self.db.get_quiz_questions(quiz.id)
+            answer_by_attempt = await self.db.get_answers_by_attempt(attempt.id)
+            count_answer_by_user_in_attempt = len(answer_by_attempt)
+
+            if count_answer_by_user_in_attempt:
+                offset = 3
+                # список вопросов по данному тестированию
+                self.questions = await self.db.get_quiz_questions(quiz.id, offset=count_answer_by_user_in_attempt)
+            else:
+                self.questions = await self.db.get_quiz_questions(quiz.id)
+            print(f'question count {len(self.questions)}')
             question = self.questions.pop()
             await message.answer(
                 question.title,

@@ -11,11 +11,15 @@ class QuizService(BaseService):
     model = Quizes
 
     @classmethod
-    async def get_quiz_questions(cls, quiz_id: int):
+    async def get_quiz_questions(cls, quiz_id: int, offset: int = None):
         """"Поучение всех вопросов определённого тестирования"""
 
         async with async_session() as session:
-            query = select(QuizQuestions).filter_by(quiz_id=quiz_id).order_by(desc('id'))
+            if offset:
+                query = select(QuizQuestions).filter_by(quiz_id=quiz_id).order_by(desc('id')).offset(offset)
+                print(query)
+            else:
+                query = select(QuizQuestions).filter_by(quiz_id=quiz_id).order_by(desc('id'))
             result = await session.execute(query)
 
             return result.scalars().all()
@@ -58,7 +62,7 @@ class QuizService(BaseService):
     async def create_attempt(cls, quiz_id: int, tg_id: int):
         """Создание попытки прохождения теста"""
 
-        user = await UserService.get_user_by_tg_id(tg_id)
+        user = await cls.get_user_by_tg_id(tg_id)
         status = await cls.get_attempt_status('В процессе')
         async with async_session() as session:
             query = insert(QuizAttempts).values(
@@ -101,9 +105,9 @@ class QuizService(BaseService):
             await session.commit()
 
     @classmethod
-    async def get_last_attempt(cls):
+    async def get_last_attempt(cls, user_id: int, quiz_id: int):
         async with async_session() as session:
-            query = select(QuizAttempts).order_by(desc('id'))
+            query = select(QuizAttempts).filter_by(user_id=user_id, quiz_id=quiz_id).order_by(desc('id'))
             result: CursorResult = await session.execute(query)
 
             return result.scalars().first()

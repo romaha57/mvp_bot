@@ -102,15 +102,36 @@ class LessonService(BaseService):
         async with async_session() as session:
             query = update(LessonHistory).where(LessonHistory.id == lesson_history_id).values(status_id=status.id)
             await session.execute(query)
-            await session.commit()    \
+            await session.commit()
+
+    @classmethod
+    async def mark_lesson_history_on_status_complete(cls, lesson_history_id):
+        """Отмечаем статус прохождеия урока на 'Пройден' """
+
+        status = await cls.get_lesson_history_status('Пройден')
+        async with async_session() as session:
+            query = update(LessonHistory).where(LessonHistory.id == lesson_history_id).values(status_id=status.id)
+            await session.execute(query)
+            await session.commit()
+
+    @classmethod
+    async def mark_lesson_history_on_status_fail_test(cls, lesson_history_id):
+        """Отмечаем статус прохождения урока на 'Завален тест' """
+
+        status = await cls.get_lesson_history_status('Завален тест')
+        async with async_session() as session:
+            query = update(LessonHistory).where(LessonHistory.id == lesson_history_id).values(status_id=status.id)
+            await session.execute(query)
+            await session.commit()
 
     @classmethod
     async def mark_lesson_history_on_status_done(cls, lesson_history_id):
-        """Отмечаем статус прохождеия урока на 'Пройден' """
+        """Отмечаем статус прохождения урока на 'Пройден' """
 
-        status = await cls.get_test_lesson_history_status('Пройден')
+        status = await cls.get_lesson_history_status('Пройден')
+
         async with async_session() as session:
-            query = update(TestLessonHistory).where(TestLessonHistory.lesson_history_id == lesson_history_id).values(status_id=status.id)
+            query = update(LessonHistory).where(LessonHistory.id == lesson_history_id).values(status_id=status.id)
             await session.execute(query)
             await session.commit()
 
