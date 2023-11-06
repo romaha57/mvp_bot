@@ -3,6 +3,7 @@ import json
 from aiogram import Bot, Router, F
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
+from aiogram.filters import or_f
 
 from bot.courses.service import CourseService
 from bot.handlers.base_handler import Handler
@@ -30,9 +31,10 @@ class LessonHandler(Handler):
         @self.router.message(LessonChooseState.lesson, F.text)
         async def choose_lesson(message: Message, state: FSMContext):
             await state.clear()
+            print(message.text)
             lesson = await self.db.get_lesson_by_name(message.text)
             user = await self.db.get_user_by_tg_id(message.from_user.id)
-
+            print(lesson)
             # получаем актуальную для текущего пользователя попытку прохождения курса
             actual_course_attempt = await self.course_db.get_actual_course_attempt(
                 user_id=user.id,
@@ -55,15 +57,22 @@ class LessonHandler(Handler):
                     )
                     await message.answer(
                         lesson.description,
-                        reply_markup=await self.kb.lesson_menu_btn(lesson.course_id)
+                        reply_markup=await self.kb.lesson_menu_btn(lesson)
                     )
 
                 else:
                     await message.answer(lesson.title)
                     await message.answer(
                         lesson.description,
-                        reply_markup=await self.kb.lesson_menu_btn(lesson.course_id)
+                        reply_markup=await self.kb.lesson_menu_btn(lesson)
                     )
+
+                # получаем актуальную попытку прохождения урока
+                actual_lesson_history = await self.db.get_actual_lesson_history(
+                    user_id=user.id,
+                    lesson_id=lesson.id
+                )
+                await state.update_data(lesson_history_id=actual_lesson_history.id)
 
             else:
                 await message.answer(MESSAGES['NOT_FOUND_LESSON'])
@@ -99,22 +108,17 @@ class LessonHandler(Handler):
 
             user = await self.db.get_user_by_tg_id(callback.message.chat.id)
 
-            # получаем актуальную попытку прохождения урока
-            actual_lesson_history = await self.db.get_actual_lesson_history(
-                user_id=user.id,
-                lesson_id=lesson.id
-            )
 
             # создаем истории прохождения теста на урок
             await self.db.create_test_history(
                 user_id=user.id,
                 lesson_id=lesson.id,
-                lesson_history_id=actual_lesson_history.id
+                lesson_history_id=data['lesson_history_id']
             )
 
             # меняем статус прохождения урока на 'ТЕСТ'
             await self.db.mark_lesson_history_on_status_test(
-                lesson_history_id=actual_lesson_history.id
+                lesson_history_id=data['lesson_history_id']
             )
 
             # берем первый вопрос, формируем сообщение с вопросом и вариантами ответа
@@ -133,7 +137,7 @@ class LessonHandler(Handler):
             await state.update_data(question=first_question)
             await state.update_data(selected=[])
             await state.update_data(inline_message_id=str(callback.inline_message_id))
-            await state.update_data(lesson_history_id=actual_lesson_history.id)
+
 
         @self.router.callback_query(F.data.startswith('test_answer'), LessonChooseState.test_answer)
         async def save_test_answer(callback: CallbackQuery, state: FSMContext):
@@ -212,6 +216,8 @@ class LessonHandler(Handler):
 
                 # вывод результат теста с подсчетом % правильных
                 user_percent_answer = int((self.result_count / data['questions_count']) * 100)
+
+                # если пользователь набрал нужный % прохождения
                 if user_percent_answer > data['lesson'].questions_percent:
 
                     await callback.message.edit_text(
@@ -237,7 +243,24 @@ class LessonHandler(Handler):
 
         @self.router.callback_query(F.data.startswith('close_lesson'))
         async def close_lesson(callback: CallbackQuery, state: FSMContext):
+            data = await state.get_data()
+            await self.db.mark_lesson_history_on_status_done(data['lesson_history_id'])
+            next_lesson = await self.db.get_lesson_by_order_num(
+                course_id=data['lesson'].course_id,
+                order_num=data['lesson'].order_num + 1
+            )
+            if next_lesson:
+                await callback.message.answer(
+                    MESSAGES['NEXT_LESSON'],
+                    reply_markup=await self.kb.next_lesson_btn(next_lesson)
+                )
+                await state.set_state(LessonChooseState.lesson)
+            else:
+                await callback.message.answer(
+                    MESSAGES['ALL_LESSONS_DONE'],
+                    reply_markup=await self.base_kb.menu_btn()
+                )
 
-            await callback.message.answer('конец')
+
 
 

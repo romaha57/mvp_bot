@@ -26,4 +26,6 @@ MESSAGES = {
     'TEST_QUESTION': test_question_text,
     'SUCCESS_TEST': 'Поздравляем! Вы прошли тест. Ваш результат {}',
     'FAIL_TEST': 'К сожалению, вы не прошли тест',
+    'ALL_LESSONS_DONE': 'Все уроки в этом курсе завершены',
+    'NEXT_LESSON': 'Перейдем к следующему уроку'
 }

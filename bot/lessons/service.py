@@ -156,3 +156,13 @@ class LessonService(BaseService):
             await session.commit()
 
             return result.scalars().all()
+
+    @classmethod
+    async def get_lesson_by_order_num(cls, course_id: int, order_num: int):
+        """Получаем урок по его курсу и порядковому номеру в этом курсе"""
+
+        async with async_session() as session:
+            query = select(Lessons).filter_by(course_id=course_id, order_num=order_num)
+            result = await session.execute(query)
+
+            return result.scalars().one_or_none()

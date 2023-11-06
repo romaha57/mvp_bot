@@ -15,11 +15,7 @@ class QuizService(BaseService):
         """"Поучение всех вопросов определённого тестирования"""
 
         async with async_session() as session:
-            if offset:
-                query = select(QuizQuestions).filter_by(quiz_id=quiz_id).order_by(desc('id')).offset(offset)
-                print(query)
-            else:
-                query = select(QuizQuestions).filter_by(quiz_id=quiz_id).order_by(desc('id'))
+            query = select(QuizQuestions).filter_by(quiz_id=quiz_id).order_by(desc('id'))
             result = await session.execute(query)
 
             return result.scalars().all()

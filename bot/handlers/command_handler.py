@@ -19,8 +19,7 @@ class CommandHandler(Handler):
 
     def handle(self):
         @self.router.message(Command('start'))
-        async def start(message: Message, state: FSMContext):
-
+        async def start(message: Message):
             start_msg = await self.db.get_msg_by_key('intro')
             await message.answer(start_msg)
 

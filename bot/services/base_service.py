@@ -1,6 +1,6 @@
 from typing import Union
 
-from sqlalchemy import select, insert, delete, Row
+from sqlalchemy import select, insert, delete, Row, text
 from sqlalchemy.ext.asyncio import AsyncMappingResult
 
 from bot.db_connect import async_session
@@ -61,6 +61,14 @@ class BaseService:
             await session.execute(query)
             await session.commit()
 
+
+    @classmethod
+    async def test(cls):
+        async with async_session() as session:
+            query = text('SELECT 1 ')
+            result = await session.execute(query)
+
+            return str(result.scalar())
     @classmethod
     async def get_msg_by_key(cls, key: str):
         """Получение сообщение бота по его ключу"""

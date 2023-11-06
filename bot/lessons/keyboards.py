@@ -1,5 +1,6 @@
 from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
 
+from bot.lessons.models import Lessons
 from bot.lessons.service import LessonService
 from bot.utils.buttons import BUTTONS
 from bot.utils.messages import MESSAGES
@@ -9,22 +10,23 @@ class LessonKeyboard:
     def __init__(self):
         self.db = LessonService()
 
-    async def lesson_menu_btn(self, course_id: int):
+    async def lesson_menu_btn(self, lesson: Lessons):
         builder = InlineKeyboardBuilder()
         builder.button(
             text=BUTTONS['BACK'],
-            callback_data=f'back_{course_id}'
+            callback_data=f'back_{lesson.course_id}'
         )
+        if lesson.questions:
 
-        builder.button(
-            text=BUTTONS['START_TEST'],
-            callback_data=f'start_test_{course_id}'
-        )
-
-        builder.button(
-            text=BUTTONS['CLOSE_LESSON'],
-            callback_data=f'close_lesson_{course_id}'
-        )
+            builder.button(
+                text=BUTTONS['START_TEST'],
+                callback_data=f'start_test_{lesson.course_id}'
+            )
+        else:
+            builder.button(
+                text=BUTTONS['CLOSE_LESSON'],
+                callback_data=f'close_lesson_{lesson.course_id}'
+            )
         builder.adjust(3)
 
         return builder.as_markup(
@@ -87,5 +89,19 @@ class LessonKeyboard:
         return builder.as_markup(
             resize_keyboard=True,
             one_time_keyboard=True
+        )
+
+    async def next_lesson_btn(self, lesson: Lessons = None):
+        builder = ReplyKeyboardBuilder()
+        builder.button(
+            text=lesson.title
+        )
+
+        builder.adjust(1)
+
+        return builder.as_markup(
+            resize_keyboard=True,
+            one_time_keyboard=True,
+            input_field_placeholder=MESSAGES['NEXT_LESSON'],
         )
 
