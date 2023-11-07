@@ -18,4 +18,3 @@ class SettingsService(BaseService):
             result = await session.execute(query)
 
             return result.scalars().one_or_none()
-

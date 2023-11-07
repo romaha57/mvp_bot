@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, func, ForeignKey
+from sqlalchemy import (Column, DateTime, ForeignKey, Integer, String, Text,
+                        func)
 from sqlalchemy.orm import relationship
 
 from bot.db_connect import Base
@@ -65,7 +66,6 @@ class CourseHistory(Base):
     user = relationship('Users', back_populates='course_history')
 
     lesson_history = relationship('LessonHistory', back_populates='course_history')
-
 
     def __str__(self):
         return f'{self.course_id} - {self.status_id}'

@@ -1,5 +1,4 @@
-from aiogram import Router, Bot, F
-from aiogram.fsm.context import FSMContext
+from aiogram import Bot, F, Router
 from aiogram.types import Message
 
 from bot.handlers.base_handler import Handler
@@ -28,6 +27,8 @@ class TextHandler(Handler):
 
         @self.router.message(F.text == BUTTONS['MENU'])
         async def get_menu(message: Message):
+            """Отлов кнопки 'Меню' """
+
             user = await self.db.get_user_by_tg_id(message.from_user.id)
             promocode = await self.db.get_promocode(user.promocode_id)
 

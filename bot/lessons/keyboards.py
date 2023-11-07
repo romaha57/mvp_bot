@@ -1,3 +1,4 @@
+from aiogram.types import InlineKeyboardMarkup, ReplyKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
 
 from bot.lessons.models import Lessons
@@ -10,7 +11,9 @@ class LessonKeyboard:
     def __init__(self):
         self.db = LessonService()
 
-    async def lesson_menu_btn(self, lesson: Lessons):
+    async def lesson_menu_btn(self, lesson: Lessons) -> InlineKeyboardMarkup:
+        """Кнопки меню для урока"""
+
         builder = InlineKeyboardBuilder()
         builder.button(
             text=BUTTONS['BACK'],
@@ -34,7 +37,9 @@ class LessonKeyboard:
             one_time_keyboard=True
         )
 
-    async def lessons_btn(self, course_id: str):
+    async def lessons_btn(self, course_id: str) -> ReplyKeyboardMarkup:
+        """Кнопки со списком уроков"""
+
         builder = ReplyKeyboardBuilder()
         lessons = await self.db.get_lessons(course_id)
         for lesson in lessons:
@@ -54,7 +59,9 @@ class LessonKeyboard:
             one_time_keyboard=True
         )
 
-    async def test_answers_btn(self, count_answers: int, selected: list[int] = None):
+    async def test_answers_btn(self, count_answers: int, selected: list[int] = None) -> InlineKeyboardMarkup:
+        """Кнопки с вариантами ответа на тестовые вопросы после урока"""
+
         builder = InlineKeyboardBuilder()
         for num in range(1, count_answers + 1):
             if selected and num in selected:
@@ -78,7 +85,9 @@ class LessonKeyboard:
             one_time_keyboard=True
         )
 
-    async def next_question_btn(self):
+    async def next_question_btn(self) -> InlineKeyboardMarkup:
+        """Кнопка с переходом к следующему вопросу в тесте после урока"""
+
         builder = InlineKeyboardBuilder()
         builder.button(
             text='Следующий вопрос',
@@ -91,7 +100,9 @@ class LessonKeyboard:
             one_time_keyboard=True
         )
 
-    async def next_lesson_btn(self, lesson: Lessons = None):
+    async def next_lesson_btn(self, lesson: Lessons = None) -> ReplyKeyboardMarkup:
+        """Кнопка для перехода к следующему уроку"""
+
         builder = ReplyKeyboardBuilder()
         builder.button(
             text=lesson.title
@@ -104,4 +115,3 @@ class LessonKeyboard:
             one_time_keyboard=True,
             input_field_placeholder=MESSAGES['NEXT_LESSON'],
         )
-

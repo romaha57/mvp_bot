@@ -1,11 +1,10 @@
 from aiogram import Bot, Router
 from aiogram.filters import Command
-from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
 from bot.handlers.base_handler import Handler
-from bot.settings.service import SettingsService
 from bot.settings.keyboards import BaseKeyboard
+from bot.settings.service import SettingsService
 from bot.users.service import UserService
 
 
@@ -20,6 +19,8 @@ class CommandHandler(Handler):
     def handle(self):
         @self.router.message(Command('start'))
         async def start(message: Message):
+            """Отлов команды /start"""
+
             start_msg = await self.db.get_msg_by_key('intro')
             await message.answer(start_msg)
 

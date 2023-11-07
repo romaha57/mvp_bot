@@ -1,5 +1,3 @@
-import datetime
-
 from aiogram.types import Message
 
 from bot.quiz.models import QuizAnswers
@@ -25,6 +23,7 @@ async def get_file_id_by_content_type(message: Message):
 
 async def format_quiz_results(answers: list[QuizAnswers.details]) -> str:
     """Формируем красивый ответ для вывода ответов пользователя на тестирование"""
+
     result = 'Ваши ответы:\n\n'
     date = ''
     for answer in answers:

@@ -1,9 +1,8 @@
 import json
 
-from aiogram import Bot, Router, F
+from aiogram import Bot, F, Router
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, CallbackQuery
-from aiogram.filters import or_f
+from aiogram.types import CallbackQuery, Message
 
 from bot.courses.service import CourseService
 from bot.handlers.base_handler import Handler
@@ -95,7 +94,7 @@ class LessonHandler(Handler):
             await state.set_state(LessonChooseState.lesson)
 
         @self.router.callback_query(F.data.startswith('start_test'), LessonChooseState.start_test)
-        async def back_to_lesson_list(callback: CallbackQuery, state: FSMContext):
+        async def start_test_after_lesson(callback: CallbackQuery, state: FSMContext):
             data = await state.get_data()
             lesson = data['lesson']
 
@@ -107,7 +106,6 @@ class LessonHandler(Handler):
             await state.update_data(questions_count=len(self.test_questions))
 
             user = await self.db.get_user_by_tg_id(callback.message.chat.id)
-
 
             # создаем истории прохождения теста на урок
             await self.db.create_test_history(
@@ -138,7 +136,6 @@ class LessonHandler(Handler):
             await state.update_data(selected=[])
             await state.update_data(inline_message_id=str(callback.inline_message_id))
 
-
         @self.router.callback_query(F.data.startswith('test_answer'), LessonChooseState.test_answer)
         async def save_test_answer(callback: CallbackQuery, state: FSMContext):
             data = await state.get_data()
@@ -159,7 +156,7 @@ class LessonHandler(Handler):
             )
 
         @self.router.callback_query(F.data.startswith('check_answer'))
-        async def close_lesson(callback: CallbackQuery, state: FSMContext):
+        async def check_answer_on_quiz(callback: CallbackQuery, state: FSMContext):
             data = await state.get_data()
 
             # получаем все выбранные пользователям ответы и сортируем по возрастанию цифр
@@ -184,7 +181,7 @@ class LessonHandler(Handler):
                 await callback.message.answer('ошибка', reply_markup=await self.kb.next_question_btn())
 
         @self.router.callback_query(F.data.startswith('next_question'))
-        async def close_lesson(callback: CallbackQuery, state: FSMContext):
+        async def next_question_in_test_after_lesson(callback: CallbackQuery, state: FSMContext):
             data = await state.get_data()
 
             # убираем историю выбранных пользователем ответов
@@ -260,7 +257,3 @@ class LessonHandler(Handler):
                     MESSAGES['ALL_LESSONS_DONE'],
                     reply_markup=await self.base_kb.menu_btn()
                 )
-
-
-
-

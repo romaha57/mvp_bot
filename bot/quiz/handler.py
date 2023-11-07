@@ -1,6 +1,6 @@
-from aiogram import Bot, Router, F
+from aiogram import Bot, F, Router
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import CallbackQuery, Message
 
 from bot.handlers.base_handler import Handler
 from bot.quiz.keyboads import QuizKeyboard
@@ -25,7 +25,10 @@ class QuizHandler(Handler):
 
         @self.router.message(F.text == BUTTONS['QUIZ'])
         async def start_quiz(message: Message, state: FSMContext):
+            """Обработка начала тестирования"""
+
             user = await self.db.get_user_by_tg_id(message.from_user.id)
+
             # стартовое сообщение при тестировании
             start_msg = await self.db.get_msg_by_key('start_quiz')
             await message.answer(start_msg)
@@ -47,7 +50,7 @@ class QuizHandler(Handler):
             await state.update_data(attempt_id=attempt.id)
             await state.update_data(quiz_id=quiz.id)
 
-
+            # получаем вопросы для тестирования
             self.questions = await self.db.get_quiz_questions(quiz.id)
 
             question = self.questions.pop()
@@ -55,6 +58,7 @@ class QuizHandler(Handler):
                 question.title,
                 reply_markup=await self.kb.quiz_answers(question.id)
             )
+            # состояния на отлов ответа на этот вопрос
             await state.set_state(QuizState.answer)
 
         @self.router.callback_query(F.data.startswith('answer'), QuizState.answer)

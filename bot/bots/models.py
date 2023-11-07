@@ -1,4 +1,5 @@
-from sqlalchemy import Column, String, Integer, DateTime, func, ForeignKey, BigInteger
+from sqlalchemy import (BigInteger, Column, DateTime, ForeignKey, Integer,
+                        String, func)
 from sqlalchemy.orm import relationship
 
 from bot.db_connect import Base

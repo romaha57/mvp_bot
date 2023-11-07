@@ -3,7 +3,6 @@ from aiogram.utils.keyboard import ReplyKeyboardBuilder
 
 from bot.settings.service import SettingsService
 from bot.users.models import Promocodes
-
 from bot.utils.buttons import BUTTONS
 from bot.utils.messages import MESSAGES
 
@@ -14,9 +13,10 @@ class BaseKeyboard:
 
     async def _get_button(self, name):
         """Получение текста кнопки"""
+
         return BUTTONS.get(name)
 
-    async def start_btn(self, promocode: Promocodes):
+    async def start_btn(self, promocode: Promocodes) -> ReplyKeyboardMarkup:
         """Стартовое меню бота"""
 
         builder = ReplyKeyboardBuilder()
@@ -48,7 +48,7 @@ class BaseKeyboard:
             one_time_keyboard=True
         )
 
-    async def help_btn(self):
+    async def help_btn(self) -> ReplyKeyboardMarkup:
         """Кнопка для обращения в службу поддержки"""
 
         builder = ReplyKeyboardBuilder()
@@ -64,7 +64,7 @@ class BaseKeyboard:
             one_time_keyboard=True
         )
 
-    async def menu_btn(self):
+    async def menu_btn(self) -> ReplyKeyboardMarkup:
         """Кнопка на главное меню"""
 
         builder = ReplyKeyboardBuilder()

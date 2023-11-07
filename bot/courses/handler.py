@@ -1,4 +1,4 @@
-from aiogram import Bot, Router, F
+from aiogram import Bot, F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
@@ -7,10 +7,9 @@ from bot.courses.service import CourseService
 from bot.courses.states import CourseChooseState
 from bot.handlers.base_handler import Handler
 from bot.lessons.keyboards import LessonKeyboard
-from bot.lessons.service import LessonService
 from bot.lessons.states import LessonChooseState
-from bot.utils.buttons import BUTTONS
 from bot.services.base_service import BaseService
+from bot.utils.buttons import BUTTONS
 from bot.utils.messages import MESSAGES
 
 
@@ -27,10 +26,13 @@ class CourseHandler(Handler):
 
         @self.router.message(F.text == BUTTONS['EDUCATION'])
         async def get_course(message: Message, state: FSMContext):
+            """Отлов кнопки 'Обучение' и вывод списка доступынх курсов"""
+
             user = await self.db.get_user_by_tg_id(message.from_user.id)
             promocode = await self.db.get_promocode(user.promocode_id)
 
             # получаем доступные курсы самого бота и те, которые доступны по промокоду
+            # и берем только уникальные id этих курсов
             courses_1 = await self.db.get_courses_ids_by_bot(user.bot_id)
             courses_2 = await self.db.get_courses_ids_by_promo(promocode.course_id)
             all_courses_ids = set(courses_1 + courses_2)
@@ -45,6 +47,8 @@ class CourseHandler(Handler):
 
         @self.router.message(CourseChooseState.course, F.text)
         async def get_lesson(message: Message, state: FSMContext):
+            """Отлавливаем выбранный пользователем курс"""
+
             course = await self.db.get_course_by_name(message.text)
             if course:
                 await state.clear()

@@ -1,17 +1,18 @@
-from sqlalchemy import select, update, insert, desc
+from typing import Union
 
+from sqlalchemy import desc, insert, select
+
+from bot.courses.models import (Course, CourseBots, CourseHistory,
+                                CourseHistoryStatuses)
 from bot.db_connect import async_session
 from bot.services.base_service import BaseService
-
-from bot.courses.models import Course, CourseHistory, CourseHistoryStatuses, CourseBots
-from bot.users.service import UserService
 
 
 class CourseService(BaseService):
     model = None
 
     @classmethod
-    async def get_courses_ids_by_promo(cls, course_id: int):
+    async def get_courses_ids_by_promo(cls, course_id: int) -> list[int]:
         """Получаем все доступные id_курсов доступных по промокоду"""
 
         async with async_session() as session:
@@ -21,17 +22,20 @@ class CourseService(BaseService):
             return result.scalars().all()
 
     @classmethod
-    async def get_courses_ids_by_bot(cls, bot_id: int):
+    async def get_courses_ids_by_bot(cls, bot_id: int) -> list[int]:
         """Получаем все доступные id_курсов этого бота"""
 
         async with async_session() as session:
-            query = select(Course.id).join(CourseBots, Course.id == CourseBots.course_id).where(CourseBots.bot_id==bot_id)
+            query = select(Course.id).\
+                join(CourseBots, Course.id == CourseBots.course_id).\
+                where(CourseBots.bot_id == bot_id)
+
             result = await session.execute(query)
 
             return result.scalars().all()
 
     @classmethod
-    async def get_courses(cls, courses_ids: set[int]):
+    async def get_courses(cls, courses_ids: set[int]) -> list[Course]:
         """Получаем все доступные курсы этого бота"""
 
         async with async_session() as session:
@@ -41,7 +45,7 @@ class CourseService(BaseService):
             return result.scalars().all()
 
     @classmethod
-    async def get_course_by_name(cls, course_name: str):
+    async def get_course_by_name(cls, course_name: str) -> Union[Course, None]:
         """Получаем курс по его названию"""
 
         async with async_session() as session:
@@ -52,6 +56,8 @@ class CourseService(BaseService):
 
     @classmethod
     async def create_history(cls, course_id: int, tg_id: int):
+        """Создание истории прохождения курса"""
+
         user = await cls.get_user_by_tg_id(tg_id)
         status = await cls.get_course_history_status('Открыт')
         async with async_session() as session:
@@ -64,7 +70,7 @@ class CourseService(BaseService):
             await session.commit()
 
     @classmethod
-    async def get_course_history_status(cls, status_name: str):
+    async def get_course_history_status(cls, status_name: str) -> CourseHistoryStatuses:
         """Получаем статус истории курса по названию статуса"""
 
         async with async_session() as session:
@@ -78,9 +84,10 @@ class CourseService(BaseService):
         """Получаем актуальную попытку прохождения курса"""
 
         async with async_session() as session:
-            query = select(CourseHistory).filter_by(user_id=user_id, course_id=course_id).order_by(desc('id'))
+            query = select(CourseHistory).\
+                filter_by(user_id=user_id, course_id=course_id).\
+                order_by(desc('id'))
+
             result = await session.execute(query)
 
             return result.scalars().first()
-
-

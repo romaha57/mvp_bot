@@ -1,6 +1,6 @@
+from bot.courses.handler import CourseHandler
 from bot.handlers.command_handler import CommandHandler
 from bot.handlers.text_handler import TextHandler
-from bot.courses.handler import CourseHandler
 from bot.lessons.handler import LessonHandler
 from bot.quiz.handler import QuizHandler
 from bot.users.handler import UserHandler
