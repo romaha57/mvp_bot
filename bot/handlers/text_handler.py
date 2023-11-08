@@ -1,5 +1,7 @@
 from aiogram import Bot, F, Router
-from aiogram.types import Message
+from aiogram.filters import or_f
+from aiogram.fsm.context import FSMContext
+from aiogram.types import Message, CallbackQuery
 
 from bot.handlers.base_handler import Handler
 from bot.services.base_service import BaseService
@@ -26,12 +28,33 @@ class TextHandler(Handler):
             await message.answer(f'{message.content_type} - {file_id}')
 
         @self.router.message(F.text == BUTTONS['MENU'])
-        async def get_menu(message: Message):
+        async def get_menu(message: Message, state: FSMContext):
             """Отлов кнопки 'Меню' """
-
+            data = await state.get_data()
             user = await self.db.get_user_by_tg_id(message.from_user.id)
             promocode = await self.db.get_promocode(user.promocode_id)
 
+            delete_chat_id = data.get('delete_chat_id')
+            delete_message_id = data.get('delete_message_id')
+            delete_test_message = data.get('delete_test_message')
+
+            if delete_message_id and delete_chat_id:
+                # удаляем сообщение с кнопками после нажатия на меню
+                await message.bot.delete_message(
+                    chat_id=data.get('delete_chat_id'),
+                    message_id=data.get('delete_message_id')
+                )
+                # обнуляем состояния для удаления сообщений
+                await state.update_data(delete_message_id=None)
+
+            if delete_test_message:
+                await message.bot.delete_message(
+                    chat_id=data.get('delete_chat_id'),
+                    message_id=data.get('delete_test_message')
+                )
+                await state.update_data(delete_test_message=None)
+
+            await message.delete()
             await message.answer(
                 MESSAGES['MENU'],
                 reply_markup=await self.kb.start_btn(promocode)

@@ -9,6 +9,7 @@ from bot.handlers.base_handler import Handler
 from bot.lessons.keyboards import LessonKeyboard
 from bot.lessons.states import LessonChooseState
 from bot.services.base_service import BaseService
+from bot.settings.keyboards import BaseKeyboard
 from bot.utils.buttons import BUTTONS
 from bot.utils.messages import MESSAGES
 
@@ -20,6 +21,7 @@ class CourseHandler(Handler):
         self.db = CourseService()
         self.base_db = BaseService()
         self.kb = CourseKeyboard()
+        self.base_kb = BaseKeyboard()
         self.lesson_kb = LessonKeyboard()
 
     def handle(self):
@@ -49,6 +51,7 @@ class CourseHandler(Handler):
         async def get_lesson(message: Message, state: FSMContext):
             """Отлавливаем выбранный пользователем курс"""
 
+            user = await self.db.get_user_by_tg_id(message.from_user.id)
             course = await self.db.get_course_by_name(message.text)
             if course:
                 await state.clear()
@@ -59,9 +62,16 @@ class CourseHandler(Handler):
                     tg_id=message.from_user.id
                 )
                 await message.answer(course.title)
-                await message.answer(
+                msg = await message.answer(
                     course.intro,
-                    reply_markup=await self.lesson_kb.lessons_btn(course.id)
+                    reply_markup=await self.lesson_kb.lessons_btn(course.id, user.id)
+                )
+                await state.update_data(delete_chat_id=message.chat.id)
+                await state.update_data(delete_message_id=msg.message_id)
+
+                await message.answer(
+                    MESSAGES['GO_TO_MENU'],
+                    reply_markup=await self.base_kb.menu_btn()
                 )
 
                 # устанавливаем отлов состояния на название урока

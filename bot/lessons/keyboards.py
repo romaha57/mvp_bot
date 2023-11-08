@@ -1,4 +1,4 @@
-from aiogram.types import InlineKeyboardMarkup, ReplyKeyboardMarkup
+from aiogram.types import InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
 
 from bot.lessons.models import Lessons
@@ -37,19 +37,31 @@ class LessonKeyboard:
             one_time_keyboard=True
         )
 
-    async def lessons_btn(self, course_id: str) -> ReplyKeyboardMarkup:
+    async def lessons_btn(self, course_id: str, user_id: int) -> InlineKeyboardMarkup:
         """Кнопки со списком уроков"""
 
-        builder = ReplyKeyboardBuilder()
-        lessons = await self.db.get_lessons(course_id)
-        for lesson in lessons:
-            builder.button(
-                    text=lesson
-            )
+        builder = InlineKeyboardBuilder()
+        lessons_from_db = await self.db.get_lessons(course_id)
 
-        builder.button(
-            text=BUTTONS['MENU']
-        )
+        # формируем кнопки в зависимости от статуса прохождения урока
+        # при успешном прохождении - '✅'
+        # при заваленном тесте - '❗'
+        for lesson in lessons_from_db:
+            if lesson['status_id'] == 3 and lesson['user_id'] == user_id:
+                builder.button(
+                    text=lesson.Lessons.title + '✅',
+                    callback_data=lesson.Lessons.title
+                )
+            elif lesson['status_id'] == 4 and lesson['user_id'] == user_id:
+                builder.button(
+                    text=lesson.Lessons.title + '❗',
+                    callback_data=lesson.Lessons.title
+                )
+            else:
+                builder.button(
+                        text=lesson.Lessons.title,
+                        callback_data=lesson.Lessons.title
+                )
 
         builder.adjust(1)
 
@@ -74,11 +86,14 @@ class LessonKeyboard:
                 text=str(num),
                 callback_data=f'test_answers_{num}'
             )
-        builder.button(
+
+        builder.adjust(2)
+
+        # кнопка 'проверить ответ' добавляет нижним рядом
+        builder.row(InlineKeyboardButton(
             text='Проверить ответ',
             callback_data='check_answer'
-        )
-        builder.adjust(1)
+        ))
 
         return builder.as_markup(
             resize_keyboard=True,

@@ -24,7 +24,7 @@ class Lessons(Base):
     created_at = Column(DateTime, server_default=func.now())
 
     course = relationship('Course', back_populates='lesson')
-    lesson_history = relationship('LessonHistory', back_populates='lesson')
+    lesson_history = relationship('LessonHistory', back_populates='lesson', lazy=False)
     test_lesson_history = relationship('TestLessonHistory', back_populates='lesson')
 
     def __str__(self):
@@ -46,7 +46,7 @@ class LessonHistory(Base):
     created_at = Column(DateTime, server_default=func.now())
 
     course_history = relationship('CourseHistory', back_populates='lesson_history')
-    lesson = relationship('Lessons', back_populates='lesson_history')
+    lesson = relationship('Lessons', back_populates='lesson_history', lazy=False)
     status = relationship('LessonHistoryStatuses', back_populates='lesson_history')
     user = relationship('Users', back_populates='lesson_history')
 

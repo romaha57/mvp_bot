@@ -1,38 +1,43 @@
 from typing import Union
 
-from sqlalchemy import desc, insert, select, update
+from sqlalchemy import desc, insert, select, update, distinct
+from sqlalchemy.exc import MultipleResultsFound
 
 from bot.db_connect import async_session
 from bot.lessons.models import (LessonHistory, LessonHistoryStatuses, Lessons,
                                 TestLessonHistory, TestLessonHistoryStatuses)
 from bot.services.base_service import BaseService
+from bot.users.models import Users
 
 
 class LessonService(BaseService):
     model = None
 
     @classmethod
-    async def get_lessons(cls, course_id: str) -> list[str]:
+    async def get_lessons(cls, course_id: str) -> list[dict]:
         """Получение всех уроков для данного курса"""
 
         async with async_session() as session:
-            query = select(Lessons.title).\
+            query = select(Lessons, LessonHistory.status_id, LessonHistory.user_id).\
+                join(LessonHistory, LessonHistory.lesson_id == Lessons.id, isouter=True).\
+                join(Users, Users.id == LessonHistory.user_id, isouter=True). \
                 where(Lessons.course_id == course_id).\
                 order_by('order_num')
 
             result = await session.execute(query)
-
-            return result.scalars().all()
+            return result.unique().mappings().all()
 
     @classmethod
     async def get_lesson_by_name(cls, name: str) -> Union[Lessons, None]:
         """Получение урока по его названию"""
 
         async with async_session() as session:
-            query = select(Lessons).filter_by(title=name)
+            query = select(Lessons).filter(Lessons.title.contains(name))
             result = await session.execute(query)
-
-            return result.scalars().one_or_none()
+            try:
+                return result.unique().scalars().one_or_none()
+            except MultipleResultsFound:
+                return result.unique().scalars().first()
 
     @classmethod
     async def get_lesson_history_status(cls, name: str) -> LessonHistoryStatuses:
@@ -187,7 +192,7 @@ class LessonService(BaseService):
             result = await session.execute(query)
             await session.commit()
 
-            return result.scalars().all()
+            return result.unique().scalars().all()
 
     @classmethod
     async def get_lesson_by_order_num(cls, course_id: int, order_num: int) -> Union[Lessons, None]:
@@ -197,4 +202,4 @@ class LessonService(BaseService):
             query = select(Lessons).filter_by(course_id=course_id, order_num=order_num)
             result = await session.execute(query)
 
-            return result.scalars().one_or_none()
+            return result.unique().scalars().one_or_none()

@@ -1,5 +1,5 @@
 from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
-from aiogram.utils.keyboard import ReplyKeyboardBuilder
+from aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardBuilder
 
 from bot.settings.service import SettingsService
 from bot.users.models import Promocodes
@@ -39,7 +39,6 @@ class BaseKeyboard:
 
         builder.row(
             KeyboardButton(text=await self._get_button('REFERAL')),
-            KeyboardButton(text=await self._get_button('MENU'))
         )
 
         return builder.as_markup(
@@ -71,6 +70,15 @@ class BaseKeyboard:
         builder.row(
             KeyboardButton(text=await self._get_button('MENU')),
         )
+        return builder.as_markup(
+            resize_keyboard=True,
+            input_field_placeholder=MESSAGES['KB_PLACEHOLDER'],
+            one_time_keyboard=True
+        )
+
+    async def empty_keybpard(self):
+        builder = InlineKeyboardBuilder()
+
         return builder.as_markup(
             resize_keyboard=True,
             input_field_placeholder=MESSAGES['KB_PLACEHOLDER'],

@@ -27,13 +27,14 @@ class LessonHandler(Handler):
 
     def handle(self):
 
-        @self.router.message(LessonChooseState.lesson, F.text)
-        async def choose_lesson(message: Message, state: FSMContext):
+        @self.router.callback_query(LessonChooseState.lesson, F.data)
+        async def choose_lesson(callback: CallbackQuery, state: FSMContext):
             await state.clear()
-            print(message.text)
-            lesson = await self.db.get_lesson_by_name(message.text)
-            user = await self.db.get_user_by_tg_id(message.from_user.id)
-            print(lesson)
+
+            lesson_name = callback.data
+            lesson = await self.db.get_lesson_by_name(lesson_name)
+            user = await self.db.get_user_by_tg_id(callback.message.chat.id)
+
             # получаем актуальную для текущего пользователя попытку прохождения курса
             actual_course_attempt = await self.course_db.get_actual_course_attempt(
                 user_id=user.id,
@@ -50,18 +51,18 @@ class LessonHandler(Handler):
             # вывод информации об уроке
             if lesson:
                 if lesson.video:
-                    await message.answer_video(
+                    await callback.message.answer_video(
                         lesson.video,
                         caption=lesson.title
                     )
-                    await message.answer(
+                    await callback.message.answer(
                         lesson.description,
                         reply_markup=await self.kb.lesson_menu_btn(lesson)
                     )
 
                 else:
-                    await message.answer(lesson.title)
-                    await message.answer(
+                    await callback.message.answer(lesson.title)
+                    await callback.message.answer(
                         lesson.description,
                         reply_markup=await self.kb.lesson_menu_btn(lesson)
                     )
@@ -74,7 +75,7 @@ class LessonHandler(Handler):
                 await state.update_data(lesson_history_id=actual_lesson_history.id)
 
             else:
-                await message.answer(MESSAGES['NOT_FOUND_LESSON'])
+                await callback.message.answer(MESSAGES['NOT_FOUND_LESSON'])
 
             # состояние на прохождение теста после урока
             await state.set_state(LessonChooseState.start_test)
@@ -82,13 +83,18 @@ class LessonHandler(Handler):
 
         @self.router.callback_query(F.data.startswith('back'))
         async def back_to_lesson_list(callback: CallbackQuery, state: FSMContext):
-
+            user = await self.db.get_user_by_tg_id(callback.message.chat.id)
             # получаем id курса для отображения кнопок с уроками курса
             course_id = callback.data.split('_')[-1]
             await callback.message.edit_text(MESSAGES['LESSONS_LIST'])
             await callback.message.answer(
                 MESSAGES['CHOOSE_LESSONS'],
-                reply_markup=await self.kb.lessons_btn(course_id))
+                reply_markup=await self.kb.lessons_btn(course_id, user.id))
+
+            await callback.message.answer(
+                MESSAGES['GO_TO_MENU'],
+                reply_markup=await self.base_kb.menu_btn()
+            )
 
             # состояние на отлов выбора урока
             await state.set_state(LessonChooseState.lesson)
@@ -126,7 +132,7 @@ class LessonHandler(Handler):
             text = f"{first_question['title']} \n {answers_text}"
             count_questions = len(first_question['questions'])
 
-            await callback.message.answer(
+            msg = await callback.message.answer(
                 text,
                 reply_markup=await self.kb.test_answers_btn(count_questions)
             )
@@ -135,6 +141,8 @@ class LessonHandler(Handler):
             await state.update_data(question=first_question)
             await state.update_data(selected=[])
             await state.update_data(inline_message_id=str(callback.inline_message_id))
+            await state.update_data(delete_test_message=msg.message_id)
+            await state.update_data(delete_chat_id=callback.message.chat.id)
 
         @self.router.callback_query(F.data.startswith('test_answer'), LessonChooseState.test_answer)
         async def save_test_answer(callback: CallbackQuery, state: FSMContext):
@@ -174,11 +182,22 @@ class LessonHandler(Handler):
 
             if correct_answers == selected:
                 self.result_count += 1
-                await callback.message.answer('все верно',
-                                              reply_markup=await self.kb.next_question_btn())
+                await callback.message.answer(
+                    MESSAGES['CORRECT_ANSWER'],
+                    reply_markup=await self.kb.next_question_btn()
+                )
 
             else:
-                await callback.message.answer('ошибка', reply_markup=await self.kb.next_question_btn())
+                answer = ''
+                for correct_answer_index in correct_answers:
+                    answer += '\n' + question['questions'][correct_answer_index - 1]['title']
+
+                await callback.message.answer(
+                    MESSAGES['INCORRECT_ANSWER'].format(
+                        answer
+                    ),
+                    reply_markup=await self.kb.next_question_btn()
+                )
 
         @self.router.callback_query(F.data.startswith('next_question'))
         async def next_question_in_test_after_lesson(callback: CallbackQuery, state: FSMContext):
@@ -188,6 +207,16 @@ class LessonHandler(Handler):
             await state.update_data(selected=[])
 
             try:
+                # получаем сообщение для удаления (удаляем предыдущий вопрос)
+                delete_test_message = data.get('delete_test_message')
+
+                if delete_test_message:
+                    await callback.bot.delete_message(
+                        chat_id=callback.message.chat.id,
+                        message_id=delete_test_message
+                    )
+                    await state.update_data(delete_test_message=None)
+
                 # получаем следующий вопрос и записываем его в state
                 question = self.test_questions.pop()
                 await state.update_data(question=question)
@@ -197,9 +226,11 @@ class LessonHandler(Handler):
                 text = f"{question['title']} \n {answers_text}"
                 count_questions = len(question['questions'])
 
-                await callback.message.edit_text(
+                msg = await callback.message.edit_text(
                     text,
                     reply_markup=await self.kb.test_answers_btn(count_questions))
+                await state.update_data(delete_test_message=msg.message_id)
+                await state.update_data(delete_chat_id=callback.message.chat.id)
 
                 await state.set_state(LessonChooseState.test_answer)
             except IndexError:

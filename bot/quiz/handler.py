@@ -54,9 +54,16 @@ class QuizHandler(Handler):
             self.questions = await self.db.get_quiz_questions(quiz.id)
 
             question = self.questions.pop()
-            await message.answer(
+            msg = await message.answer(
                 question.title,
                 reply_markup=await self.kb.quiz_answers(question.id)
+            )
+            await state.update_data(delete_message_id=msg.message_id)
+            await state.update_data(delete_chat_id=msg.chat.id)
+
+            await message.answer(
+                MESSAGES['GO_TO_MENU'],
+                reply_markup=await self.base_kb.menu_btn()
             )
             # состояния на отлов ответа на этот вопрос
             await state.set_state(QuizState.answer)
@@ -67,11 +74,9 @@ class QuizHandler(Handler):
 
             # получаем ответ пользователя и создаем его в БД
             answer_id = callback.data.split('_')[1]
-            answer = await self.db.get_answer_by_id(answer_id)
             await self.db.create_answer(
                 answer_id=answer_id,
                 attempt_id=data['attempt_id'],
-                answer=answer
             )
 
             # берем вопросы из списка, пока они не закончатся
@@ -96,6 +101,7 @@ class QuizHandler(Handler):
                     MESSAGES['GO_TO_MENU'],
                     reply_markup=await self.base_kb.menu_btn()
                 )
+
 
         @self.router.message(F.text == BUTTONS['RESULTS_QUIZ'])
         async def get_results_quiz(message: Message):

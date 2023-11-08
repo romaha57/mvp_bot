@@ -93,13 +93,12 @@ class QuizService(BaseService):
             return result.scalars().one()
 
     @classmethod
-    async def create_answer(cls, answer_id: str, attempt_id: int, answer: str):
+    async def create_answer(cls, answer_id: str, attempt_id: int):
         async with async_session() as session:
             query = insert(QuizAnswers).\
                 values(
                 option_id=answer_id,
                 attempt_id=attempt_id,
-                details=answer
             )
             await session.execute(query)
             await session.commit()

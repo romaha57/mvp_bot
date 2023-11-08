@@ -8,6 +8,11 @@ test_question_text = """
 {}
 """
 
+incorrect_answer_text = """
+Ошибка! Правильный ответ: 
+<b>{}</b>
+"""
+
 
 MESSAGES = {
     'KB_PLACEHOLDER': 'Выберите одну из функций',
@@ -27,5 +32,7 @@ MESSAGES = {
     'SUCCESS_TEST': 'Поздравляем! Вы прошли тест. Ваш результат {}',
     'FAIL_TEST': 'К сожалению, вы не прошли тест',
     'ALL_LESSONS_DONE': 'Все уроки в этом курсе завершены',
-    'NEXT_LESSON': 'Перейдем к следующему уроку'
+    'NEXT_LESSON': 'Перейдем к следующему уроку',
+    'CORRECT_ANSWER': 'Отлично! Вы ответили верно',
+    'INCORRECT_ANSWER': incorrect_answer_text,
 }
