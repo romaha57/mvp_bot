@@ -1,7 +1,6 @@
 from aiogram import Bot, F, Router
-from aiogram.filters import or_f
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message
 
 from bot.handlers.base_handler import Handler
 from bot.services.base_service import BaseService

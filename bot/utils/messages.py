@@ -13,7 +13,6 @@ incorrect_answer_text = """
 <b>{}</b>
 """
 
-
 MESSAGES = {
     'KB_PLACEHOLDER': 'Выберите одну из функций',
     'QUIZ_ANSWERS': 'Выберите ответ по кнопке',

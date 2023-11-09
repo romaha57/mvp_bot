@@ -102,7 +102,6 @@ class QuizHandler(Handler):
                     reply_markup=await self.base_kb.menu_btn()
                 )
 
-
         @self.router.message(F.text == BUTTONS['RESULTS_QUIZ'])
         async def get_results_quiz(message: Message):
 

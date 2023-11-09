@@ -1,7 +1,6 @@
 from typing import Union
 
-from sqlalchemy import desc, insert, select, update, distinct
-from sqlalchemy.exc import MultipleResultsFound
+from sqlalchemy import desc, insert, select, update
 
 from bot.db_connect import async_session
 from bot.lessons.models import (LessonHistory, LessonHistoryStatuses, Lessons,

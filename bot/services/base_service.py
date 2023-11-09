@@ -1,6 +1,4 @@
-from typing import Union
-
-from sqlalchemy import Row, select
+from sqlalchemy import select
 
 from bot.db_connect import async_session
 from bot.settings.model import Settings

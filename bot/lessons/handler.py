@@ -2,7 +2,7 @@ import json
 
 from aiogram import Bot, F, Router
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, Message
+from aiogram.types import CallbackQuery
 
 from bot.courses.service import CourseService
 from bot.handlers.base_handler import Handler
