@@ -10,18 +10,6 @@ from bot.users.models import Promocodes, Users
 class BaseService:
     """Базовый класс для общих методов работы с БД"""
 
-    model = None
-
-    @classmethod
-    async def get_object_or_none(cls, **filters) -> Union[Row, None]:
-        """Находит объект по фильтру или возвращает None"""
-
-        async with async_session() as session:
-            query = select(cls.model.__table__.columns).filter_by(**filters)
-            result = await session.execute(query)
-
-            return result.mappings().one_or_none()
-
     @classmethod
     async def get_msg_by_key(cls, key: str) -> str:
         """Получение сообщение бота по его ключу"""

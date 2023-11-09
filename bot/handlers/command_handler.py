@@ -37,7 +37,9 @@ class CommandHandler(Handler):
                         username=message.from_user.username,
                         tg_id=message.from_user.id,
                         bot_id=promocode.bot_id,
-                        promocode_id=promocode.id
+                        promocode_id=promocode.id,
+                        first_name=message.from_user.first_name,
+                        last_name=message.from_user.last_name
                     )
                     kb = await self.keyboard.start_btn(promocode)
                 else:

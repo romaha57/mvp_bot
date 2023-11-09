@@ -257,7 +257,8 @@ class LessonHandler(Handler):
 
                 else:
                     await callback.message.edit_text(
-                        MESSAGES['FAIL_TEST']
+                        MESSAGES['FAIL_TEST'],
+                        reply_markup=await self.kb.close_lesson_btn(data['lesson'])
                     )
                     await self.db.mark_lesson_history_on_status_fail_test(data['lesson_history_id'])
 
@@ -277,6 +278,7 @@ class LessonHandler(Handler):
                 course_id=data['lesson'].course_id,
                 order_num=data['lesson'].order_num + 1
             )
+            print(next_lesson)
             if next_lesson:
                 await callback.message.answer(
                     MESSAGES['NEXT_LESSON'],

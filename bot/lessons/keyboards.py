@@ -43,24 +43,30 @@ class LessonKeyboard:
         builder = InlineKeyboardBuilder()
         lessons_from_db = await self.db.get_lessons(course_id)
 
+        result = {}
+        # сортируем список уроков по порядковому номеру и статусу
+        sorted_lessons_by_status_id = sorted(lessons_from_db, key=lambda elem: (elem['order_num'], elem['status_id']))
+        for lesson in sorted_lessons_by_status_id:
+            result[lesson['title']] = (lesson['status_id'], lesson['user_id'])
+
         # формируем кнопки в зависимости от статуса прохождения урока
-        # при успешном прохождении - '✅'
-        # при заваленном тесте - '❗'
-        for lesson in lessons_from_db:
-            if lesson['status_id'] == 3 and lesson['user_id'] == user_id:
+        # при успешном прохождении - '✅'(id статуса = 4)
+        # при заваленном тесте - '❗' (id статуса = 3)
+        for lesson in result:
+            if result[lesson][0] == 4 and result[lesson][1] == user_id:
                 builder.button(
-                    text=lesson.Lessons.title + '✅',
-                    callback_data=lesson.Lessons.title
+                    text=lesson + '✅',
+                    callback_data=lesson
                 )
-            elif lesson['status_id'] == 4 and lesson['user_id'] == user_id:
+            elif result[lesson][0] == 3 and result[lesson][1] == user_id:
                 builder.button(
-                    text=lesson.Lessons.title + '❗',
-                    callback_data=lesson.Lessons.title
+                    text=lesson + '❗',
+                    callback_data=lesson
                 )
             else:
                 builder.button(
-                        text=lesson.Lessons.title,
-                        callback_data=lesson.Lessons.title
+                        text=lesson,
+                        callback_data=lesson
                 )
 
         builder.adjust(1)
@@ -115,12 +121,14 @@ class LessonKeyboard:
             one_time_keyboard=True
         )
 
-    async def next_lesson_btn(self, lesson: Lessons = None) -> ReplyKeyboardMarkup:
+    async def next_lesson_btn(self, lesson: Lessons = None) -> InlineKeyboardMarkup:
         """Кнопка для перехода к следующему уроку"""
 
-        builder = ReplyKeyboardBuilder()
+        builder = InlineKeyboardBuilder()
         builder.button(
-            text=lesson.title
+            text=lesson.title,
+            callback_data=lesson.title
+
         )
 
         builder.adjust(1)
@@ -129,4 +137,19 @@ class LessonKeyboard:
             resize_keyboard=True,
             one_time_keyboard=True,
             input_field_placeholder=MESSAGES['NEXT_LESSON'],
+        )
+
+    async def close_lesson_btn(self, lesson: Lessons) -> InlineKeyboardMarkup:
+        """Кнопки меню для урока"""
+
+        builder = InlineKeyboardBuilder()
+        builder.button(
+            text=BUTTONS['CLOSE_LESSON'],
+            callback_data=f'close_lesson_{lesson.course_id}'
+        )
+        builder.adjust(1)
+
+        return builder.as_markup(
+            resize_keyboard=True,
+            one_time_keyboard=True
         )

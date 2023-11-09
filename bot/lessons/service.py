@@ -18,7 +18,7 @@ class LessonService(BaseService):
         """Получение всех уроков для данного курса"""
 
         async with async_session() as session:
-            query = select(Lessons, LessonHistory.status_id, LessonHistory.user_id).\
+            query = select(Lessons.title, LessonHistory.status_id, LessonHistory.user_id, Lessons.order_num).\
                 join(LessonHistory, LessonHistory.lesson_id == Lessons.id, isouter=True).\
                 join(Users, Users.id == LessonHistory.user_id, isouter=True). \
                 where(Lessons.course_id == course_id).\
@@ -34,10 +34,7 @@ class LessonService(BaseService):
         async with async_session() as session:
             query = select(Lessons).filter(Lessons.title.contains(name))
             result = await session.execute(query)
-            try:
-                return result.unique().scalars().one_or_none()
-            except MultipleResultsFound:
-                return result.unique().scalars().first()
+            return result.scalars().first()
 
     @classmethod
     async def get_lesson_history_status(cls, name: str) -> LessonHistoryStatuses:
