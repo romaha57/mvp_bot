@@ -30,8 +30,9 @@ async def format_quiz_results(answers: list[QuizAnswers.details]) -> str:
         answer_date = answer.created_at.strftime("%d-%m-%Y %H:%M")
         date = f'<b>Дата прохождения тестирования: {answer_date}</b>'
         question = await QuizService.get_question_by_option(answer.option_id)
+        answer = await QuizService.get_answer_by_id(answer.option_id)
         result += f'{question}\n' \
-                  f'<b>{answer.details}</b>\n\n'
+                  f'<b>{answer}</b>\n\n'
 
     result = date + '\n\n' + result
 

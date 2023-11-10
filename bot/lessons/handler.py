@@ -29,7 +29,7 @@ class LessonHandler(Handler):
 
         @self.router.callback_query(LessonChooseState.lesson, F.data)
         async def choose_lesson(callback: CallbackQuery, state: FSMContext):
-            await state.clear()
+            # await state.clear()
 
             lesson_name = callback.data
             lesson = await self.db.get_lesson_by_name(lesson_name)
@@ -51,21 +51,28 @@ class LessonHandler(Handler):
             # вывод информации об уроке
             if lesson:
                 if lesson.video:
-                    await callback.message.answer_video(
+                    video_msg = await callback.message.answer_video(
                         lesson.video,
-                        caption=lesson.title
-                    )
-                    await callback.message.answer(
-                        lesson.description,
+                        caption=lesson.title,
                         reply_markup=await self.kb.lesson_menu_btn(lesson)
+                    )
+                    video_description_msg = await callback.message.answer(
+                        lesson.description
                     )
 
+                    # сохраняем message_id, чтобы потом их удалить
+                    await state.update_data(video_msg=video_msg.message_id)
+                    await state.update_data(video_description_msg=video_description_msg.message_id)
+
                 else:
-                    await callback.message.answer(lesson.title)
-                    await callback.message.answer(
+                    msg1 = await callback.message.answer(lesson.title)
+                    msg2 = await callback.message.answer(
                         lesson.description,
                         reply_markup=await self.kb.lesson_menu_btn(lesson)
                     )
+                    # сохраняем message_id, чтобы потом их удалить
+                    await state.update_data(msg1=msg1.message_id)
+                    await state.update_data(msg2=msg2.message_id)
 
                 # получаем актуальную попытку прохождения урока
                 actual_lesson_history = await self.db.get_actual_lesson_history(
@@ -73,6 +80,7 @@ class LessonHandler(Handler):
                     lesson_id=lesson.id
                 )
                 await state.update_data(lesson_history_id=actual_lesson_history.id)
+                await state.update_data(chat_id=callback.message.chat.id)
 
             else:
                 await callback.message.answer(MESSAGES['NOT_FOUND_LESSON'])
@@ -83,10 +91,33 @@ class LessonHandler(Handler):
 
         @self.router.callback_query(F.data.startswith('back'))
         async def back_to_lesson_list(callback: CallbackQuery, state: FSMContext):
+            data = await state.get_data()
+            # проверяем нужно ли удалять какие-то сообщения
+            if data.get('video_msg'):
+                await callback.bot.delete_message(
+                    chat_id=data.get('chat_id'),
+                    message_id=data.get('video_msg')
+                )
+            elif data.get('video_description_msg'):
+                await callback.bot.delete_message(
+                    chat_id=data.get('chat_id'),
+                    message_id=data.get('video_description_msg')
+                )
+            elif data.get('msg1'):
+                await callback.bot.delete_message(
+                    chat_id=data.get('chat_id'),
+                    message_id=data.get('msg1')
+                )
+
+            elif data.get('msg2'):
+                await callback.bot.delete_message(
+                    chat_id=data.get('chat_id'),
+                    message_id=data.get('msg2')
+                )
+
             user = await self.db.get_user_by_tg_id(callback.message.chat.id)
             # получаем id курса для отображения кнопок с уроками курса
             course_id = callback.data.split('_')[-1]
-            await callback.message.edit_text(MESSAGES['LESSONS_LIST'])
             await callback.message.answer(
                 MESSAGES['CHOOSE_LESSONS'],
                 reply_markup=await self.kb.lessons_btn(course_id, user.id))
@@ -220,6 +251,10 @@ class LessonHandler(Handler):
                 # получаем следующий вопрос и записываем его в state
                 question = self.test_questions.pop()
                 await state.update_data(question=question)
+                await callback.message.answer(
+                    MESSAGES['ERROR'],
+                    reply_markup=await self.base_kb.menu_btn()
+                )
 
                 # формируем текст ответа и записываем кол-во вариантов ответа для формирования кнопок
                 answers_text = await format_answers_text(question['questions'])

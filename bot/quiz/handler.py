@@ -20,6 +20,8 @@ class QuizHandler(Handler):
         self.kb = QuizKeyboard()
         self.base_kb = BaseKeyboard()
         self.questions = None
+        self.attempts_list = None
+        self.index = None
 
     def handle(self):
 
@@ -37,15 +39,13 @@ class QuizHandler(Handler):
             quiz = await self.db.get_quiz(user.promocode_id)
             await message.answer(quiz.name)
 
-            attempt = await self.db.get_last_attempt(user.id, quiz.id)
-            if not attempt:
-                # запись в БД о начале тестирования данным пользователем
-                await self.db.create_attempt(
-                    quiz_id=quiz.id,
-                    tg_id=user.external_id
+            # запись в БД о начале тестирования данным пользователем
+            await self.db.create_attempt(
+                quiz_id=quiz.id,
+                tg_id=user.external_id
 
-                )
-                attempt = await self.db.get_last_attempt(user.id, quiz.id)
+            )
+            attempt = await self.db.get_last_attempt(user.id, quiz.id)
 
             await state.update_data(attempt_id=attempt.id)
             await state.update_data(quiz_id=quiz.id)
@@ -98,24 +98,43 @@ class QuizHandler(Handler):
                 await callback.message.edit_text(
                     quiz.outro)
                 await callback.message.answer(
-                    MESSAGES['GO_TO_MENU'],
-                    reply_markup=await self.base_kb.menu_btn()
+                    MESSAGES['LOAD_RESULT_QUIZ']
+                )
+                # выводим ответы пользователя
+                answers = await self.db.get_answers_by_attempt(data['attempt_id'])
+                result = await format_quiz_results(answers)
+                await callback.message.edit_text(
+                    result
                 )
 
         @self.router.message(F.text == BUTTONS['RESULTS_QUIZ'])
-        async def get_results_quiz(message: Message):
+        async def get_results_quiz(message: Message, state: FSMContext):
+            data = await state.get_data()
 
             # получаем все попытки текущего пользователя
-            attempts = await self.db.get_attempts(
+            attempts = await self.db.get_quiz_attempts(
                 tg_id=message.from_user.id
             )
-            if attempts:
 
-                for attempt in attempts:
-                    answers = await self.db.get_answers_by_attempt(attempt.id)
+            if attempts:
+                self.attempts_list = attempts
+                self.index = len(self.attempts_list) - 1
+                attempt = self.attempts_list[self.index]
+                answers = await self.db.get_answers_by_attempt(attempt.id)
+                if answers:
                     result = await format_quiz_results(answers)
-                    await message.answer(
+                    quiz_result_msg = await message.answer(
                         result,
+                        reply_markup=await self.kb.switch_arrows_result_quiz_btn(self.attempts_list, self.index)
+                    )
+
+                    await state.update_data(quiz_result_msg=quiz_result_msg.message_id)
+                    await state.update_data(quiz_result_chat_id=message.chat.id)
+
+                else:
+                    msg = await self.db.get_msg_by_key('empty_quiz_results')
+                    await message.answer(
+                        msg,
                         reply_markup=await self.base_kb.menu_btn()
                     )
 
@@ -123,5 +142,66 @@ class QuizHandler(Handler):
                 msg = await self.db.get_msg_by_key('empty_quiz_results')
                 await message.answer(
                     msg,
+                    reply_markup=await self.base_kb.menu_btn()
+                )
+
+        @self.router.message(F.text == BUTTONS['NEXT'])
+        async def get_next_result_quiz(message: Message, state: FSMContext):
+            data = await state.get_data()
+
+            # проверяем нужно ли удалить сообщения
+            if data.get('quiz_result_msg'):
+                await message.bot.delete_message(
+                    chat_id=data['quiz_result_chat_id'],
+                    message_id=data['quiz_result_msg']
+                )
+            self.index -= 1
+            try:
+                attempt = self.attempts_list[self.index]
+                answers = await self.db.get_answers_by_attempt(attempt.id)
+                if answers:
+                    result = await format_quiz_results(answers)
+                    quiz_result_msg = await message.answer(
+                        result,
+                        reply_markup=await self.kb.switch_arrows_result_quiz_btn(self.attempts_list, self.index)
+                    )
+                    await state.update_data(quiz_result_msg=quiz_result_msg.message_id)
+                    await state.update_data(quiz_result_chat_id=message.chat.id)
+
+            except IndexError:
+                self.index = None
+                await message.answer(
+                    MESSAGES['MENU'],
+                    reply_markup=await self.base_kb.menu_btn()
+                )
+
+        @self.router.message(F.text == BUTTONS['PREVIOUS'])
+        async def get_previous_result_quiz(message: Message, state: FSMContext):
+            data = await state.get_data()
+
+            # проверяем нужно ли удалить сообщения
+            if data.get('quiz_result_msg'):
+                await message.bot.delete_message(
+                    chat_id=data['quiz_result_chat_id'],
+                    message_id=data['quiz_result_msg']
+                )
+
+            self.index += 1
+            try:
+                attempt = self.attempts_list[self.index]
+                answers = await self.db.get_answers_by_attempt(attempt.id)
+                if answers:
+                    result = await format_quiz_results(answers)
+                    quiz_result_msg = await message.answer(
+                        result,
+                        reply_markup=await self.kb.switch_arrows_result_quiz_btn(self.attempts_list, self.index)
+                    )
+
+                    await state.update_data(quiz_result_msg=quiz_result_msg.message_id)
+                    await state.update_data(quiz_result_chat_id=message.chat.id)
+            except IndexError:
+                self.index = None
+                await message.answer(
+                    MESSAGES['MENU'],
                     reply_markup=await self.base_kb.menu_btn()
                 )

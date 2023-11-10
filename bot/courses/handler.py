@@ -54,7 +54,7 @@ class CourseHandler(Handler):
             user = await self.db.get_user_by_tg_id(message.from_user.id)
             course = await self.db.get_course_by_name(message.text)
             if course:
-                await state.clear()
+                # await state.clear()
 
                 # создаем запись в истории прохождения курса со статусом 'Открыт'
                 await self.db.create_history(

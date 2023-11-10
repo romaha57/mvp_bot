@@ -1,6 +1,6 @@
 from aiogram import Bot, F, Router
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message
+from aiogram.types import Message, CallbackQuery
 
 from bot.handlers.base_handler import Handler
 from bot.services.base_service import BaseService
@@ -19,6 +19,8 @@ class TextHandler(Handler):
         self.db = BaseService()
 
     def handle(self):
+
+
         @self.router.message(F.content_type.in_(MEDIA_CONTENT_TYPE))
         async def any_media(message: Message):
             """При отправке медиа файла пользователю возвращается тип документа и его file_id"""
@@ -28,9 +30,11 @@ class TextHandler(Handler):
 
         @self.router.message(F.text == BUTTONS['MENU'])
         async def get_menu(message: Message, state: FSMContext):
+
             """Отлов кнопки 'Меню' """
             data = await state.get_data()
             user = await self.db.get_user_by_tg_id(message.from_user.id)
+
             promocode = await self.db.get_promocode(user.promocode_id)
 
             delete_chat_id = data.get('delete_chat_id')
@@ -58,3 +62,14 @@ class TextHandler(Handler):
                 MESSAGES['MENU'],
                 reply_markup=await self.kb.start_btn(promocode)
             )
+
+        @self.router.message(F.text)
+        async def any_text(message: Message, state: FSMContext):
+            """Отлавливаем любые текстовые сообщения"""
+
+            data = await state.get_data()
+            await message.answer(
+                MESSAGES['ANY_TEXT'],
+                reply_markup=await self.kb.start_btn(data['promocode'])
+            )
+

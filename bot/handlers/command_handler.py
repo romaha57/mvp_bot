@@ -1,5 +1,6 @@
 from aiogram import Bot, Router
 from aiogram.filters import Command
+from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
 from bot.handlers.base_handler import Handler
@@ -18,7 +19,7 @@ class CommandHandler(Handler):
 
     def handle(self):
         @self.router.message(Command('start'))
-        async def start(message: Message):
+        async def start(message: Message, state: FSMContext):
             """Отлов команды /start"""
 
             start_msg = await self.db.get_msg_by_key('intro')
@@ -31,6 +32,9 @@ class CommandHandler(Handler):
                 promocode = await self.db.check_promocode(promocode_in_msg[0])
                 if promocode:
                     msg = await self.db.get_msg_by_key('have_promocode')
+
+                    # сохраняем промокод в состояние
+                    await state.update_data(promocode=promocode)
 
                     # сохраняем пользователя в БД
                     await self.user_db.get_or_create_user(

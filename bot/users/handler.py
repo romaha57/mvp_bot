@@ -1,8 +1,12 @@
-from aiogram import Bot, Router
+from aiogram import Bot, Router, F
+from aiogram.types import Message
 
 from bot.handlers.base_handler import Handler
+from bot.settings.keyboards import BaseKeyboard
 from bot.users.keyboards import UserKeyboard
 from bot.users.service import UserService
+from bot.utils.buttons import BUTTONS
+from bot.utils.messages import MESSAGES
 
 
 class UserHandler(Handler):
@@ -10,7 +14,14 @@ class UserHandler(Handler):
         super().__init__(bot)
         self.router = Router()
         self.db = UserService()
-        self.keyboard = UserKeyboard()
+        self.kb = UserKeyboard()
+        self.base_kb = BaseKeyboard()
 
     def handle(self):
-        pass
+        @self.router.message(F.text == BUTTONS['REFERAL'])
+        async def start_referal(message: Message):
+            await message.answer(
+                MESSAGES['START_REFERAL'],
+                reply_markup=await self.base_kb.menu_btn()
+            )
+

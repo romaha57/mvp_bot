@@ -42,7 +42,6 @@ class LessonKeyboard:
 
         builder = InlineKeyboardBuilder()
         lessons_from_db = await self.db.get_lessons(course_id)
-
         result = {}
         # сортируем список уроков по порядковому номеру и статусу
         sorted_lessons_by_status_id = sorted(lessons_from_db, key=lambda elem: (elem['order_num'], elem['status_id']))
@@ -52,6 +51,7 @@ class LessonKeyboard:
         # формируем кнопки в зависимости от статуса прохождения урока
         # при успешном прохождении - '✅'(id статуса = 4)
         # при заваленном тесте - '❗' (id статуса = 3)
+        # при открытом уроке - '👀' (id статуса = 1)
         for lesson in result:
             if result[lesson][0] == 4 and result[lesson][1] == user_id:
                 builder.button(
@@ -61,6 +61,11 @@ class LessonKeyboard:
             elif result[lesson][0] == 3 and result[lesson][1] == user_id:
                 builder.button(
                     text=lesson + '❗',
+                    callback_data=lesson
+                )
+            elif result[lesson][0] == 1 and result[lesson][1] == user_id:
+                builder.button(
+                    text=lesson + '👀 ',
                     callback_data=lesson
                 )
             else:

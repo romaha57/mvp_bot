@@ -21,11 +21,11 @@ class MainBot:
         """Подключение всех роутеров/старт отлова сообщений/логгирование"""
 
         self.dp.include_router(self.handler.command_handler.router)
-        self.dp.include_router(self.handler.text_handler.router)
         self.dp.include_router(self.handler.course_handler.router)
         self.dp.include_router(self.handler.lesson_handler.router)
         self.dp.include_router(self.handler.quiz_handler.router)
         self.dp.include_router(self.handler.user_handler.router)
+        self.dp.include_router(self.handler.text_handler.router)
         self.handler.handle()
         # logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 
@@ -37,6 +37,9 @@ class MainBot:
 
 
 if __name__ == '__main__':
-    bot = MainBot()
-    print('START BOT')
-    asyncio.run(bot.main())
+    try:
+        bot = MainBot()
+        print('START BOT')
+        asyncio.run(bot.main())
+    except Exception as e:
+        print(e)

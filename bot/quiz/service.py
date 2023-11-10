@@ -117,15 +117,17 @@ class QuizService(BaseService):
             return result.scalars().first()
 
     @classmethod
-    async def get_attempts(cls, tg_id: int) -> list[QuizAttempts]:
+    async def get_quiz_attempts(cls, tg_id: int) -> list[QuizAttempts]:
         """Получение всех попыток прохождения квиза для данного пользователя"""
 
         user = await cls.get_user_by_tg_id(tg_id)
-
+        status_complete = await cls.get_attempt_status('Завершен')
         async with async_session() as session:
-            query = select(QuizAttempts).filter_by(
-                user_id=user.id
-            )
+            query = select(QuizAttempts).\
+                where(
+                QuizAttempts.user_id == user.id,
+                QuizAttempts.status_id == status_complete.id
+            ).order_by('created_at')
             result = await session.execute(query)
 
             return result.scalars().all()

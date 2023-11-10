@@ -130,7 +130,7 @@ class QuizAttempts(Base):
     quiz_answers = relationship('QuizAnswers', back_populates='attempt')
 
     def __str__(self):
-        return f'{self.quiz_id} - {self.user_id}'
+        return f'Quiz_id:{self.quiz_id} - User_id:{self.user_id}'
 
 
 class QuizAttemptStatuses(Base):
