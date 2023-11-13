@@ -59,7 +59,7 @@ class QuizHandler(Handler):
                 reply_markup=await self.kb.quiz_answers(question.id)
             )
             await state.update_data(delete_message_id=msg.message_id)
-            await state.update_data(delete_chat_id=msg.chat.id)
+            await state.update_data(chat_id=msg.chat.id)
 
             await message.answer(
                 MESSAGES['GO_TO_MENU'],

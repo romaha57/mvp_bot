@@ -136,13 +136,25 @@ class QuizService(BaseService):
     async def get_answers_by_attempt(cls, attempt_id: int) -> list[QuizAnswers]:
         """Получение всех ответов для данной попытки прохождения квиза"""
 
+        """
+        SELECT `$_quiz_questions`.`title`,`$_quiz_question_options`.`title`
+FROM `$_quiz_question_options` 
+JOIN `$_quiz_answers` ON `$_quiz_question_options`.`id` = `$_quiz_answers`.`option_id`
+JOIN `$_quiz_questions` ON `$_quiz_questions`.`id` = `$_quiz_question_options`.`question_id`
+WHERE `$_quiz_answers`.`attempt_id` = 135"""
+
         async with async_session() as session:
-            query = select(QuizAnswers).filter_by(
-                attempt_id=attempt_id
-            )
+            query = select(
+                QuizQuestions.title.label('question'),
+                QuizQuestionOptions.title.label('answer'),
+                QuizAnswers.created_at.label('created_at')
+            ).\
+                join(QuizAnswers, QuizQuestionOptions.id == QuizAnswers.option_id).\
+                join(QuizQuestions, QuizQuestions.id == QuizQuestionOptions.question_id).\
+                where(QuizAnswers.attempt_id == attempt_id)
             result = await session.execute(query)
 
-            return result.scalars().all()
+            return result.mappings().all()
 
     @classmethod
     async def get_question_by_option(cls, option_id: str) -> str:

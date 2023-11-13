@@ -30,21 +30,26 @@ class TextHandler(Handler):
 
         @self.router.message(F.text == BUTTONS['MENU'])
         async def get_menu(message: Message, state: FSMContext):
-
             """Отлов кнопки 'Меню' """
+
             data = await state.get_data()
             user = await self.db.get_user_by_tg_id(message.from_user.id)
 
             promocode = await self.db.get_promocode(user.promocode_id)
 
-            delete_chat_id = data.get('delete_chat_id')
+            chat_id = data.get('chat_id')
             delete_message_id = data.get('delete_message_id')
             delete_test_message = data.get('delete_test_message')
+            video_msg = data.get('video_msg')
+            video_description_msg = data.get('video_description_msg')
+            msg1 = data.get('msg1')
+            msg2 = data.get('msg2')
+            print(f'video msg {video_msg}')
 
-            if delete_message_id and delete_chat_id:
+            if delete_message_id and chat_id:
                 # удаляем сообщение с кнопками после нажатия на меню
                 await message.bot.delete_message(
-                    chat_id=data.get('delete_chat_id'),
+                    chat_id=data.get('chat_id'),
                     message_id=data.get('delete_message_id')
                 )
                 # обнуляем состояния для удаления сообщений
@@ -52,10 +57,38 @@ class TextHandler(Handler):
 
             if delete_test_message:
                 await message.bot.delete_message(
-                    chat_id=data.get('delete_chat_id'),
+                    chat_id=data.get('chat_id'),
                     message_id=data.get('delete_test_message')
                 )
                 await state.update_data(delete_test_message=None)
+
+            if video_msg:
+                await message.bot.delete_message(
+                    chat_id=data.get('chat_id'),
+                    message_id=data.get('video_msg')
+                )
+                await state.update_data(video_msg=None)
+
+            if video_description_msg:
+                await message.bot.delete_message(
+                    chat_id=data.get('chat_id'),
+                    message_id=data.get('video_description_msg')
+                )
+                await state.update_data(video_description_msg=None)
+
+            if msg1:
+                await message.bot.delete_message(
+                    chat_id=data.get('chat_id'),
+                    message_id=data.get('msg1')
+                )
+                await state.update_data(msg1=None)
+
+            if msg2:
+                await message.bot.delete_message(
+                    chat_id=data.get('chat_id'),
+                    message_id=data.get('msg2')
+                )
+                await state.update_data(msg2=None)
 
             await message.delete()
             await message.answer(

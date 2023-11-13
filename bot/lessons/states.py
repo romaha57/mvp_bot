@@ -7,3 +7,4 @@ class LessonChooseState(StatesGroup):
     lesson = State()
     start_test = State()
     test_answer = State()
+    next_lesson = State()

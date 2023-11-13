@@ -51,7 +51,7 @@ class LessonKeyboard:
         # формируем кнопки в зависимости от статуса прохождения урока
         # при успешном прохождении - '✅'(id статуса = 4)
         # при заваленном тесте - '❗' (id статуса = 3)
-        # при открытом уроке - '👀' (id статуса = 1)
+        # при открытом уроке - '👀' (id статуса = 1 или 2)
         for lesson in result:
             if result[lesson][0] == 4 and result[lesson][1] == user_id:
                 builder.button(
@@ -63,7 +63,7 @@ class LessonKeyboard:
                     text=lesson + '❗',
                     callback_data=lesson
                 )
-            elif result[lesson][0] == 1 and result[lesson][1] == user_id:
+            elif result[lesson][0] in (1, 2) and result[lesson][1] == user_id:
                 builder.button(
                     text=lesson + '👀 ',
                     callback_data=lesson
@@ -151,6 +151,21 @@ class LessonKeyboard:
         builder.button(
             text=BUTTONS['CLOSE_LESSON'],
             callback_data=f'close_lesson_{lesson.course_id}'
+        )
+        builder.adjust(1)
+
+        return builder.as_markup(
+            resize_keyboard=True,
+            one_time_keyboard=True
+        )
+
+    async def start_again_lesson(self, lesson: Lessons) -> InlineKeyboardMarkup:
+        """Кнопка для повторного прохождения урока"""
+
+        builder = InlineKeyboardBuilder()
+        builder.button(
+            text=BUTTONS['AGAIN'],
+            callback_data=f'{lesson.title}'
         )
         builder.adjust(1)
 

@@ -11,5 +11,6 @@ BUTTONS = {
     'START_TEST': emojize(':check_mark_button: Начать тест'),
     'CLOSE_LESSON': emojize(':cross_mark: Закрыть урок'),
     'NEXT': emojize(':play_button: Следующая'),
-    'PREVIOUS': emojize(':reverse_button: Предыдущая')
+    'PREVIOUS': emojize(':reverse_button: Предыдущая'),
+    'AGAIN': emojize(':repeat_button: Пройти урок заново')
 }

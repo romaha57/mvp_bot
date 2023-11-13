@@ -51,6 +51,8 @@ class CourseHandler(Handler):
         async def get_lesson(message: Message, state: FSMContext):
             """Отлавливаем выбранный пользователем курс"""
 
+            data = await state.get_data()
+
             user = await self.db.get_user_by_tg_id(message.from_user.id)
             course = await self.db.get_course_by_name(message.text)
             if course:
@@ -66,7 +68,7 @@ class CourseHandler(Handler):
                     course.intro,
                     reply_markup=await self.lesson_kb.lessons_btn(course.id, user.id)
                 )
-                await state.update_data(delete_chat_id=message.chat.id)
+                await state.update_data(chat_id=message.chat.id)
                 await state.update_data(delete_message_id=msg.message_id)
 
                 await message.answer(
@@ -78,4 +80,7 @@ class CourseHandler(Handler):
                 await state.set_state(LessonChooseState.lesson)
 
             else:
-                await message.answer(MESSAGES['NOT_FOUND_COURSE'])
+                await message.answer(
+                    MESSAGES['MENU'],
+                    reply_markup=await self.base_kb.start_btn(promocode=data['promocode'])
+                )
