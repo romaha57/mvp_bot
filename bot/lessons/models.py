@@ -18,12 +18,14 @@ class Lessons(Base):
     questions = Column(Text)
     questions_percent = Column(Integer)
     course_id = Column(Integer, ForeignKey('$_courses.id'))
+    work_type_id = Column(Integer, ForeignKey('$_lesson_work_types.id'))
     title = Column(String, nullable=False)
     video = Column(String)
     updated_at = Column(DateTime, onupdate=func.now)
     created_at = Column(DateTime, server_default=func.now())
 
     course = relationship('Course', back_populates='lesson')
+    work_type = relationship('LessonWorkTypes', back_populates='lesson')
     lesson_history = relationship('LessonHistory', back_populates='lesson')
     test_lesson_history = relationship('TestLessonHistory', back_populates='lesson')
 
@@ -42,6 +44,7 @@ class LessonHistory(Base):
     lesson_id = Column(Integer, ForeignKey('$_lessons.id'))
     status_id = Column(Integer, ForeignKey('$_lesson_history_statuses.id'))
     user_id = Column(Integer, ForeignKey('$_users.id'))
+    work_details = Column(Text)
     updated_at = Column(DateTime, onupdate=func.now)
     created_at = Column(DateTime, server_default=func.now())
 
@@ -110,6 +113,23 @@ class TestLessonHistoryStatuses(Base):
     created_at = Column(DateTime, server_default=func.now())
 
     test_lesson_history = relationship('TestLessonHistory', back_populates='status')
+
+    def __str__(self):
+        return f'{self.name}'
+
+
+class LessonWorkTypes(Base):
+    __tablename__ = '$_lesson_work_types'
+    __tableargs__ = {
+        'comment': 'Тип задания к уроку'
+    }
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String, nullable=False)
+    updated_at = Column(DateTime, onupdate=func.now)
+    created_at = Column(DateTime, server_default=func.now())
+
+    lesson = relationship('Lessons', back_populates='work_type')
 
     def __str__(self):
         return f'{self.name}'

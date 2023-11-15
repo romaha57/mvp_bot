@@ -44,9 +44,10 @@ async def format_answers_text(answers: list[str]):
     2. ответ 2
     """
     result = ''
+    letter_list = ['1', 'А', 'Б', 'В', 'Г', 'Д', 'Е']
 
     for number, answer in enumerate(answers, 1):
-        result += f'{str(number)}. '
+        result += f'{letter_list[number]}. '
         result += answer['title'] + '\n'
 
     return result

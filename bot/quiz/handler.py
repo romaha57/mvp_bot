@@ -9,6 +9,7 @@ from bot.quiz.states import QuizState
 from bot.settings.keyboards import BaseKeyboard
 from bot.utils.answers import format_quiz_results
 from bot.utils.buttons import BUTTONS
+from bot.utils.delete_messages import delete_messages
 from bot.utils.messages import MESSAGES
 
 
@@ -29,7 +30,15 @@ class QuizHandler(Handler):
         async def start_quiz(message: Message, state: FSMContext):
             """Обработка начала тестирования"""
 
+            data = await state.get_data()
             user = await self.db.get_user_by_tg_id(message.from_user.id)
+
+            # удаляем сообщения
+            await delete_messages(
+                src=message,
+                data=data,
+                state=state
+            )
 
             # стартовое сообщение при тестировании
             start_msg = await self.db.get_msg_by_key('start_quiz')
@@ -72,6 +81,13 @@ class QuizHandler(Handler):
         async def get_quiz_answer(callback: CallbackQuery, state: FSMContext):
             data = await state.get_data()
 
+            # удаляем сообщения
+            await delete_messages(
+                src=callback,
+                data=data,
+                state=state
+            )
+
             # получаем ответ пользователя и создаем его в БД
             answer_id = callback.data.split('_')[1]
             await self.db.create_answer(
@@ -111,6 +127,13 @@ class QuizHandler(Handler):
         async def get_results_quiz(message: Message, state: FSMContext):
             data = await state.get_data()
 
+            # удаляем сообщения
+            await delete_messages(
+                src=message,
+                data=data,
+                state=state
+            )
+
             # получаем все попытки текущего пользователя
             attempts = await self.db.get_quiz_attempts(
                 tg_id=message.from_user.id
@@ -149,12 +172,12 @@ class QuizHandler(Handler):
         async def get_next_result_quiz(message: Message, state: FSMContext):
             data = await state.get_data()
 
-            # проверяем нужно ли удалить сообщения
-            if data.get('quiz_result_msg'):
-                await message.bot.delete_message(
-                    chat_id=data['quiz_result_chat_id'],
-                    message_id=data['quiz_result_msg']
-                )
+            # удаляем сообщения
+            await delete_messages(
+                src=message,
+                data=data,
+                state=state
+            )
             self.index -= 1
             try:
                 attempt = self.attempts_list[self.index]
@@ -179,12 +202,12 @@ class QuizHandler(Handler):
         async def get_previous_result_quiz(message: Message, state: FSMContext):
             data = await state.get_data()
 
-            # проверяем нужно ли удалить сообщения
-            if data.get('quiz_result_msg'):
-                await message.bot.delete_message(
-                    chat_id=data['quiz_result_chat_id'],
-                    message_id=data['quiz_result_msg']
-                )
+            # удаляем сообщения
+            await delete_messages(
+                src=message,
+                data=data,
+                state=state
+            )
 
             self.index += 1
             try:

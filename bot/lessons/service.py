@@ -4,7 +4,7 @@ from sqlalchemy import desc, insert, select, update
 
 from bot.db_connect import async_session
 from bot.lessons.models import (LessonHistory, LessonHistoryStatuses, Lessons,
-                                TestLessonHistory, TestLessonHistoryStatuses)
+                                TestLessonHistory, TestLessonHistoryStatuses, LessonWorkTypes)
 from bot.services.base_service import BaseService
 from bot.users.models import Users
 
@@ -24,7 +24,7 @@ class LessonService(BaseService):
                 order_by('order_num')
 
             result = await session.execute(query)
-            return result.unique().mappings().all()
+            return result.mappings().all()
 
     @classmethod
     async def get_lesson_by_name(cls, name: str) -> Union[Lessons, None]:
@@ -78,7 +78,7 @@ class LessonService(BaseService):
         async with async_session() as session:
             query = select(LessonHistory).\
                 filter_by(user_id=user_id, lesson_id=lesson_id).\
-                order_by(desc('id'))
+                order_by(desc('id')).limit(1)
 
             result = await session.execute(query)
 
@@ -188,7 +188,7 @@ class LessonService(BaseService):
             result = await session.execute(query)
             await session.commit()
 
-            return result.unique().scalars().all()
+            return result.scalars().all()
 
     @classmethod
     async def get_lesson_by_order_num(cls, course_id: int, order_num: int) -> Union[Lessons, None]:
@@ -198,4 +198,28 @@ class LessonService(BaseService):
             query = select(Lessons).filter_by(course_id=course_id, order_num=order_num)
             result = await session.execute(query)
 
-            return result.unique().scalars().one_or_none()
+            return result.scalars().one_or_none()
+
+    @classmethod
+    async def get_type_task_for_lesson(cls, lesson: Lessons):
+        """Получаем тип задания к данному уроку"""
+
+        async with async_session() as session:
+            query = select(LessonWorkTypes.id).\
+                join(Lessons, LessonWorkTypes.id == Lessons.work_type_id).\
+                where(Lessons.id == lesson.id)
+            result = await session.execute(query)
+
+            return result.scalars().one_or_none()
+
+    @classmethod
+    async def save_user_answer(cls, answer: str, lesson_history_id: int):
+        """Сохраняем ответ пользователя на вопросы после урока"""
+
+        async with async_session() as session:
+            query = update(LessonHistory).\
+                where(LessonHistory.id == lesson_history_id).\
+                values(work_details=answer)
+            await session.execute(query)
+            await session.commit()
+

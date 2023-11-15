@@ -1,9 +1,12 @@
+import asyncio
 import json
+from typing import Union
 
 from aiogram import Bot, F, Router
-from aiogram.filters import or_f
+from aiogram.enums import ContentType
+from aiogram.filters import or_f, StateFilter
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery
+from aiogram.types import CallbackQuery, Message
 
 from bot.courses.service import CourseService
 from bot.handlers.base_handler import Handler
@@ -12,6 +15,7 @@ from bot.lessons.service import LessonService
 from bot.lessons.states import LessonChooseState
 from bot.settings.keyboards import BaseKeyboard
 from bot.utils.answers import format_answers_text
+from bot.utils.delete_messages import delete_messages
 from bot.utils.messages import MESSAGES
 
 
@@ -34,17 +38,6 @@ class LessonHandler(Handler):
 
             data = await state.get_data()
 
-            # удаляем сообщения со списком уроков
-            chat_id = data.get('chat_id')
-            delete_message_id = data.get('delete_message_id')
-
-            if delete_message_id and chat_id:
-                await callback.bot.delete_message(
-                    chat_id=chat_id,
-                    message_id=delete_message_id
-                )
-                await state.update_data(delete_message_id=None)
-
             lesson_name = callback.data
             lesson = await self.db.get_lesson_by_name(lesson_name)
             user = await self.db.get_user_by_tg_id(callback.message.chat.id)
@@ -60,6 +53,13 @@ class LessonHandler(Handler):
                 lesson_id=lesson.id,
                 user_id=user.id,
                 course_history_id=actual_course_attempt.id
+            )
+
+            # удаляем сообщения со списком уроков
+            await delete_messages(
+                src=callback,
+                data=data,
+                state=state
             )
 
             # вывод информации об уроке
@@ -100,42 +100,19 @@ class LessonHandler(Handler):
                 await callback.message.answer(MESSAGES['NOT_FOUND_LESSON'])
 
             # состояние на прохождение теста после урока
-            await state.set_state(LessonChooseState.start_test)
+            await state.set_state(LessonChooseState.start_task)
             await state.update_data(lesson=lesson)
 
         @self.router.callback_query(F.data.startswith('back'))
         async def back_to_lesson_list(callback: CallbackQuery, state: FSMContext):
             data = await state.get_data()
-            # проверяем нужно ли удалять какие-то сообщения
-            if data.get('video_msg'):
-                await callback.bot.delete_message(
-                    chat_id=data.get('chat_id'),
-                    message_id=data.get('video_msg')
-                )
-                await state.update_data(video_msg=None)
-            elif data.get('video_description_msg'):
-                await callback.bot.delete_message(
-                    chat_id=data.get('chat_id'),
-                    message_id=data.get('video_description_msg')
-                )
-            elif data.get('msg1'):
-                await callback.bot.delete_message(
-                    chat_id=data.get('chat_id'),
-                    message_id=data.get('msg1')
-                )
 
-            elif data.get('msg2'):
-                await callback.bot.delete_message(
-                    chat_id=data.get('chat_id'),
-                    message_id=data.get('msg2')
-                )
-
-            elif data.get('delete_test_message') and data.get('chat_id'):
-                await callback.bot.delete_message(
-                    chat_id=data.get('chat_id'),
-                    message_id=data.get('delete_test_message')
-                )
-                await state.update_data(delete_message_id=None)
+            # удаляем сообщения
+            await delete_messages(
+                src=callback,
+                data=data,
+                state=state
+            )
 
             user = await self.db.get_user_by_tg_id(callback.message.chat.id)
             # получаем id курса для отображения кнопок с уроками курса
@@ -151,22 +128,45 @@ class LessonHandler(Handler):
 
             # состояние на отлов выбора урока
             await state.set_state(LessonChooseState.lesson)
+
             # сохраняем id сообщения для последующего удаления
             await state.update_data(delete_message_id=msg.message_id)
             await state.update_data(chat_id=callback.message.chat.id)
 
-        @self.router.callback_query(F.data.startswith('start_test'), LessonChooseState.start_test)
+        @self.router.callback_query(F.data.startswith('start_task'), LessonChooseState.start_task)
         async def start_test_after_lesson(callback: CallbackQuery, state: FSMContext):
             data = await state.get_data()
 
             # удаляем предыдущие сообщения с кнопками
-            if data.get('video_msg') and data.get('chat_id'):
-                await callback.bot.delete_message(
-                    chat_id=data.get('chat_id'),
-                    message_id=data.get('video_msg')
-                )
-                await state.update_data(video_msg=None)
+            await delete_messages(
+                src=callback,
+                data=data,
+                state=state
+            )
 
+            lesson = data['lesson']
+
+            # получаем тип задания к уроку
+            task_type_id = await self.db.get_type_task_for_lesson(lesson)
+
+            if task_type_id == 1:
+                await close_lesson(src=callback, state=state)
+            elif task_type_id == 2:
+                await start_test_after_lesson(callback=callback, state=state)
+            elif task_type_id == 3:
+                await start_text_task_after_lesson(message=callback.message, state=state)
+            elif task_type_id == 4:
+                await start_image_task_after_lesson(message=callback.message, state=state)
+            elif task_type_id == 5:
+                await start_video_task_after_lesson(message=callback.message, state=state)
+            elif task_type_id == 6:
+                await start_file_task_after_lesson(message=callback.message, state=state)
+            elif task_type_id == 7:
+                await start_circle_task_after_lesson(message=callback.message, state=state)
+
+
+        async def start_test_after_lesson(callback: CallbackQuery, state: FSMContext):
+            data = await state.get_data()
             lesson = data['lesson']
 
             # получаем все тестовые вопросы по данному уроку и переворачиваем список, чтобы начиналось с №1
@@ -279,14 +279,13 @@ class LessonHandler(Handler):
 
             try:
                 # получаем сообщение для удаления (удаляем предыдущий вопрос)
-                delete_test_message = data.get('delete_test_message')
 
-                if delete_test_message:
-                    await callback.bot.delete_message(
-                        chat_id=callback.message.chat.id,
-                        message_id=delete_test_message
-                    )
-                    await state.update_data(delete_test_message=None)
+                # удаляем сообщения
+                await delete_messages(
+                    src=callback,
+                    data=data,
+                    state=state
+                )
 
                 # получаем следующий вопрос и записываем его в state
                 question = self.test_questions.pop()
@@ -319,7 +318,7 @@ class LessonHandler(Handler):
                 # если пользователь набрал нужный % прохождения
                 if user_percent_answer > data['lesson'].questions_percent:
 
-                    await callback.message.edit_text(
+                    msg = await callback.message.edit_text(
                         MESSAGES['SUCCESS_TEST'].format(
                             user_percent_answer
                         ),
@@ -327,12 +326,18 @@ class LessonHandler(Handler):
                     )
                     await self.db.mark_lesson_history_on_status_done(data['lesson_history_id'])
 
+                    # сохраняем msg_id чтобы потом удалить
+                    await state.update_data(msg1=msg.message_id)
+
                 else:
-                    await callback.message.edit_text(
+                    msg = await callback.message.edit_text(
                         MESSAGES['FAIL_TEST'],
                         reply_markup=await self.kb.start_again_lesson(data['lesson'])
                     )
                     await state.set_state(LessonChooseState.lesson)
+
+                    # сохраняем msg_id чтобы потом удалить
+                    await state.update_data(msg1=msg.message_id)
 
                     await self.db.mark_lesson_history_on_status_fail_test(data['lesson_history_id'])
 
@@ -345,22 +350,154 @@ class LessonHandler(Handler):
                 )
 
         @self.router.callback_query(or_f(F.data.startswith('close_lesson')))
-        async def close_lesson(callback: CallbackQuery, state: FSMContext):
+        async def close_lesson(src: Union[CallbackQuery, Message], state: FSMContext):
             data = await state.get_data()
+
+            # удаляем сообщения с кнопками
+            await delete_messages(
+                src=src,
+                data=data,
+                state=state
+            )
+
             await self.db.mark_lesson_history_on_status_done(data['lesson_history_id'])
             next_lesson = await self.db.get_lesson_by_order_num(
                 course_id=data['lesson'].course_id,
                 order_num=data['lesson'].order_num + 1
             )
 
-            if next_lesson:
-                await callback.message.answer(
-                    MESSAGES['NEXT_LESSON'],
-                    reply_markup=await self.kb.next_lesson_btn(next_lesson)
-                )
-                await state.set_state(LessonChooseState.lesson)
+            if isinstance(src, CallbackQuery):
+                if next_lesson:
+                    msg1 = await src.message.answer(
+                        MESSAGES['NEXT_LESSON'],
+                        reply_markup=await self.kb.next_lesson_btn(next_lesson)
+                    )
+                    await state.set_state(LessonChooseState.lesson)
+                    await state.update_data(msg1=msg1.message_id)
+                else:
+                    await src.message.answer(
+                        MESSAGES['ALL_LESSONS_DONE'],
+                        reply_markup=await self.base_kb.menu_btn()
+                    )
             else:
-                await callback.message.answer(
-                    MESSAGES['ALL_LESSONS_DONE'],
-                    reply_markup=await self.base_kb.menu_btn()
+                if next_lesson:
+                    msg1 = await src.answer(
+                        MESSAGES['NEXT_LESSON'],
+                        reply_markup=await self.kb.next_lesson_btn(next_lesson)
+                    )
+                    await state.set_state(LessonChooseState.lesson)
+                    await state.update_data(msg1=msg1.message_id)
+                else:
+                    await src.answer(
+                        MESSAGES['ALL_LESSONS_DONE'],
+                        reply_markup=await self.base_kb.menu_btn()
+                    )
+
+        async def start_text_task_after_lesson(message: Message, state: FSMContext):
+
+            # получаем текст вопроса и выводим его, и затем отлавливаем ответ пользователя
+            await message.answer(MESSAGES['TEXT_ANSWER'])
+            await state.set_state(LessonChooseState.test_answer)
+
+        @self.router.message(LessonChooseState.test_answer)
+        async def get_text_answer(message: Message, state: FSMContext):
+            data = await state.get_data()
+
+            if message.content_type == ContentType.TEXT:
+                await self.db.save_user_answer(
+                    answer=message.text,
+                    lesson_history_id=data['lesson_history_id']
                 )
+                await message.answer(MESSAGES['YOUR_ANSWER_SAVE'])
+                await close_lesson(src=message, state=state)
+            else:
+                await message.answer(MESSAGES['PLEASE_WRITE_CORRECT_ANSWER'])
+
+        async def start_image_task_after_lesson(message: Message, state: FSMContext):
+
+            # получаем текст вопроса и выводим его, и затем отлавливаем ответ пользователя
+            await message.answer(MESSAGES['IMAGE_ANSWER'])
+            await state.set_state(LessonChooseState.image_answer)
+
+        @self.router.message(LessonChooseState.image_answer)
+        async def get_image_answer(message: Message, state: FSMContext):
+
+            data = await state.get_data()
+
+            if message.content_type == ContentType.PHOTO:
+                answer = message.photo[-1].file_id
+                await self.db.save_user_answer(
+                    answer=answer,
+                    lesson_history_id=data['lesson_history_id']
+                )
+                await message.answer(MESSAGES['YOUR_ANSWER_SAVE'])
+                await close_lesson(src=message, state=state)
+            else:
+                await message.answer(MESSAGES['PLEASE_WRITE_CORRECT_ANSWER'])
+
+        async def start_video_task_after_lesson(message: Message, state: FSMContext):
+
+            # получаем текст вопроса и выводим его, и затем отлавливаем ответ пользователя
+            await message.answer(MESSAGES['VIDEO_ANSWER'])
+            await state.set_state(LessonChooseState.video_answer)
+
+        @self.router.message(LessonChooseState.video_answer)
+        async def get_video_answer(message: Message, state: FSMContext):
+
+            data = await state.get_data()
+
+            if message.content_type == ContentType.VIDEO:
+                answer = message.video.file_id
+                await self.db.save_user_answer(
+                    answer=answer,
+                    lesson_history_id=data['lesson_history_id']
+                )
+                await message.answer(MESSAGES['YOUR_ANSWER_SAVE'])
+                await close_lesson(src=message, state=state)
+            else:
+                await message.answer(MESSAGES['PLEASE_WRITE_CORRECT_ANSWER'])
+
+        async def start_file_task_after_lesson(message: Message, state: FSMContext):
+
+            # получаем текст вопроса и выводим его, и затем отлавливаем ответ пользователя
+            await message.answer(MESSAGES['FILE_ANSWER'])
+            await state.set_state(LessonChooseState.file_answer)
+
+        @self.router.message(LessonChooseState.file_answer)
+        async def get_file_answer(message: Message, state: FSMContext):
+
+            data = await state.get_data()
+
+            if message.content_type == ContentType.DOCUMENT:
+                answer = message.document.file_id
+                await self.db.save_user_answer(
+                    answer=answer,
+                    lesson_history_id=data['lesson_history_id']
+                )
+                await message.answer(MESSAGES['YOUR_ANSWER_SAVE'])
+                await close_lesson(src=message, state=state)
+            else:
+                await message.answer(MESSAGES['PLEASE_WRITE_CORRECT_ANSWER'])
+
+        async def start_circle_task_after_lesson(message: Message, state: FSMContext):
+
+            # получаем текст вопроса и выводим его, и затем отлавливаем ответ пользователя
+            await message.answer(MESSAGES['CIRCLE_ANSWER'])
+            await state.set_state(LessonChooseState.circle_answer)
+
+        @self.router.message(LessonChooseState.circle_answer)
+        async def get_circle_answer(message: Message, state: FSMContext):
+
+            data = await state.get_data()
+
+            if message.content_type == ContentType.VIDEO_NOTE:
+                answer = message.video_note.file_id
+                await self.db.save_user_answer(
+                    answer=answer,
+                    lesson_history_id=data['lesson_history_id']
+                )
+                await message.answer(MESSAGES['YOUR_ANSWER_SAVE'])
+                await close_lesson(src=message, state=state)
+            else:
+                await message.answer(MESSAGES['PLEASE_WRITE_CORRECT_ANSWER'])
+

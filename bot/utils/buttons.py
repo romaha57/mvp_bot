@@ -8,7 +8,7 @@ BUTTONS = {
     'MENU': emojize(':left_arrow: В главное меню'),
     'RESULTS_QUIZ': emojize(':open_book: Посмотреть свои ответы тестирования'),
     'BACK': emojize(':reverse_button: Назад'),
-    'START_TEST': emojize(':check_mark_button: Начать тест'),
+    'START_TASK': emojize(':check_mark_button: Выполнить задание'),
     'CLOSE_LESSON': emojize(':cross_mark: Закрыть урок'),
     'NEXT': emojize(':play_button: Следующая'),
     'PREVIOUS': emojize(':reverse_button: Предыдущая'),

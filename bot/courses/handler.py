@@ -11,6 +11,7 @@ from bot.lessons.states import LessonChooseState
 from bot.services.base_service import BaseService
 from bot.settings.keyboards import BaseKeyboard
 from bot.utils.buttons import BUTTONS
+from bot.utils.delete_messages import delete_messages
 from bot.utils.messages import MESSAGES
 
 
@@ -55,6 +56,13 @@ class CourseHandler(Handler):
 
             user = await self.db.get_user_by_tg_id(message.from_user.id)
             course = await self.db.get_course_by_name(message.text)
+
+            await delete_messages(
+                src=message,
+                data=data,
+                state=state
+            )
+
             if course:
                 # await state.clear()
 
@@ -71,10 +79,13 @@ class CourseHandler(Handler):
                 await state.update_data(chat_id=message.chat.id)
                 await state.update_data(delete_message_id=msg.message_id)
 
-                await message.answer(
+                menu_msg = await message.answer(
                     MESSAGES['GO_TO_MENU'],
                     reply_markup=await self.base_kb.menu_btn()
                 )
+
+
+                await state.update_data(menu_msg=menu_msg.message_id)
 
                 # устанавливаем отлов состояния на название урока
                 await state.set_state(LessonChooseState.lesson)

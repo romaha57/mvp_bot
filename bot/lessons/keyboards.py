@@ -19,11 +19,11 @@ class LessonKeyboard:
             text=BUTTONS['BACK'],
             callback_data=f'back_{lesson.course_id}'
         )
-        if lesson.questions:
+        if lesson.work_type_id:
 
             builder.button(
-                text=BUTTONS['START_TEST'],
-                callback_data=f'start_test_{lesson.course_id}'
+                text=BUTTONS['START_TASK'],
+                callback_data=f'start_task_{lesson.course_id}'
             )
         else:
             builder.button(
@@ -85,16 +85,18 @@ class LessonKeyboard:
     async def test_answers_btn(self, count_answers: int, selected: list[int] = None) -> InlineKeyboardMarkup:
         """Кнопки с вариантами ответа на тестовые вопросы после урока"""
 
+        letter_list = ['1', 'А', 'Б', 'В', 'Г', 'Д', 'Е']
+
         builder = InlineKeyboardBuilder()
         for num in range(1, count_answers + 1):
             if selected and num in selected:
                 builder.button(
-                    text=f'{num} ✅',
+                    text=f'{letter_list[num]} ✅',
                     callback_data=f'test_answers_{num}'
                 )
                 continue
             builder.button(
-                text=str(num),
+                text=letter_list[num],
                 callback_data=f'test_answers_{num}'
             )
 
@@ -166,6 +168,19 @@ class LessonKeyboard:
         builder.button(
             text=BUTTONS['AGAIN'],
             callback_data=f'{lesson.title}'
+        )
+        builder.adjust(1)
+
+        return builder.as_markup(
+            resize_keyboard=True,
+            one_time_keyboard=True
+        )
+
+    async def get_test_btn(self):
+        builder = InlineKeyboardBuilder()
+        builder.button(
+            text='testrun',
+            callback_data='start_test'
         )
         builder.adjust(1)
 
