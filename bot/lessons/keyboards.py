@@ -19,7 +19,7 @@ class LessonKeyboard:
             text=BUTTONS['BACK'],
             callback_data=f'back_{lesson.course_id}'
         )
-        if lesson.work_type_id:
+        if lesson.work_type_id != 1:
 
             builder.button(
                 text=BUTTONS['START_TASK'],
@@ -56,22 +56,22 @@ class LessonKeyboard:
             if result[lesson][0] == 4 and result[lesson][1] == user_id:
                 builder.button(
                     text=lesson + '✅',
-                    callback_data=lesson
+                    callback_data=f'lesson_{lesson}'
                 )
             elif result[lesson][0] == 3 and result[lesson][1] == user_id:
                 builder.button(
                     text=lesson + '❗',
-                    callback_data=lesson
+                    callback_data=f'lesson_{lesson}'
                 )
             elif result[lesson][0] in (1, 2) and result[lesson][1] == user_id:
                 builder.button(
                     text=lesson + '👀 ',
-                    callback_data=lesson
+                    callback_data=f'lesson_{lesson}'
                 )
             else:
                 builder.button(
                         text=lesson,
-                        callback_data=lesson
+                        callback_data=f'lesson_{lesson}'
                 )
 
         builder.adjust(1)
@@ -134,7 +134,7 @@ class LessonKeyboard:
         builder = InlineKeyboardBuilder()
         builder.button(
             text=lesson.title,
-            callback_data=lesson.title
+            callback_data=f'lesson_{lesson.title}'
 
         )
 
@@ -181,6 +181,23 @@ class LessonKeyboard:
         builder.button(
             text='testrun',
             callback_data='start_test'
+        )
+        builder.adjust(1)
+
+        return builder.as_markup(
+            resize_keyboard=True,
+            one_time_keyboard=True
+        )
+
+    async def additional_task_btn(self):
+        builder = InlineKeyboardBuilder()
+        builder.button(
+            text=BUTTONS['SKIP'],
+            callback_data='skip_additional_task'
+        )
+        builder.button(
+            text=BUTTONS['DONE'],
+            callback_data='done_additional_task'
         )
         builder.adjust(1)
 

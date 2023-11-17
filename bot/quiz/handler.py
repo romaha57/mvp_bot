@@ -7,7 +7,7 @@ from bot.quiz.keyboads import QuizKeyboard
 from bot.quiz.service import QuizService
 from bot.quiz.states import QuizState
 from bot.settings.keyboards import BaseKeyboard
-from bot.utils.answers import format_quiz_results
+from bot.utils.answers import format_quiz_results, handle_quiz_answers
 from bot.utils.buttons import BUTTONS
 from bot.utils.delete_messages import delete_messages
 from bot.utils.messages import MESSAGES
@@ -81,13 +81,6 @@ class QuizHandler(Handler):
         async def get_quiz_answer(callback: CallbackQuery, state: FSMContext):
             data = await state.get_data()
 
-            # удаляем сообщения
-            await delete_messages(
-                src=callback,
-                data=data,
-                state=state
-            )
-
             # получаем ответ пользователя и создаем его в БД
             answer_id = callback.data.split('_')[1]
             await self.db.create_answer(
@@ -113,15 +106,33 @@ class QuizHandler(Handler):
                 quiz = await self.db.get_quiz(data['quiz_id'])
                 await callback.message.edit_text(
                     quiz.outro)
-                await callback.message.answer(
-                    MESSAGES['LOAD_RESULT_QUIZ']
-                )
-                # выводим ответы пользователя
+
+                # получаем все ответы для текущей попытки
                 answers = await self.db.get_answers_by_attempt(data['attempt_id'])
-                result = await format_quiz_results(answers)
-                await callback.message.edit_text(
-                    result
-                )
+
+                # получаем название функции обработки ответом пользователя на квиз
+                calculate_func_name = quiz.function_name_to_calculate
+                if calculate_func_name:
+
+                    # обрабатываем ответы пользователя на квиз
+                    await handle_quiz_answers(
+                        answers=answers,
+                        algorithm=calculate_func_name
+                    )
+
+                    # выводим подсчитанный ответ
+                    await callback.message.edit_text(
+                        MESSAGES['CALCULATE_RESULT'].format(
+                            calculate_func_name
+                        )
+                    )
+
+                else:
+                    # выводим ответы пользователя
+                    result = await format_quiz_results(answers)
+                    await callback.message.edit_text(
+                        result
+                    )
 
         @self.router.message(F.text == BUTTONS['RESULTS_QUIZ'])
         async def get_results_quiz(message: Message, state: FSMContext):

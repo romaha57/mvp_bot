@@ -32,6 +32,7 @@ class Users(Base):
     bot = relationship('Bots', back_populates='user')
     test_lesson_history = relationship('TestLessonHistory', back_populates='user')
     promocode = relationship('Promocodes', back_populates='user')
+    lesson_additional_history_task = relationship('LessonAdditionalTaskHistory', back_populates='user')
 
     def __str__(self):
         return f'{self.username} - {self.external_id}'
@@ -52,6 +53,7 @@ class UserAccount(Base):
     created_at = Column(DateTime, server_default=func.now())
 
     user = relationship('Users', back_populates='account')
+    bonus_reward = relationship('BonusRewards', back_populates='account')
 
     def __str__(self):
         return f'{self.first_name} - {self.last_name} - {self.phone}'
@@ -79,3 +81,41 @@ class Promocodes(Base):
 
     def __str__(self):
         return f'{self.code}'
+
+
+class BonusRewards(Base):
+    __tablename__ = '$_bonus_rewards'
+    __tableargs__ = {
+        'comment': 'Зачисления бонусов'
+    }
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    account_id = Column(Integer, ForeignKey('$_user_accounts.id'))
+    type_id = Column(Integer, ForeignKey('$_bonus_reward_types.id'))
+    amount = Column(Integer)
+    comment = Column(Text)
+    updated_at = Column(DateTime, onupdate=func.now)
+    created_at = Column(DateTime, server_default=func.now())
+
+    account = relationship('UserAccount', back_populates='bonus_reward')
+    type = relationship('BonusRewardsTypes', back_populates='bonus_reward')
+
+    def __str__(self):
+        return f'{self.amount}'
+
+
+class BonusRewardsTypes(Base):
+    __tablename__ = '$_bonus_reward_types'
+    __tableargs__ = {
+        'comment': 'Типы зачисления бонусов'
+    }
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String, nullable=False)
+    updated_at = Column(DateTime, onupdate=func.now)
+    created_at = Column(DateTime, server_default=func.now())
+
+    bonus_reward = relationship('BonusRewards', back_populates='type')
+
+    def __str__(self):
+        return f'{self.name}'

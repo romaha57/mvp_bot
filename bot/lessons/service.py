@@ -4,9 +4,10 @@ from sqlalchemy import desc, insert, select, update
 
 from bot.db_connect import async_session
 from bot.lessons.models import (LessonHistory, LessonHistoryStatuses, Lessons,
-                                TestLessonHistory, TestLessonHistoryStatuses, LessonWorkTypes)
+                                TestLessonHistory, TestLessonHistoryStatuses, LessonWorkTypes, LessonAdditionalTasks,
+                                LessonAdditionalTaskHistory, LessonAdditionalTaskHistoryStatuses)
 from bot.services.base_service import BaseService
-from bot.users.models import Users
+from bot.users.models import Users, UserAccount, BonusRewards, BonusRewardsTypes
 
 
 class LessonService(BaseService):
@@ -223,3 +224,137 @@ class LessonService(BaseService):
             await session.execute(query)
             await session.commit()
 
+    @classmethod
+    async def get_additional_task_by_lesson(cls, lesson: Lessons):
+        """Получаем доп задание для урока по его id"""
+
+        async with async_session() as session:
+            query = select(LessonAdditionalTasks).\
+                join(Lessons, Lessons.additional_task_id == LessonAdditionalTasks.id).\
+                where(Lessons.id == lesson.id)
+            res = await session.execute(query)
+
+            return res.scalars().first()
+
+    @classmethod
+    async def get_bonus_reward_type_by_name(cls, name: str):
+        """Получение типа (начисление/списание) бонусов """
+
+        async with async_session() as session:
+            query = select(BonusRewardsTypes).where(BonusRewardsTypes.name == name)
+            res = await session.execute(query)
+
+            return res.scalars().first()
+
+
+    @classmethod
+    async def add_reward_to_user(cls, tg_id: int, reward: int, comment: str):
+        """Добавляем награду пользователю"""
+
+        account = await cls.get_account_by_tg_id(tg_id)
+        type_add = await cls.get_bonus_reward_type_by_name('Начисление')
+
+        async with async_session() as session:
+            query = insert(BonusRewards).values(
+                account_id=account.id,
+                type_id=type_add.id,
+                amount=reward,
+                comment=comment
+
+            )
+            await session.execute(query)
+            await session.commit()
+
+    @classmethod
+    async def get_lesson_additional_task_history_status_by_name(cls, name: str):
+        """Получение статуса прохождения доп задания к уроку"""
+
+        async with async_session() as session:
+            query = select(LessonAdditionalTaskHistoryStatuses).\
+                where(LessonAdditionalTaskHistoryStatuses.name == name)
+            res = await session.execute(query)
+
+            return res.scalars().first()
+
+    @classmethod
+    async def mark_additional_task_missed_status(cls, additional_task_history_id: int):
+        """Отмечаем в истории прохождении доп задания статус 'Пропущен' """
+
+        status = await cls.get_lesson_additional_task_history_status_by_name('Пропущен')
+
+        async with async_session() as session:
+            query = update(LessonAdditionalTaskHistory).\
+                values(LessonAdditionalTaskHistory.status_id == status.id).\
+                where(LessonAdditionalTaskHistory.id == additional_task_history_id)
+            res = await session.execute(query)
+
+            return res.scalars().first()
+
+    @classmethod
+    async def create_additional_task_history(cls, tg_id: int, additional_task_id: int, lesson_history_id: int):
+        """Создаем запись о начале прохождения доп задания к уроку (по умолчанию статус пропущен)"""
+
+        status = await cls.get_lesson_additional_task_history_status_by_name('Пропущен')
+        user = await cls.get_user_by_tg_id(tg_id)
+
+        async with async_session() as session:
+            query = insert(LessonAdditionalTaskHistory).values(
+                user_id=user.id,
+                additional_task_id=additional_task_id,
+                lesson_history_id=lesson_history_id,
+                status_id=status.id
+            )
+            await session.execute(query)
+            await session.commit()
+
+            # получаем созданую историю прохождения доп задания
+            query = select(LessonAdditionalTaskHistory).\
+                filter_by(
+                    user_id=user.id, additional_task_id=additional_task_id, lesson_history_id=lesson_history_id
+            )
+            additional_task_history = await session.execute(query)
+
+            return additional_task_history.scalars().first()
+
+    @classmethod
+    async def mark_additional_task_done_status(cls, additional_task_history_id: int):
+        """Отмечаем статус прохождеия доп задания к уроку на 'Сделан' """
+
+        status = await cls.get_lesson_additional_task_history_status_by_name('Сделан')
+
+        async with async_session() as session:
+            query = update(LessonAdditionalTaskHistory).\
+                where(LessonAdditionalTaskHistory.id == additional_task_history_id).\
+                values(status_id=status.id)
+
+            await session.execute(query)
+            await session.commit()
+
+    @classmethod
+    async def mark_additional_task_await_review_status(cls, additional_task_history_id: int):
+        """Отмечаем статус прохождеия доп задания к уроку на 'Ожидает проверки' """
+
+        status = await cls.get_lesson_additional_task_history_status_by_name('Ожидает проверки')
+
+        async with async_session() as session:
+            query = update(LessonAdditionalTaskHistory).\
+                where(LessonAdditionalTaskHistory.id == additional_task_history_id).\
+                values(status_id=status.id)
+
+            await session.execute(query)
+            await session.commit()
+
+    @classmethod
+    async def get_users_in_awaited_status(cls):
+        """Получаем tg_id пользователей, у которых статус прохождения доп задания 'Ожидает проверки' """
+
+        status = await cls.get_lesson_additional_task_history_status_by_name('Ожидает проверки')
+
+        async with async_session() as session:
+            query = select(Users.external_id, LessonAdditionalTaskHistory.created_at, LessonAdditionalTaskHistory.id, LessonAdditionalTasks.reward, LessonAdditionalTasks.title).\
+                join(LessonAdditionalTaskHistory, Users.id == LessonAdditionalTaskHistory.user_id).\
+                join(LessonAdditionalTasks, LessonAdditionalTasks.id == LessonAdditionalTaskHistory.additional_task_id).\
+                where(LessonAdditionalTaskHistory.status_id == status.id)
+
+            res = await session.execute(query)
+            return res.mappings().all()

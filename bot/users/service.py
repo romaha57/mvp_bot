@@ -27,7 +27,7 @@ class UserService(BaseService):
             result = await session.execute(query)
             await session.commit()
 
-            account = result.scalars().all()
+            account = result.scalars().first()
 
             if not account:
                 query = insert(UserAccount).values(
@@ -36,6 +36,17 @@ class UserService(BaseService):
                 )
                 await session.execute(query)
                 await session.commit()
+
+                query = select(UserAccount).filter_by(
+                    first_name=first_name,
+                    last_name=last_name
+                )
+                res = await session.execute(query)
+                account = res.scalars().first()
+
+            return account
+
+
 
     @classmethod
     async def get_or_create_user(cls, username: str, tg_id: int, bot_id: int = None,
@@ -46,7 +57,7 @@ class UserService(BaseService):
             tg_id=tg_id
         )
         if not user:
-            await cls.get_or_create_account(
+            account = await cls.get_or_create_account(
                 first_name=first_name,
                 last_name=last_name
             )
@@ -56,7 +67,8 @@ class UserService(BaseService):
                     username=username,
                     bot_id=bot_id,
                     external_id=tg_id,
-                    promocode_id=promocode_id
+                    promocode_id=promocode_id,
+                    account_id=account.id
                 )
                 await session.execute(query)
                 await session.commit()

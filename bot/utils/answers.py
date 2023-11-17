@@ -51,3 +51,8 @@ async def format_answers_text(answers: list[str]):
         result += answer['title'] + '\n'
 
     return result
+
+
+async def handle_quiz_answers(answers: list[QuizAnswers], algorithm: str):
+    """Обрабатываем ответы квиза по заданному алгоритму"""
+    pass

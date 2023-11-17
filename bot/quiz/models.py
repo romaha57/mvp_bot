@@ -16,6 +16,7 @@ class Quizes(Base):
     cnt = Column(Integer)
     description = Column(Text)
     outro = Column(Text)
+    function_name_to_calculate = Column(String)
     type_id = Column(Integer, ForeignKey('$_quiz_types.id'))
     updated_at = Column(DateTime, onupdate=func.now)
     created_at = Column(DateTime, server_default=func.now())

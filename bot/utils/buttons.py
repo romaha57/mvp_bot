@@ -12,5 +12,8 @@ BUTTONS = {
     'CLOSE_LESSON': emojize(':cross_mark: Закрыть урок'),
     'NEXT': emojize(':play_button: Следующая'),
     'PREVIOUS': emojize(':reverse_button: Предыдущая'),
-    'AGAIN': emojize(':repeat_button: Пройти урок заново')
+    'AGAIN': emojize(':repeat_button: Пройти урок заново'),
+    'SKIP': emojize(':yellow_square: Пропустить'),
+    'DONE': emojize(':green_square: Сделал'),
+    'BALANCE': emojize(':money_bag: Баланс')
 }

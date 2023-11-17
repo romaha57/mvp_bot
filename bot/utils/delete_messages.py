@@ -65,3 +65,11 @@ async def delete_messages(data: dict, state: FSMContext, src: Union[CallbackQuer
         )
 
         await state.update_data(quiz_result_msg=None)
+
+    if data.get('additional_msg'):
+        await src.bot.delete_message(
+            chat_id=data.get('chat_id'),
+            message_id=data.get('additional_msg')
+        )
+
+        await state.update_data(additional_msg=None)

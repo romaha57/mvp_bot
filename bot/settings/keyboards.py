@@ -40,6 +40,9 @@ class BaseKeyboard:
         builder.row(
             KeyboardButton(text=await self._get_button('REFERAL')),
         )
+        builder.add(
+            KeyboardButton(text=await self._get_button('BALANCE')),
+        )
 
         return builder.as_markup(
             resize_keyboard=True,

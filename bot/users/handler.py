@@ -25,3 +25,13 @@ class UserHandler(Handler):
                 reply_markup=await self.base_kb.menu_btn()
             )
 
+        @self.router.message(F.text == BUTTONS['BALANCE'])
+        async def start_referal(message: Message):
+
+            # получаем баланс текущего пользователя
+
+            await message.answer(
+                MESSAGES['BALANCE'],
+                reply_markup=await self.base_kb.menu_btn()
+            )
+

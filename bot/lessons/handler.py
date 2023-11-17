@@ -32,13 +32,13 @@ class LessonHandler(Handler):
 
     def handle(self):
 
-        @self.router.callback_query(LessonChooseState.lesson, F.data)
+        @self.router.callback_query(LessonChooseState.lesson, F.data.startswith('lesson'))
         async def choose_lesson(callback: CallbackQuery, state: FSMContext):
             # await state.clear()
 
             data = await state.get_data()
 
-            lesson_name = callback.data
+            lesson_name = callback.data.split('_')[1]
             lesson = await self.db.get_lesson_by_name(lesson_name)
             user = await self.db.get_user_by_tg_id(callback.message.chat.id)
 
@@ -134,7 +134,7 @@ class LessonHandler(Handler):
             await state.update_data(chat_id=callback.message.chat.id)
 
         @self.router.callback_query(F.data.startswith('start_task'), LessonChooseState.start_task)
-        async def start_test_after_lesson(callback: CallbackQuery, state: FSMContext):
+        async def start_task_after_lesson(callback: CallbackQuery, state: FSMContext):
             data = await state.get_data()
 
             # удаляем предыдущие сообщения с кнопками
@@ -163,7 +163,6 @@ class LessonHandler(Handler):
                 await start_file_task_after_lesson(message=callback.message, state=state)
             elif task_type_id == 7:
                 await start_circle_task_after_lesson(message=callback.message, state=state)
-
 
         async def start_test_after_lesson(callback: CallbackQuery, state: FSMContext):
             data = await state.get_data()
@@ -317,7 +316,6 @@ class LessonHandler(Handler):
 
                 # если пользователь набрал нужный % прохождения
                 if user_percent_answer > data['lesson'].questions_percent:
-
                     msg = await callback.message.edit_text(
                         MESSAGES['SUCCESS_TEST'].format(
                             user_percent_answer
@@ -349,7 +347,7 @@ class LessonHandler(Handler):
                     reply_markup=await self.base_kb.menu_btn()
                 )
 
-        @self.router.callback_query(or_f(F.data.startswith('close_lesson')))
+        @self.router.callback_query(F.data.startswith('close_lesson'))
         async def close_lesson(src: Union[CallbackQuery, Message], state: FSMContext):
             data = await state.get_data()
 
@@ -360,12 +358,55 @@ class LessonHandler(Handler):
                 state=state
             )
 
+            lesson = data['lesson']
+
             await self.db.mark_lesson_history_on_status_done(data['lesson_history_id'])
             next_lesson = await self.db.get_lesson_by_order_num(
-                course_id=data['lesson'].course_id,
-                order_num=data['lesson'].order_num + 1
+                course_id=lesson.course_id,
+                order_num=lesson.order_num + 1
             )
 
+            # проверяем есть ли у данного урока доп задание
+            additional_task = await self.db.get_additional_task_by_lesson(lesson)
+            await state.update_data(additional_task=additional_task)
+
+            # выводим доп задание с кнопками 'пропустить' и 'выполнил'
+            if additional_task:
+
+                # в зависимости от типа переменной берем id telegram
+                if isinstance(src, CallbackQuery):
+                    tg_id = src.message.chat.id
+                else:
+                    tg_id = src.from_user.id
+
+                # создаем запись прохождения доп задания в БД
+                additional_task_history = await self.db.create_additional_task_history(
+                    tg_id=tg_id,
+                    additional_task_id=additional_task.id,
+                    lesson_history_id=data['lesson_history_id']
+                )
+
+                # сохраняем в состоянии id истории
+                await state.update_data(additional_task_history_id=additional_task_history.id)
+
+                await src.message.answer(
+                    MESSAGES['ADDITIONAL_TASK'].format(
+                        additional_task.title
+                    )
+                )
+                additional_msg = await src.message.answer(
+                    additional_task.description,
+                    reply_markup=await self.kb.additional_task_btn()
+                )
+
+                await src.message.answer(
+                    MESSAGES['GO_TO_MENU'],
+                    reply_markup=await self.base_kb.menu_btn()
+                )
+
+                await state.update_data(additional_msg=additional_msg.message_id)
+
+            # в зависимости от callback или message меняется отправка сообщения
             if isinstance(src, CallbackQuery):
                 if next_lesson:
                     msg1 = await src.message.answer(
@@ -500,4 +541,77 @@ class LessonHandler(Handler):
                 await close_lesson(src=message, state=state)
             else:
                 await message.answer(MESSAGES['PLEASE_WRITE_CORRECT_ANSWER'])
+
+        @self.router.callback_query(LessonChooseState.lesson, F.data.startswith('skip_additional_task'))
+        async def skip_additional_task(callback: CallbackQuery, state: FSMContext):
+            data = await state.get_data()
+
+            # если пользователь нажал 'Пропустить', то удаляем это сообщение с кнопками
+            if data.get('additional_msg'):
+                await callback.bot.delete_message(
+                    chat_id=data.get('chat_id'),
+                    message_id=data.get('additional_msg')
+                )
+
+                await state.update_data(additional_msg=None)
+
+        @self.router.callback_query(LessonChooseState.lesson, F.data.startswith('done_additional_task'))
+        async def done_additional_task(callback: CallbackQuery, state: FSMContext):
+            data = await state.get_data()
+
+            await delete_messages(
+                data=data,
+                state=state,
+                src=callback
+            )
+            additional_task = data.get('additional_task')
+
+            # если задание не нужно проверять, то начисляем сразу бонусы
+            if not additional_task.checkup:
+
+                # меняем статус прохождения доп задания на 'Сделан'
+                await self.db.mark_additional_task_done_status(
+                    additional_task_history_id=data['additional_task_history_id']
+                )
+
+                # зачисляем бонусы на аккаунт
+                await self.db.add_reward_to_user(
+                    tg_id=callback.message.chat.id,
+                    reward=additional_task.reward,
+                    comment=f'Начислено за доп задание: {additional_task.title}'
+                )
+
+                await callback.message.answer(
+                    MESSAGES['REWARDS_WAS_ADDED']
+                )
+            else:
+                # меняем статус прохождения доп задания на 'Ожидает проверки'
+                await self.db.mark_additional_task_await_review_status(
+                    additional_task_history_id=data['additional_task_history_id']
+                )
+
+                await callback.message.answer(
+                    MESSAGES['ADD_REWARD_AFTER_TIME']
+                )
+
+            # получаем следующий урок 
+            lesson = data['lesson']
+
+            await self.db.mark_lesson_history_on_status_done(data['lesson_history_id'])
+            next_lesson = await self.db.get_lesson_by_order_num(
+                course_id=lesson.course_id,
+                order_num=lesson.order_num + 1
+            )
+            if next_lesson:
+                msg1 = await callback.message.answer(
+                    MESSAGES['NEXT_LESSON'],
+                    reply_markup=await self.kb.next_lesson_btn(next_lesson)
+                )
+                await state.set_state(LessonChooseState.lesson)
+                await state.update_data(msg1=msg1.message_id)
+            else:
+                await callback.message.answer(
+                    MESSAGES['ALL_LESSONS_DONE'],
+                    reply_markup=await self.base_kb.menu_btn()
+                )
 
