@@ -1,8 +1,9 @@
-from sqlalchemy import insert, select
+from sqlalchemy import insert, select, func
 
 from bot.db_connect import async_session
+from bot.lessons.service import LessonService
 from bot.services.base_service import BaseService
-from bot.users.models import UserAccount, Users
+from bot.users.models import UserAccount, Users, BonusRewards, BonusRewardsTypes
 
 
 class UserService(BaseService):
@@ -72,3 +73,29 @@ class UserService(BaseService):
                 )
                 await session.execute(query)
                 await session.commit()
+
+    @classmethod
+    async def get_balance(cls, account_id: int) -> int:
+        """Получаем баланс для текущего аккаунта (из всех начислений вычитаем все списания)"""
+
+        status_accrual = await LessonService.get_bonus_reward_type_by_name('Начисление')
+        status_debited = await LessonService.get_bonus_reward_type_by_name('Списание')
+
+        async with async_session() as session:
+            # получаем сумму всех начислений
+            query = select(func.sum(BonusRewards.amount)).\
+                where(BonusRewards.type_id == status_accrual.id, BonusRewards.account_id == account_id)
+            res = await session.execute(query)
+
+            sum_accrual = res.scalars().first()
+
+            # получаем сумму всех списаний со счета
+            query = select(func.sum(BonusRewards.amount)).\
+                where(BonusRewards.type_id == status_debited.id, BonusRewards.account_id == account_id)
+            res = await session.execute(query)
+
+            sum_debited = res.scalars().first()
+            if not sum_debited:
+                sum_debited = 0
+
+        return sum_accrual - sum_debited

@@ -16,6 +16,7 @@ class Course(Base):
     outro = Column(Text, nullable=False)
     title = Column(String)
     order_num = Column(Integer, nullable=False)
+    group_id = Column(String)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, onupdate=func.now())
 

@@ -1,7 +1,13 @@
-from aiogram.types import Message
+from typing import Union
 
+from aiogram import Bot
+from aiogram.exceptions import TelegramForbiddenError
+from aiogram.types import Message, CallbackQuery
+
+from bot.courses.service import CourseService
 from bot.quiz.models import QuizAnswers
 from bot.quiz.service import QuizService
+from bot.utils.messages import MESSAGES
 
 
 async def get_file_id_by_content_type(message: Message):
@@ -56,3 +62,20 @@ async def format_answers_text(answers: list[str]):
 async def handle_quiz_answers(answers: list[QuizAnswers], algorithm: str):
     """Обрабатываем ответы квиза по заданному алгоритму"""
     pass
+
+
+async def send_user_answers_to_group(bot: Bot, course_id: int, name: str, lesson_name: str, homework: str):
+    """Отправляем ответ пользователя в соответствующую группу круса"""
+
+    group_id = await CourseService.get_group_id(course_id)
+
+    if group_id:
+        text = MESSAGES['USER_ANSWER_IN_GROUP'].format(
+            name,
+            lesson_name,
+            homework
+        )
+        try:
+            await bot.send_message(group_id, text)
+        except TelegramForbiddenError:
+            print('Бот не добавлен в группу')

@@ -38,9 +38,6 @@ class MainBot:
 
 
 if __name__ == '__main__':
-    try:
-        bot = MainBot()
-        print('START BOT')
-        asyncio.run(bot.main())
-    except Exception as e:
-        print(e)
+    bot = MainBot()
+    print('START BOT')
+    asyncio.run(bot.main())

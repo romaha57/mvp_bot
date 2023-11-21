@@ -13,7 +13,7 @@ async def send_message_after_30_minutes():
 
     # список tg_id пользователей у кого статус в ожидании
     users_data = await LessonService.get_users_in_awaited_status()
-    print(users_data)
+
     for record in users_data:
         if record['created_at'] + datetime.timedelta(minutes=2) <= datetime.datetime.now():
             msg = MESSAGES['CHECK_ADDITIONAL_TASK']

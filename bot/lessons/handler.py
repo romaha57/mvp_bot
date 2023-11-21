@@ -14,7 +14,7 @@ from bot.lessons.keyboards import LessonKeyboard
 from bot.lessons.service import LessonService
 from bot.lessons.states import LessonChooseState
 from bot.settings.keyboards import BaseKeyboard
-from bot.utils.answers import format_answers_text
+from bot.utils.answers import format_answers_text, send_user_answers_to_group
 from bot.utils.delete_messages import delete_messages
 from bot.utils.messages import MESSAGES
 
@@ -435,14 +435,18 @@ class LessonHandler(Handler):
                     )
 
         async def start_text_task_after_lesson(message: Message, state: FSMContext):
+            data = await state.get_data()
+
+            lesson_work_description = data['lesson'].work_description
 
             # получаем текст вопроса и выводим его, и затем отлавливаем ответ пользователя
-            await message.answer(MESSAGES['TEXT_ANSWER'])
+            await message.answer(lesson_work_description)
             await state.set_state(LessonChooseState.test_answer)
 
         @self.router.message(LessonChooseState.test_answer)
         async def get_text_answer(message: Message, state: FSMContext):
             data = await state.get_data()
+            lesson = data['lesson']
 
             if message.content_type == ContentType.TEXT:
                 await self.db.save_user_answer(
@@ -451,19 +455,31 @@ class LessonHandler(Handler):
                 )
                 await message.answer(MESSAGES['YOUR_ANSWER_SAVE'])
                 await close_lesson(src=message, state=state)
+
+                # отправляем отчет в группу курса
+                await send_user_answers_to_group(
+                    bot=message.bot,
+                    course_id=lesson.course_id,
+                    name=message.from_user.full_name,
+                    lesson_name=lesson.title,
+                    homework=lesson.work_description
+                )
             else:
                 await message.answer(MESSAGES['PLEASE_WRITE_CORRECT_ANSWER'])
 
         async def start_image_task_after_lesson(message: Message, state: FSMContext):
+            data = await state.get_data()
 
+            lesson_work_description = data['lesson'].work_description
             # получаем текст вопроса и выводим его, и затем отлавливаем ответ пользователя
-            await message.answer(MESSAGES['IMAGE_ANSWER'])
+            await message.answer(lesson_work_description)
             await state.set_state(LessonChooseState.image_answer)
 
         @self.router.message(LessonChooseState.image_answer)
         async def get_image_answer(message: Message, state: FSMContext):
 
             data = await state.get_data()
+            lesson = data['lesson']
 
             if message.content_type == ContentType.PHOTO:
                 answer = message.photo[-1].file_id
@@ -473,19 +489,32 @@ class LessonHandler(Handler):
                 )
                 await message.answer(MESSAGES['YOUR_ANSWER_SAVE'])
                 await close_lesson(src=message, state=state)
+
+                # отправляем отчет в группу курса
+                await send_user_answers_to_group(
+                    bot=message.bot,
+                    course_id=lesson.course_id,
+                    name=message.from_user.full_name,
+                    lesson_name=lesson.title,
+                    homework=lesson.work_description
+                )
+
             else:
                 await message.answer(MESSAGES['PLEASE_WRITE_CORRECT_ANSWER'])
 
         async def start_video_task_after_lesson(message: Message, state: FSMContext):
+            data = await state.get_data()
 
+            lesson_work_description = data['lesson'].work_description
             # получаем текст вопроса и выводим его, и затем отлавливаем ответ пользователя
-            await message.answer(MESSAGES['VIDEO_ANSWER'])
+            await message.answer(lesson_work_description)
             await state.set_state(LessonChooseState.video_answer)
 
         @self.router.message(LessonChooseState.video_answer)
         async def get_video_answer(message: Message, state: FSMContext):
 
             data = await state.get_data()
+            lesson = data['lesson']
 
             if message.content_type == ContentType.VIDEO:
                 answer = message.video.file_id
@@ -495,19 +524,32 @@ class LessonHandler(Handler):
                 )
                 await message.answer(MESSAGES['YOUR_ANSWER_SAVE'])
                 await close_lesson(src=message, state=state)
+
+                # отправляем отчет в группу курса
+                await send_user_answers_to_group(
+                    bot=message.bot,
+                    course_id=lesson.course_id,
+                    name=message.from_user.full_name,
+                    lesson_name=lesson.title,
+                    homework=lesson.work_description
+                )
+
             else:
                 await message.answer(MESSAGES['PLEASE_WRITE_CORRECT_ANSWER'])
 
         async def start_file_task_after_lesson(message: Message, state: FSMContext):
+            data = await state.get_data()
 
+            lesson_work_description = data['lesson'].work_description
             # получаем текст вопроса и выводим его, и затем отлавливаем ответ пользователя
-            await message.answer(MESSAGES['FILE_ANSWER'])
+            await message.answer(lesson_work_description)
             await state.set_state(LessonChooseState.file_answer)
 
         @self.router.message(LessonChooseState.file_answer)
         async def get_file_answer(message: Message, state: FSMContext):
 
             data = await state.get_data()
+            lesson = data['lesson']
 
             if message.content_type == ContentType.DOCUMENT:
                 answer = message.document.file_id
@@ -517,19 +559,32 @@ class LessonHandler(Handler):
                 )
                 await message.answer(MESSAGES['YOUR_ANSWER_SAVE'])
                 await close_lesson(src=message, state=state)
+
+                # отправляем отчет в группу курса
+                await send_user_answers_to_group(
+                    bot=message.bot,
+                    course_id=lesson.course_id,
+                    name=message.from_user.full_name,
+                    lesson_name=lesson.title,
+                    homework=lesson.work_description
+                )
+
             else:
                 await message.answer(MESSAGES['PLEASE_WRITE_CORRECT_ANSWER'])
 
         async def start_circle_task_after_lesson(message: Message, state: FSMContext):
+            data = await state.get_data()
 
+            lesson_work_description = data['lesson'].work_description
             # получаем текст вопроса и выводим его, и затем отлавливаем ответ пользователя
-            await message.answer(MESSAGES['CIRCLE_ANSWER'])
+            await message.answer(lesson_work_description)
             await state.set_state(LessonChooseState.circle_answer)
 
         @self.router.message(LessonChooseState.circle_answer)
         async def get_circle_answer(message: Message, state: FSMContext):
 
             data = await state.get_data()
+            lesson = data['lesson']
 
             if message.content_type == ContentType.VIDEO_NOTE:
                 answer = message.video_note.file_id
@@ -539,6 +594,16 @@ class LessonHandler(Handler):
                 )
                 await message.answer(MESSAGES['YOUR_ANSWER_SAVE'])
                 await close_lesson(src=message, state=state)
+
+                # отправляем отчет в группу курса
+                await send_user_answers_to_group(
+                    bot=message.bot,
+                    course_id=lesson.course_id,
+                    name=message.from_user.full_name,
+                    lesson_name=lesson.title,
+                    homework=lesson.work_description
+                )
+
             else:
                 await message.answer(MESSAGES['PLEASE_WRITE_CORRECT_ANSWER'])
 
@@ -609,9 +674,9 @@ class LessonHandler(Handler):
                 )
                 await state.set_state(LessonChooseState.lesson)
                 await state.update_data(msg1=msg1.message_id)
+
             else:
                 await callback.message.answer(
                     MESSAGES['ALL_LESSONS_DONE'],
                     reply_markup=await self.base_kb.menu_btn()
                 )
-

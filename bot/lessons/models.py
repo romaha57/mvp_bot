@@ -17,6 +17,7 @@ class Lessons(Base):
     order_num = Column(Integer, nullable=False)
     questions = Column(Text)
     questions_percent = Column(Integer)
+    work_description = Column(Text)
     course_id = Column(Integer, ForeignKey('$_courses.id'))
     work_type_id = Column(Integer, ForeignKey('$_lesson_work_types.id'))
     additional_task_id = Column(Integer, ForeignKey('$_lesson_additional_tasks.id'))

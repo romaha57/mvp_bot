@@ -91,3 +91,14 @@ class CourseService(BaseService):
             result = await session.execute(query)
 
             return result.scalars().first()
+
+    @classmethod
+    async def get_group_id(cls, course_id: int):
+        """Получение id группы для отправки овтетов пользователя"""
+
+        async with async_session() as session:
+            query = select(Course.group_id).where(Course.id == course_id)
+
+            res = await session.execute(query)
+
+            return res.scalars().first()
