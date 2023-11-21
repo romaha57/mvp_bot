@@ -70,10 +70,12 @@ class QuizHandler(Handler):
             await state.update_data(delete_message_id=msg.message_id)
             await state.update_data(chat_id=msg.chat.id)
 
-            await message.answer(
+            menu_msg = await message.answer(
                 MESSAGES['GO_TO_MENU'],
                 reply_markup=await self.base_kb.menu_btn()
             )
+            await state.update_data(menu_msg=menu_msg.message_id)
+
             # состояния на отлов ответа на этот вопрос
             await state.set_state(QuizState.answer)
 

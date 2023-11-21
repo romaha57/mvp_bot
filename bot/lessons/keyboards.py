@@ -43,11 +43,11 @@ class LessonKeyboard:
         builder = InlineKeyboardBuilder()
         lessons_from_db = await self.db.get_lessons(course_id)
         result = {}
+
         # сортируем список уроков по порядковому номеру и статусу
         sorted_lessons_by_status_id = sorted(lessons_from_db, key=lambda elem: (elem['order_num'], elem['status_id']))
         for lesson in sorted_lessons_by_status_id:
             result[lesson['title']] = (lesson['status_id'], lesson['user_id'])
-
         # формируем кнопки в зависимости от статуса прохождения урока
         # при успешном прохождении - '✅'(id статуса = 4)
         # при заваленном тесте - '❗' (id статуса = 3)
@@ -167,20 +167,7 @@ class LessonKeyboard:
         builder = InlineKeyboardBuilder()
         builder.button(
             text=BUTTONS['AGAIN'],
-            callback_data=f'{lesson.title}'
-        )
-        builder.adjust(1)
-
-        return builder.as_markup(
-            resize_keyboard=True,
-            one_time_keyboard=True
-        )
-
-    async def get_test_btn(self):
-        builder = InlineKeyboardBuilder()
-        builder.button(
-            text='testrun',
-            callback_data='start_test'
+            callback_data=f'lesson_{lesson.title}'
         )
         builder.adjust(1)
 
@@ -190,6 +177,8 @@ class LessonKeyboard:
         )
 
     async def additional_task_btn(self):
+        """Кнопки меню при выдаче доп задания к уроку (Пропустить, Выполнил)"""
+
         builder = InlineKeyboardBuilder()
         builder.button(
             text=BUTTONS['SKIP'],

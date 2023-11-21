@@ -24,9 +24,12 @@ class BaseService:
 
         async with async_session() as session:
             query = select(Users).filter_by(external_id=tg_id)
+            print('--' * 20)
+            print(query)
             user = await session.execute(query)
+            print(user)
 
-            return user.scalars().one()
+            return user.scalars().first()
 
     @classmethod
     async def get_account_by_tg_id(cls, tg_id: int) -> UserAccount:

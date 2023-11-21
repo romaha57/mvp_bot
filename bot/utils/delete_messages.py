@@ -7,19 +7,21 @@ from aiogram.types import CallbackQuery, Message
 async def delete_messages(data: dict, state: FSMContext, src: Union[CallbackQuery, Message]):
     """Проверяем наличие сообщение с кнопкой и удаляем его"""
 
+    # убираем кнопки управление уроком(Назад, Выполнить задание)
     if data.get('video_msg'):
-        await src.bot.delete_message(
+        await src.bot.edit_message_reply_markup(
             chat_id=data.get('chat_id'),
             message_id=data.get('video_msg')
         )
         await state.update_data(video_msg=None)
 
-    if data.get('video_description_msg'):
-        await src.bot.delete_message(
+    # убираем кнопки управление уроком(Назад, Выполнить задание)
+    if data.get('lesson_msg2'):
+        await src.bot.edit_message_reply_markup(
             chat_id=data.get('chat_id'),
-            message_id=data.get('video_description_msg')
+            message_id=data.get('lesson_msg2')
         )
-        await state.update_data(video_description_msg=None)
+        await state.update_data(lesson_msg2=None)
 
     if data.get('msg1'):
         await src.bot.delete_message(

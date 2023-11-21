@@ -78,12 +78,3 @@ class BaseKeyboard:
             input_field_placeholder=MESSAGES['KB_PLACEHOLDER'],
             one_time_keyboard=True
         )
-
-    async def empty_keybpard(self):
-        builder = InlineKeyboardBuilder()
-
-        return builder.as_markup(
-            resize_keyboard=True,
-            input_field_placeholder=MESSAGES['KB_PLACEHOLDER'],
-            one_time_keyboard=True
-        )

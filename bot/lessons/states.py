@@ -14,4 +14,3 @@ class LessonChooseState(StatesGroup):
     video_answer = State()
     file_answer = State()
     circle_answer = State()
-

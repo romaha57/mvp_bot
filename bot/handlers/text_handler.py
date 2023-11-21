@@ -32,10 +32,15 @@ class TextHandler(Handler):
         async def get_menu(message: Message, state: FSMContext):
             """Отлов кнопки 'Меню' """
 
-            data = await state.get_data()
-            user = await self.db.get_user_by_tg_id(message.from_user.id)
+            # обнуляем отлов состояний
+            await state.set_state(state=None)
 
+            data = await state.get_data()
+            print(message.from_user.id)
+            user = await self.db.get_user_by_tg_id(message.from_user.id)
+            print(user)
             promocode = await self.db.get_promocode(user.promocode_id)
+            print(promocode)
 
             await delete_messages(
                 src=message,

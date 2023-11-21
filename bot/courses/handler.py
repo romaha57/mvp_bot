@@ -84,7 +84,6 @@ class CourseHandler(Handler):
                     reply_markup=await self.base_kb.menu_btn()
                 )
 
-
                 await state.update_data(menu_msg=menu_msg.message_id)
 
                 # устанавливаем отлов состояния на название урока

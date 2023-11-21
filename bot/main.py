@@ -5,7 +5,6 @@ import sys
 from aiogram import Bot, Dispatcher
 from aiogram.enums.parse_mode import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram.types import ErrorEvent
 
 from bot.handlers.main_handler import MainHandler
 from bot.settings_bot import settings

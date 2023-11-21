@@ -246,7 +246,6 @@ class LessonService(BaseService):
 
             return res.scalars().first()
 
-
     @classmethod
     async def add_reward_to_user(cls, tg_id: int, reward: int, comment: str):
         """Добавляем награду пользователю"""
@@ -307,7 +306,7 @@ class LessonService(BaseService):
             await session.execute(query)
             await session.commit()
 
-            # получаем созданую историю прохождения доп задания
+            # получаем созданную историю прохождения доп задания
             query = select(LessonAdditionalTaskHistory).\
                 filter_by(
                     user_id=user.id, additional_task_id=additional_task_id, lesson_history_id=lesson_history_id
