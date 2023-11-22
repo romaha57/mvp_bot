@@ -2,6 +2,7 @@ import asyncio
 import logging
 import sys
 
+
 from aiogram import Bot, Dispatcher
 from aiogram.enums.parse_mode import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
@@ -9,6 +10,8 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from bot.handlers.main_handler import MainHandler
 from bot.settings_bot import settings
 
+# для удобного импорта модулей
+sys.path.append("/Users/macbook/PycharmProjects/mvp_bot")
 
 class MainBot:
 

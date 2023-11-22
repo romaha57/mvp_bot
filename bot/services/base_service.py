@@ -1,4 +1,6 @@
-from sqlalchemy import select
+from asyncio import IncompleteReadError
+
+from sqlalchemy import select, text
 
 from bot.db_connect import async_session
 from bot.settings.model import Settings
@@ -13,6 +15,10 @@ class BaseService:
         """Получение сообщение бота по его ключу"""
 
         async with async_session() as session:
+            query = text('set global max_allowed_packet=67108864')
+            await session.execute(query)
+
+        async with async_session() as session:
             query = select(Settings.value).filter_by(key=key)
             result = await session.execute(query)
 
@@ -23,13 +29,16 @@ class BaseService:
         """Получаем пользователя по его id"""
 
         async with async_session() as session:
-            query = select(Users).filter_by(external_id=tg_id)
-            print('--' * 20)
-            print(query)
-            user = await session.execute(query)
-            print(user)
+            try:
+                query = select(Users).filter_by(external_id=tg_id)
+                print('--' * 20)
+                print(query)
+                user = await session.execute(query)
+                print(user)
 
-            return user.scalars().first()
+                return user.scalars().first()
+            except IncompleteReadError:
+                pass
 
     @classmethod
     async def get_account_by_tg_id(cls, tg_id: int) -> UserAccount:
