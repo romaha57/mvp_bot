@@ -11,6 +11,15 @@ from bot.services.base_service import BaseService
 class CourseService(BaseService):
     model = None
 
+
+    @classmethod
+    async def get_all_courses(cls):
+        async with async_session() as session:
+            query = select(Course.title)
+            res = await session.execute(query)
+
+            return res.scalars().all()
+
     @classmethod
     async def get_courses_ids_by_promo(cls, course_id: int) -> list[int]:
         """Получаем все доступные id_курсов доступных по промокоду"""
@@ -50,6 +59,16 @@ class CourseService(BaseService):
 
         async with async_session() as session:
             query = select(Course).filter_by(title=course_name)
+            result = await session.execute(query)
+
+            return result.scalars().one_or_none()
+
+    @classmethod
+    async def get_course_id_by_name(cls, course_name: str) -> Union[Course, None]:
+        """Получаем курс по его названию"""
+
+        async with async_session() as session:
+            query = select(Course.id).filter_by(title=course_name)
             result = await session.execute(query)
 
             return result.scalars().one_or_none()

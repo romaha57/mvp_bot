@@ -1,9 +1,12 @@
 from sqlalchemy import insert, select, func
 
+from bot.courses.service import CourseService
 from bot.db_connect import async_session
 from bot.lessons.service import LessonService
+from bot.quiz.service import QuizService
 from bot.services.base_service import BaseService
-from bot.users.models import UserAccount, Users, BonusRewards, BonusRewardsTypes
+from bot.users.models import UserAccount, Users, BonusRewards, BonusRewardsTypes, PromocodeTypes, Promocodes
+from bot.utils.answers import generate_promocode
 
 
 class UserService(BaseService):
@@ -16,7 +19,19 @@ class UserService(BaseService):
             query = select(Users).filter_by(external_id=tg_id)
             result = await session.execute(query)
 
-            return result.mappings().all()
+            return result.scalars().first()
+
+    @classmethod
+    async def get_promocode_by_tg_id(cls, tg_id: int):
+        """Получаем промокод по tg_id"""
+
+        async with async_session() as session:
+            query = select(Promocodes).\
+                join(Users, Users.promocode_id == Promocodes.id).\
+                where(Users.external_id == tg_id)
+            result = await session.execute(query)
+
+            return result.scalars().first()
 
     @classmethod
     async def get_or_create_account(cls, first_name: str, last_name: str):
@@ -99,3 +114,54 @@ class UserService(BaseService):
                 sum_debited = 0
 
         return sum_accrual - sum_debited
+
+    @classmethod
+    async def get_promocode_roles(cls):
+        """Получение всех ролей для промокода"""
+
+        async with async_session() as session:
+            query = select(PromocodeTypes.name)
+            res = await session.execute(query)
+
+            return res.scalars().all()
+
+    @classmethod
+    async def get_promocode_role_id_by_name(cls, role: str):
+        """Получение роли для промокода"""
+
+        async with async_session() as session:
+            query = select(PromocodeTypes.id).where(PromocodeTypes.name == role)
+            res = await session.execute(query)
+
+            return res.scalars().one_or_none()
+
+    @classmethod
+    async def create_promocode(cls, course_name: str, quiz_name: str, role: str, code: str, account_id: int):
+        """Создаем промокод"""
+
+        course_id = await CourseService.get_course_id_by_name(course_name)
+
+        quiz_id = await QuizService.get_quiz_id_by_name(quiz_name)
+        role_id = await UserService.get_promocode_role_id_by_name(role)
+
+        async with async_session() as session:
+            query = insert(Promocodes).values(
+                bot_id=1,
+                course_id=course_id,
+                quiz_id=quiz_id,
+                type_id=role_id,
+                code=code,
+                account_id=account_id
+            )
+            await session.execute(query)
+            await session.commit()
+
+    @classmethod
+    async def get_created_promocodes_by_manager(cls, account_id: int):
+        """Получение всех промокодов, сгенерированных данным пользователем"""
+
+        async with async_session() as session:
+            query = select(Promocodes).where(Promocodes.account_id == account_id)
+
+            res = await session.execute(query)
+            return res.scalars().all()

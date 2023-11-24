@@ -15,10 +15,6 @@ class BaseService:
         """Получение сообщение бота по его ключу"""
 
         async with async_session() as session:
-            query = text('set global max_allowed_packet=67108864')
-            await session.execute(query)
-
-        async with async_session() as session:
             query = select(Settings.value).filter_by(key=key)
             result = await session.execute(query)
 
@@ -31,10 +27,7 @@ class BaseService:
         async with async_session() as session:
             try:
                 query = select(Users).filter_by(external_id=tg_id)
-                print('--' * 20)
-                print(query)
                 user = await session.execute(query)
-                print(user)
 
                 return user.scalars().first()
             except IncompleteReadError:
@@ -53,7 +46,6 @@ class BaseService:
 
             return account.scalars().first()
 
-
     @classmethod
     async def get_promocode(cls, promocode_id: int) -> Promocodes:
         """Получение промокода по его id"""
@@ -62,5 +54,5 @@ class BaseService:
             query = select(Promocodes).filter_by(id=promocode_id)
             result = await session.execute(query)
 
-            return result.scalars().one()
+            return result.scalars().first()
 

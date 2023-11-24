@@ -13,6 +13,7 @@ from bot.handlers.base_handler import Handler
 from bot.lessons.keyboards import LessonKeyboard
 from bot.lessons.service import LessonService
 from bot.lessons.states import LessonChooseState
+from bot.middleware import CheckPromocodeMiddleware
 from bot.settings.keyboards import BaseKeyboard
 from bot.utils.answers import format_answers_text, send_user_answers_to_group
 from bot.utils.delete_messages import delete_messages
@@ -174,10 +175,8 @@ class LessonHandler(Handler):
         async def start_test_after_lesson(callback: CallbackQuery, state: FSMContext):
             data = await state.get_data()
             lesson = data['lesson']
-            print(f'lesson - {lesson}')
             # получаем все тестовые вопросы по данному уроку и переворачиваем список, чтобы начиналось с №1
             self.test_questions = json.loads(lesson.questions)
-            print(f'test_questions - {self.test_questions}')
             self.test_questions.reverse()
 
             # сохранить общее количество вопросов

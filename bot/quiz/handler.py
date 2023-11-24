@@ -3,6 +3,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
 from bot.handlers.base_handler import Handler
+from bot.middleware import CheckPromocodeMiddleware
 from bot.quiz.keyboads import QuizKeyboard
 from bot.quiz.service import QuizService
 from bot.quiz.states import QuizState

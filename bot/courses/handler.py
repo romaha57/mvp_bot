@@ -8,6 +8,7 @@ from bot.courses.states import CourseChooseState
 from bot.handlers.base_handler import Handler
 from bot.lessons.keyboards import LessonKeyboard
 from bot.lessons.states import LessonChooseState
+from bot.middleware import CheckPromocodeMiddleware
 from bot.services.base_service import BaseService
 from bot.settings.keyboards import BaseKeyboard
 from bot.utils.buttons import BUTTONS

@@ -3,6 +3,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
 
 from bot.handlers.base_handler import Handler
+from bot.middleware import CheckPromocodeMiddleware
 from bot.services.base_service import BaseService
 from bot.settings.keyboards import BaseKeyboard
 from bot.utils.answers import get_file_id_by_content_type
@@ -36,11 +37,8 @@ class TextHandler(Handler):
             await state.set_state(state=None)
 
             data = await state.get_data()
-            print(message.from_user.id)
             user = await self.db.get_user_by_tg_id(message.from_user.id)
-            print(user)
-            promocode = await self.db.get_promocode(user.promocode_id)
-            print(promocode)
+            promocode = data['promocode']
 
             await delete_messages(
                 src=message,
@@ -49,10 +47,11 @@ class TextHandler(Handler):
             )
 
             await message.delete()
-            await message.answer(
+            menu_msg = await message.answer(
                 MESSAGES['MENU'],
                 reply_markup=await self.kb.start_btn(promocode)
             )
+            await state.update_data(menu_msg=menu_msg.message_id)
 
         @self.router.message(F.text)
         async def any_text(message: Message, state: FSMContext):

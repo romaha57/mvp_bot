@@ -26,7 +26,6 @@ MESSAGES = {
     'NOT_FOUND_LESSON': 'Таково урока не существует, выберите его из списка ниже',
     'START_TEST': 'Начат тест',
     'END_TEST': 'Вы завершили тест. правильных ответов: {}',
-    'START_CALCULATE_TEST_RESULTS': 'Производим подсчет ваших результатов',
     'TEST_QUESTION': test_question_text,
     'SUCCESS_TEST': 'Поздравляем! Вы прошли тест. Ваш результат {}',
     'FAIL_TEST': 'К сожалению, вы не прошли тест',
@@ -47,5 +46,11 @@ MESSAGES = {
     'REWARDS_WAS_ADDED': 'Отлично! Бонусы зачислены вам в кошелек',
     'CHECK_ADDITIONAL_TASK': 'Поздравляем! Мы проверили ваше задание и начислили вам бонусы)',
     'BALANCE': 'Ваш баланс: {} монет',
-    'USER_ANSWER_IN_GROUP': 'Пользователь: <b>{}</b> \nУрок: <b>{}</b>\nДЗ: <b>{}</b>'
+    'USER_ANSWER_IN_GROUP': 'Пользователь: <b>{}</b> \nУрок: <b>{}</b>\nДЗ: <b>{}</b>',
+    'MANAGER_PANEL': 'Панель менеджера',
+    'INCORRECT_PROMOCODE_COURSE': 'Неверено выбран курс',
+    'INCORRECT_PROMOCODE_ROLE': 'Неверено выбрана роль',
+    'INCORRECT_PROMOCODE_QUIZ': 'Неверено выбран квиз',
+    'CREATED_PROMOCODE': 'Промокод успешно создан: <b>{}</b>',
+    'WRONG_PROMOCODE': 'Неверный промокод! Обратитесь в поддержку: ссылка на поддержку'
 }

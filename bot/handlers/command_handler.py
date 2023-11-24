@@ -4,6 +4,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
 from bot.handlers.base_handler import Handler
+from bot.middleware import CheckPromocodeMiddleware
 from bot.settings.keyboards import BaseKeyboard
 from bot.settings.service import SettingsService
 from bot.users.service import UserService
@@ -25,16 +26,23 @@ class CommandHandler(Handler):
             start_msg = await self.db.get_msg_by_key('intro')
             await message.answer(start_msg)
 
+            await state.update_data(chat_id=message.chat.id)
+
             # получаем промокод из сообщения пользователя
             promocode_in_msg = message.text.split()[1:]
             if promocode_in_msg:
                 # проверяем наличие промокода в БД
                 promocode = await self.db.check_promocode(promocode_in_msg[0])
-                if promocode:
+                if promocode.actual:
                     msg = await self.db.get_msg_by_key('have_promocode')
 
                     # сохраняем промокод в состояние
                     await state.update_data(promocode=promocode)
+
+                    # увеличиваем счетчик активированных пользователей на этом промокоде
+                    await self.db.increment_count_promocode(
+                        promocode
+                    )
 
                     # сохраняем пользователя в БД
                     await self.user_db.get_or_create_user(

@@ -8,16 +8,19 @@ from aiogram.enums.parse_mode import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
 
 from bot.handlers.main_handler import MainHandler
+from bot.middleware import CheckPromocodeMiddleware
 from bot.settings_bot import settings
 
 # для удобного импорта модулей
 sys.path.append("/Users/macbook/PycharmProjects/mvp_bot")
+
 
 class MainBot:
 
     def __init__(self):
         self.bot = Bot(token=settings.bot_token, parse_mode=ParseMode.HTML)
         self.dp = Dispatcher(storage=MemoryStorage())
+        self.dp.message.middleware(CheckPromocodeMiddleware())
         self.handler = MainHandler(self.bot)
 
     async def start(self):

@@ -54,6 +54,7 @@ class UserAccount(Base):
 
     user = relationship('Users', back_populates='account')
     bonus_reward = relationship('BonusRewards', back_populates='account')
+    promocode = relationship('Promocodes', back_populates='account')
 
     def __str__(self):
         return f'{self.first_name} - {self.last_name} - {self.phone}'
@@ -69,8 +70,12 @@ class Promocodes(Base):
     bot_id = Column(Integer, ForeignKey('$_bots.id'))
     course_id = Column(Integer, ForeignKey('$_courses.id'))
     quiz_id = Column(Integer, ForeignKey('$_quizes.id'))
+    type_id = Column(Integer, ForeignKey('$_promocode_types.id'))
+    account_id = Column(Integer, ForeignKey('$_user_accounts.id'))
 
     code = Column(String, nullable=False)
+    actual = Column(Integer, default=1)
+    count_start = Column(Integer)
     updated_at = Column(DateTime, onupdate=func.now)
     created_at = Column(DateTime, server_default=func.now())
 
@@ -78,9 +83,28 @@ class Promocodes(Base):
     course = relationship('Course', back_populates='promocode')
     quiz = relationship('Quizes', back_populates='promocode')
     user = relationship('Users', back_populates='promocode')
+    account = relationship('UserAccount', back_populates='promocode')
+    type = relationship('PromocodeTypes', back_populates='promocode')
 
     def __str__(self):
         return f'{self.code}'
+
+
+class PromocodeTypes(Base):
+    __tablename__ = '$_promocode_types'
+    __tableargs__ = {
+        'comment': 'Роли для промокодов'
+    }
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String, nullable=False)
+    updated_at = Column(DateTime, onupdate=func.now)
+    created_at = Column(DateTime, server_default=func.now())
+
+    promocode = relationship('Promocodes', back_populates='type')
+
+    def __str__(self):
+        return f'{self.name}'
 
 
 class BonusRewards(Base):

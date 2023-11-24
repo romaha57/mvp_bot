@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import select, update
 
 from bot.db_connect import async_session
 from bot.services.base_service import BaseService
@@ -18,3 +18,18 @@ class SettingsService(BaseService):
             result = await session.execute(query)
 
             return result.scalars().one_or_none()
+
+    
+
+
+    @classmethod
+    async def increment_count_promocode(cls, promocode: Promocodes):
+        """Увеличиваем счет активированных пользователей"""
+
+        new_count = promocode.count_start + 1
+        async with async_session() as session:
+            query = update(Promocodes).where(Promocodes.id == promocode.id).\
+                values(count_start=new_count)
+
+            await session.execute(query)
+            await session.commit()

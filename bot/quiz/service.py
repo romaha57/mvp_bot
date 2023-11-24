@@ -11,6 +11,16 @@ class QuizService(BaseService):
     model = Quizes
 
     @classmethod
+    async def get_all_quizes(cls):
+        """Получение всех квизов из БД"""
+
+        async with async_session() as session:
+            query = select(Quizes.name)
+            result = await session.execute(query)
+
+            return result.scalars().all()
+
+    @classmethod
     async def get_quiz_questions(cls, quiz_id: int) -> list[QuizQuestions]:
         """"Поучение всех вопросов определённого тестирования"""
 
@@ -170,3 +180,13 @@ WHERE `$_quiz_answers`.`attempt_id` = 135"""
             res = await session.execute(q)
 
             return res.scalars().first()
+
+    @classmethod
+    async def get_quiz_id_by_name(cls, quiz_name: str):
+        """Получение id квиза по его название"""
+
+        async with async_session() as session:
+            query = select(Quizes.id).where(Quizes.name.contains(quiz_name))
+            res = await session.execute(query)
+
+            return res.scalars().one_or_none()

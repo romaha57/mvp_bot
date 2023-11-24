@@ -15,5 +15,8 @@ BUTTONS = {
     'AGAIN': emojize(':repeat_button: Пройти урок заново'),
     'SKIP': emojize(':yellow_square: Пропустить'),
     'DONE': emojize(':green_square: Сделал'),
-    'BALANCE': emojize(':money_bag: Баланс')
+    'BALANCE': emojize(':money_bag: Баланс'),
+    'PROMOCODES': emojize(':admission_tickets: Промокоды'),
+    'SEE_PROMOCODES': emojize(':open_book: Все промокоды'),
+    'GENERATE_PROMOCODE': emojize(':plus: Сгенерировать промокод'),
 }
