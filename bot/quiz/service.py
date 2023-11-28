@@ -3,11 +3,11 @@ from sqlalchemy import desc, insert, select, update
 from bot.db_connect import async_session
 from bot.quiz.models import (QuizAnswers, QuizAttempts, QuizAttemptStatuses,
                              Quizes, QuizQuestionOptions, QuizQuestions)
-from bot.services.base_service import BaseService
+from bot.services.base_service import BaseService, Singleton
 from bot.users.models import Promocodes
 
 
-class QuizService(BaseService):
+class QuizService(BaseService, metaclass=Singleton):
     model = Quizes
 
     @classmethod

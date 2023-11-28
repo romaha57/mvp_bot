@@ -1,5 +1,5 @@
-from aiogram.types import ReplyKeyboardMarkup
-from aiogram.utils.keyboard import ReplyKeyboardBuilder
+from aiogram.types import ReplyKeyboardMarkup, InlineKeyboardMarkup
+from aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardBuilder
 
 from bot.courses.models import Course
 from bot.courses.service import CourseService
@@ -13,18 +13,16 @@ class CourseKeyboard:
         self.db = CourseService()
         self.lesson_db = LessonService()
 
-    async def courses_btn(self, courses: list[str]) -> ReplyKeyboardMarkup:
+    async def courses_btn(self, courses: list[str]) -> InlineKeyboardMarkup:
         """Кнопки со списком доступных курсов"""
 
-        builder = ReplyKeyboardBuilder()
+        builder = InlineKeyboardBuilder()
         for course in courses:
             builder.button(
-                text=course
+                text=course,
+                callback_data=course
             )
 
-        builder.button(
-           text=BUTTONS['MENU']
-        )
         builder.adjust(1)
 
         return builder.as_markup(

@@ -37,7 +37,6 @@ class TextHandler(Handler):
             await state.set_state(state=None)
 
             data = await state.get_data()
-            user = await self.db.get_user_by_tg_id(message.from_user.id)
             promocode = data['promocode']
 
             await delete_messages(

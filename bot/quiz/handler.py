@@ -1,4 +1,5 @@
 from aiogram import Bot, F, Router
+from aiogram.filters import or_f
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
@@ -182,8 +183,8 @@ class QuizHandler(Handler):
                     reply_markup=await self.base_kb.menu_btn()
                 )
 
-        @self.router.message(F.text == BUTTONS['NEXT'])
-        async def get_next_result_quiz(message: Message, state: FSMContext):
+        @self.router.message(or_f(F.text.startswith(BUTTONS['NEXT']), F.text.startswith(BUTTONS['PREVIOUS'])))
+        async def get_other_result_quiz(message: Message, state: FSMContext):
             data = await state.get_data()
 
             # удаляем сообщения
@@ -192,7 +193,12 @@ class QuizHandler(Handler):
                 data=data,
                 state=state
             )
-            self.index -= 1
+            # в зависимости какую кнопку нажал юзер(Следующая или Предыдущая)
+            # получаем индекс для результата квиза
+            if message.text == BUTTONS['NEXT']:
+                self.index -= 1
+            else:
+                self.index += 1
             try:
                 attempt = self.attempts_list[self.index]
                 answers = await self.db.get_answers_by_attempt(attempt.id)
@@ -205,37 +211,6 @@ class QuizHandler(Handler):
                     await state.update_data(quiz_result_msg=quiz_result_msg.message_id)
                     await state.update_data(quiz_result_chat_id=message.chat.id)
 
-            except IndexError:
-                self.index = None
-                await message.answer(
-                    MESSAGES['MENU'],
-                    reply_markup=await self.base_kb.menu_btn()
-                )
-
-        @self.router.message(F.text == BUTTONS['PREVIOUS'])
-        async def get_previous_result_quiz(message: Message, state: FSMContext):
-            data = await state.get_data()
-
-            # удаляем сообщения
-            await delete_messages(
-                src=message,
-                data=data,
-                state=state
-            )
-
-            self.index += 1
-            try:
-                attempt = self.attempts_list[self.index]
-                answers = await self.db.get_answers_by_attempt(attempt.id)
-                if answers:
-                    result = await format_quiz_results(answers)
-                    quiz_result_msg = await message.answer(
-                        result,
-                        reply_markup=await self.kb.switch_arrows_result_quiz_btn(self.attempts_list, self.index)
-                    )
-
-                    await state.update_data(quiz_result_msg=quiz_result_msg.message_id)
-                    await state.update_data(quiz_result_chat_id=message.chat.id)
             except IndexError:
                 self.index = None
                 await message.answer(

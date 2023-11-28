@@ -1,15 +1,16 @@
 from sqlalchemy import insert, select, func
+from sqlalchemy.exc import OperationalError
 
 from bot.courses.service import CourseService
 from bot.db_connect import async_session
 from bot.lessons.service import LessonService
 from bot.quiz.service import QuizService
-from bot.services.base_service import BaseService
+from bot.services.base_service import BaseService, Singleton
 from bot.users.models import UserAccount, Users, BonusRewards, BonusRewardsTypes, PromocodeTypes, Promocodes
 from bot.utils.answers import generate_promocode
 
 
-class UserService(BaseService):
+class UserService(BaseService, metaclass=Singleton):
 
     @classmethod
     async def get_users_by_tg_id(cls, tg_id: int):
@@ -29,6 +30,7 @@ class UserService(BaseService):
             query = select(Promocodes).\
                 join(Users, Users.promocode_id == Promocodes.id).\
                 where(Users.external_id == tg_id)
+
             result = await session.execute(query)
 
             return result.scalars().first()

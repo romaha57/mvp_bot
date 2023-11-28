@@ -5,13 +5,12 @@ from sqlalchemy import desc, insert, select, func, distinct, or_
 from bot.courses.models import (Course, CourseBots, CourseHistory,
                                 CourseHistoryStatuses)
 from bot.db_connect import async_session
-from bot.services.base_service import BaseService
+from bot.services.base_service import BaseService, Singleton
 from bot.users.models import Promocodes
 
 
-class CourseService(BaseService):
+class CourseService(BaseService, metaclass=Singleton):
     model = None
-
 
     @classmethod
     async def get_all_courses(cls):

@@ -6,11 +6,11 @@ from bot.db_connect import async_session
 from bot.lessons.models import (LessonHistory, LessonHistoryStatuses, Lessons,
                                 TestLessonHistory, TestLessonHistoryStatuses, LessonWorkTypes, LessonAdditionalTasks,
                                 LessonAdditionalTaskHistory, LessonAdditionalTaskHistoryStatuses)
-from bot.services.base_service import BaseService
+from bot.services.base_service import BaseService, Singleton
 from bot.users.models import Users, UserAccount, BonusRewards, BonusRewardsTypes
 
 
-class LessonService(BaseService):
+class LessonService(BaseService, metaclass=Singleton):
     model = None
 
     @classmethod

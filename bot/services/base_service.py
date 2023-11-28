@@ -7,7 +7,20 @@ from bot.settings.model import Settings
 from bot.users.models import Promocodes, Users, UserAccount
 
 
-class BaseService:
+class Singleton(type):
+    """Синглтон для БД"""
+
+    def __init__(cls, name, bases, attrs, **kwargs):
+        super().__init__(name, bases, attrs)
+        cls._instance = None
+
+    def __call__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super().__call__(*args, **kwargs)
+        return cls._instance
+
+
+class BaseService(metaclass=Singleton):
     """Базовый класс для общих методов работы с БД"""
 
     @classmethod
