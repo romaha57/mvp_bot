@@ -5,10 +5,8 @@ services:
     build:
       context: .
     container_name: aiogram_bot
-    restart: unless-stopped
     env_file:
       - .env
-    command: sh -c "cd bot && python main.py"
     ports:
       - 8000:8000
 

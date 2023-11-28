@@ -13,6 +13,7 @@ from bot.settings_bot import settings
 
 # для удобного импорта модулей
 sys.path.append("/Users/macbook/PycharmProjects/mvp_bot")
+sys.path.append("bot/")
 
 
 class MainBot:
@@ -39,7 +40,7 @@ class MainBot:
         """Основная точка входа в бота и его запуск"""
 
         await self.start()
-        await self.dp.start_polling(self.bot)
+        await self.dp.start_polling(self.bot, polling_timeout=100000)
 
 
 if __name__ == '__main__':

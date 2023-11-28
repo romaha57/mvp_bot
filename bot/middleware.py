@@ -1,4 +1,3 @@
-import pprint
 from typing import Callable, Any, Awaitable
 
 from aiogram import BaseMiddleware
@@ -21,6 +20,9 @@ class CheckPromocodeMiddleware(BaseMiddleware):
     ) -> Any:
 
         tg_id = data['event_from_user'].id
+        # получаем промокод текущего пользователя
+        # и если он активен, то идем дальше в хендлер
+        # если нет, то выводим сообщение(сообщения срабатывают на все, кроме inline взаимодействия)
         promocode = await UserService.get_promocode_by_tg_id(tg_id)
         if promocode.actual:
             result = await handler(event, data)

@@ -2,9 +2,9 @@ FROM python:3.9-alpine3.18
 
 ENV PYTHONUNBUFFERED=1
 
-RUN mkdir /bot
+RUN mkdir /app
 
-WORKDIR /bot
+WORKDIR /app
 
 COPY requirements.txt .
 

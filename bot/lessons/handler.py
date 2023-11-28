@@ -448,35 +448,36 @@ class LessonHandler(Handler):
                     )
 
             else:
-                tg_id = src.from_user.id
-                # создаем запись прохождения доп задания в БД
-                additional_task_history = await self.db.create_additional_task_history(
-                    tg_id=tg_id,
-                    additional_task_id=additional_task.id,
-                    lesson_history_id=data['lesson_history_id']
-                )
-
-                # сохраняем в состоянии id истории
-                await state.update_data(additional_task_history_id=additional_task_history.id)
-
-                await src.answer(
-                    MESSAGES['ADDITIONAL_TASK'].format(
-                        additional_task.title
+                if additional_task:
+                    tg_id = src.from_user.id
+                    # создаем запись прохождения доп задания в БД
+                    additional_task_history = await self.db.create_additional_task_history(
+                        tg_id=tg_id,
+                        additional_task_id=additional_task.id,
+                        lesson_history_id=data['lesson_history_id']
                     )
-                )
-                additional_msg = await src.answer(
-                    additional_task.description,
-                    reply_markup=await self.kb.additional_task_btn()
-                )
 
-                menu_msg = await src.answer(
-                    MESSAGES['GO_TO_MENU'],
-                    reply_markup=await self.base_kb.menu_btn()
-                )
+                    # сохраняем в состоянии id истории
+                    await state.update_data(additional_task_history_id=additional_task_history.id)
 
-                await state.update_data(menu_msg=menu_msg.message_id)
+                    await src.answer(
+                        MESSAGES['ADDITIONAL_TASK'].format(
+                            additional_task.title
+                        )
+                    )
+                    additional_msg = await src.answer(
+                        additional_task.description,
+                        reply_markup=await self.kb.additional_task_btn()
+                    )
 
-                await state.update_data(additional_msg=additional_msg.message_id)
+                    menu_msg = await src.answer(
+                        MESSAGES['GO_TO_MENU'],
+                        reply_markup=await self.base_kb.menu_btn()
+                    )
+
+                    await state.update_data(menu_msg=menu_msg.message_id)
+
+                    await state.update_data(additional_msg=additional_msg.message_id)
 
                 # выводим следующий урок
                 if next_lesson:
