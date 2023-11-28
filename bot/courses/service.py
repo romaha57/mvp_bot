@@ -1,11 +1,12 @@
 from typing import Union
 
-from sqlalchemy import desc, insert, select
+from sqlalchemy import desc, insert, select, func, distinct, or_
 
 from bot.courses.models import (Course, CourseBots, CourseHistory,
                                 CourseHistoryStatuses)
 from bot.db_connect import async_session
 from bot.services.base_service import BaseService
+from bot.users.models import Promocodes
 
 
 class CourseService(BaseService):
@@ -21,34 +22,12 @@ class CourseService(BaseService):
             return res.scalars().all()
 
     @classmethod
-    async def get_courses_ids_by_promo(cls, course_id: int) -> list[int]:
-        """Получаем все доступные id_курсов доступных по промокоду"""
-
+    async def get_course_by_promo_and_bot(cls, promocode_course_id: int, bot_id: int):
+        """Получение курсов доступныз для самого бота и для промокода"""
         async with async_session() as session:
-            query = select(Course.id).filter_by(id=course_id)
-            result = await session.execute(query)
-
-            return result.scalars().all()
-
-    @classmethod
-    async def get_courses_ids_by_bot(cls, bot_id: int) -> list[int]:
-        """Получаем все доступные id_курсов этого бота"""
-
-        async with async_session() as session:
-            query = select(Course.id).\
+            query = select(Course.title).\
                 join(CourseBots, Course.id == CourseBots.course_id).\
-                where(CourseBots.bot_id == bot_id)
-
-            result = await session.execute(query)
-
-            return result.scalars().all()
-
-    @classmethod
-    async def get_courses(cls, courses_ids: set[int]) -> list[Course]:
-        """Получаем все доступные курсы этого бота"""
-
-        async with async_session() as session:
-            query = select(Course).filter(Course.id.in_(courses_ids))
+                where(or_(Course.id == promocode_course_id, CourseBots.id == bot_id))
             result = await session.execute(query)
 
             return result.scalars().all()

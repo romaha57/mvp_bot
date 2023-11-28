@@ -56,3 +56,16 @@ class BaseService:
 
             return result.scalars().first()
 
+    @classmethod
+    async def get_bot_id_and_promocode_course_id_by_user(cls, tg_id: int):
+        """Получение id бота и курс к данному промокоду для дальнейнего получения всех курсов"""
+
+        async with async_session() as session:
+            query = select(Users.bot_id, Promocodes.course_id).\
+                select_from(Users).\
+                join(Promocodes, Users.promocode_id == Promocodes.id). \
+                where(Users.external_id == tg_id)
+
+            result = await session.execute(query)
+
+            return result.mappings().first()

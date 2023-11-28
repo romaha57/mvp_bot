@@ -13,13 +13,13 @@ class CourseKeyboard:
         self.db = CourseService()
         self.lesson_db = LessonService()
 
-    async def courses_btn(self, courses: list[Course]) -> ReplyKeyboardMarkup:
+    async def courses_btn(self, courses: list[str]) -> ReplyKeyboardMarkup:
         """Кнопки со списком доступных курсов"""
 
         builder = ReplyKeyboardBuilder()
         for course in courses:
             builder.button(
-                text=course.title
+                text=course
             )
 
         builder.button(

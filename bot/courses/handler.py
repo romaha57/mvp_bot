@@ -21,7 +21,6 @@ class CourseHandler(Handler):
         super().__init__(bot)
         self.router = Router()
         self.db = CourseService()
-        self.base_db = BaseService()
         self.kb = CourseKeyboard()
         self.base_kb = BaseKeyboard()
         self.lesson_kb = LessonKeyboard()
@@ -32,15 +31,15 @@ class CourseHandler(Handler):
         async def get_course(message: Message, state: FSMContext):
             """Отлов кнопки 'Обучение' и вывод списка доступынх курсов"""
 
-            user = await self.db.get_user_by_tg_id(message.from_user.id)
-            promocode = await self.db.get_promocode(user.promocode_id)
+            # получаем id бота текущего юзера и id курса для текущего пользователя и его промокода
+            user_data = await self.db.get_bot_id_and_promocode_course_id_by_user(
+                tg_id=message.from_user.id
+            )
 
-            # получаем доступные курсы самого бота и те, которые доступны по промокоду
-            # и берем только уникальные id этих курсов
-            courses_1 = await self.db.get_courses_ids_by_bot(user.bot_id)
-            courses_2 = await self.db.get_courses_ids_by_promo(promocode.course_id)
-            all_courses_ids = set(courses_1 + courses_2)
-            all_courses = await self.db.get_courses(all_courses_ids)
+            all_courses = await self.db.get_course_by_promo_and_bot(
+                bot_id=user_data['bot_id'],
+                promocode_course_id=user_data['course_id']
+            )
 
             await message.answer(
                 MESSAGES['CHOOSE_COURSE'],
