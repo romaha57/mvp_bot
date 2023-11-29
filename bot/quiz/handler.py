@@ -42,13 +42,15 @@ class QuizHandler(Handler):
                 state=state
             )
 
-            # стартовое сообщение при тестировании
-            start_msg = await self.db.get_msg_by_key('start_quiz')
-            await message.answer(start_msg)
-
             # получение тестирования
-            quiz = await self.db.get_quiz(user.promocode_id)
+            quiz = await self.db.get_quiz_by_promocode(user.promocode_id)
             await message.answer(quiz.name)
+
+            # если есть описание у квиза, то и его выводим
+            if quiz.description:
+                quiz_description_msg = await message.answer(quiz.description)
+
+                await state.update_data(quiz_description_msg=quiz_description_msg.message_id)
 
             # запись в БД о начале тестирования данным пользователем
             await self.db.create_attempt(
@@ -117,18 +119,17 @@ class QuizHandler(Handler):
                 # получаем название функции обработки ответом пользователя на квиз
                 calculate_func_name = quiz.function_name_to_calculate
                 if calculate_func_name:
-
                     # обрабатываем ответы пользователя на квиз
-                    await handle_quiz_answers(
+                    result = await handle_quiz_answers(
                         answers=answers,
                         algorithm=calculate_func_name
                     )
 
                     # выводим подсчитанный ответ
-                    await callback.message.edit_text(
-                        MESSAGES['CALCULATE_RESULT'].format(
-                            calculate_func_name
-                        )
+                    await callback.bot.edit_message_text(
+                        chat_id=data['chat_id'],
+                        message_id=data['quiz_description_msg'],
+                        text=result
                     )
 
                 else:

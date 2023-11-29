@@ -10,6 +10,7 @@ from bot.courses.service import CourseService
 from bot.quiz.models import QuizAnswers
 from bot.quiz.service import QuizService
 from bot.users.models import Promocodes
+from bot.utils.algorithms import func_sociability
 from bot.utils.constants import LINK
 from bot.utils.messages import MESSAGES
 
@@ -65,7 +66,13 @@ async def format_answers_text(answers: list[str]):
 
 async def handle_quiz_answers(answers: list[QuizAnswers], algorithm: str):
     """Обрабатываем ответы квиза по заданному алгоритму"""
-    pass
+
+    result = ''
+
+    if algorithm == 'func_sociability':
+        result = await func_sociability(answers)
+
+    return result
 
 
 async def send_user_answers_to_group(bot: Bot, course_id: int, name: str, lesson_name: str, homework: str):

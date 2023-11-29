@@ -31,8 +31,8 @@ class QuizService(BaseService, metaclass=Singleton):
             return result.scalars().all()
 
     @classmethod
-    async def get_quiz(cls, promocode_id: int) -> Quizes:
-        """Получение тестирования по его id"""
+    async def get_quiz_by_promocode(cls, promocode_id: int) -> Quizes:
+        """Получение тестирования по его id промокода"""
 
         async with async_session() as session:
             query = select(Quizes).\
@@ -41,7 +41,17 @@ class QuizService(BaseService, metaclass=Singleton):
 
             result = await session.execute(query)
 
-            return result.scalars().one()
+            return result.scalars().first()
+
+    @classmethod
+    async def get_quiz(cls, quiz_id: int) -> Quizes:
+        """Получение тестирования по его id"""
+
+        async with async_session() as session:
+            query = select(Quizes).where(Quizes.id == quiz_id)
+            result = await session.execute(query)
+
+            return result.scalars().first()
 
     @classmethod
     async def get_quiz_answers(cls, question_id: int) -> list[QuizQuestionOptions]:
