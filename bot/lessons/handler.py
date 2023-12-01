@@ -461,11 +461,16 @@ class LessonHandler(Handler):
                         await src.message.answer(
                             MESSAGES['CERTIFICATE']
                         )
-                        from_html_to_pdf(
-                            html_text=course.certificate_body,
-                            image_url=course.certificate_img,
-                            user_chat_id=src.message.chat.id,
-                            username=src.message.from_user.username
+                        # формируем сертификат
+                        build_certificate(
+                            user_id=src.message.chat.id
+                        )
+                        # читаем файл и отправляем пользователю
+                        file_path = f'../static/{src.chat.id}_certificate.jpg'
+                        certificate = FSInputFile(file_path)
+                        await src.bot.send_photo(
+                            chat_id=data['chat_id'],
+                            photo=certificate
                         )
 
             else:
@@ -526,9 +531,11 @@ class LessonHandler(Handler):
                             MESSAGES['CERTIFICATE']
                         )
 
+                        # формируем сертификат
                         build_certificate(
                             user_id=src.chat.id
                         )
+                        # читаем файл и отправляем пользователю
                         file_path = f'../static/{src.chat.id}_certificate.jpg'
                         certificate = FSInputFile(file_path)
                         await src.bot.send_photo(
