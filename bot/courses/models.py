@@ -17,6 +17,8 @@ class Course(Base):
     title = Column(String)
     order_num = Column(Integer, nullable=False)
     group_id = Column(String)
+    certificate_body = Column(Text)
+    certificate_img = Column(Text)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, onupdate=func.now())
 

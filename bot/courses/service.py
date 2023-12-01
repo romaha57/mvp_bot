@@ -1,10 +1,11 @@
 from typing import Union
 
-from sqlalchemy import desc, insert, select, func, distinct, or_
+from sqlalchemy import desc, insert, select, func, distinct, or_, update
 
 from bot.courses.models import (Course, CourseBots, CourseHistory,
                                 CourseHistoryStatuses)
 from bot.db_connect import async_session
+from bot.lessons.models import LessonHistory
 from bot.services.base_service import BaseService, Singleton
 from bot.users.models import Promocodes
 
@@ -99,3 +100,41 @@ class CourseService(BaseService, metaclass=Singleton):
             res = await session.execute(query)
 
             return res.scalars().first()
+
+    @classmethod
+    async def get_course_history_id_by_lesson_history(cls, lesson_history_id: int):
+        """Получаем id прохожения курса по истории прохождения урока"""
+
+        async with async_session() as session:
+            query = select(CourseHistory.id).\
+                join(LessonHistory, LessonHistory.course_history_id == CourseHistory.id). \
+                where(LessonHistory.id == lesson_history_id)
+            res = await session.execute(query)
+
+            return res.scalars().first()    \
+
+
+    @classmethod
+    async def get_course_by_course_history_id(cls, course_history_id: int):
+        """Получаем курс по истории прохождения урока"""
+
+        async with async_session() as session:
+            query = select(Course).\
+                join(CourseHistory, CourseHistory.course_id == Course.id). \
+                where(CourseHistory.id == course_history_id)
+            res = await session.execute(query)
+
+            return res.scalars().first()
+
+    @classmethod
+    async def mark_course_done(cls, course_history_id: int):
+        """Отмечаем курс как пройденный"""
+
+        status = await cls.get_course_history_status('Пройден')
+        async with async_session() as session:
+            query = update(CourseHistory). \
+                where(CourseHistory.id == course_history_id). \
+                values(status_id=status.id)
+
+            await session.execute(query)
+            await session.commit()

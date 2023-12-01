@@ -167,3 +167,13 @@ class UserService(BaseService, metaclass=Singleton):
 
             res = await session.execute(query)
             return res.scalars().all()
+
+    @classmethod
+    async def get_users_by_id(cls, users_ids: list[int]):
+        """Получаем всех юзеров из БД по списку их id"""
+
+        async with async_session() as session:
+            query = select(Users).where(Users.id.in_(users_ids))
+            res = await session.execute(query)
+
+            return res.scalars().all()

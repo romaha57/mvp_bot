@@ -6,7 +6,7 @@ from aiogram import Bot, F, Router
 from aiogram.enums import ContentType
 from aiogram.filters import or_f, StateFilter
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, Message
+from aiogram.types import CallbackQuery, Message, FSInputFile, BufferedInputFile, InputMediaDocument
 
 from bot.courses.service import CourseService
 from bot.handlers.base_handler import Handler
@@ -16,6 +16,7 @@ from bot.lessons.states import LessonChooseState
 from bot.middleware import CheckPromocodeMiddleware
 from bot.settings.keyboards import BaseKeyboard
 from bot.utils.answers import format_answers_text, send_user_answers_to_group
+from bot.utils.certificate import from_html_to_pdf
 from bot.utils.delete_messages import delete_messages
 from bot.utils.messages import MESSAGES
 
@@ -442,10 +443,29 @@ class LessonHandler(Handler):
                     await state.set_state(LessonChooseState.lesson)
                     await state.update_data(msg1=msg1.message_id)
                 else:
+                    # отмечаем курс как 'Пройден'
+                    course_history_id = await CourseService.get_course_history_id_by_lesson_history(
+                        data['lesson_history_id'])
+                    await CourseService.mark_course_done(course_history_id)
+
                     await src.message.answer(
                         MESSAGES['ALL_LESSONS_DONE'],
                         reply_markup=await self.base_kb.menu_btn()
                     )
+
+                    course = await CourseService.get_course_by_course_history_id(course_history_id)
+                    if course.certificate_img and course.certificate_body:
+
+                        # собираем сертификат для текущего пользователя
+                        await src.message.answer(
+                            MESSAGES['CERTIFICATE']
+                        )
+                        from_html_to_pdf(
+                            html_text=course.certificate_body,
+                            image_url=course.certificate_img,
+                            user_chat_id=src.message.chat.id,
+                            username=src.message.from_user.username
+                        )
 
             else:
                 if additional_task:
@@ -488,10 +508,35 @@ class LessonHandler(Handler):
                     await state.set_state(LessonChooseState.lesson)
                     await state.update_data(msg1=msg1.message_id)
                 else:
+                    # отмечаем курс как 'Пройден'
+                    course_history_id = await CourseService.get_course_history_id_by_lesson_history(
+                        data['lesson_history_id'])
+                    await CourseService.mark_course_done(course_history_id)
+
                     await src.answer(
                         MESSAGES['ALL_LESSONS_DONE'],
                         reply_markup=await self.base_kb.menu_btn()
                     )
+
+                    course = await CourseService.get_course_by_course_history_id(course_history_id)
+                    if course.certificate_img and course.certificate_body:
+                        # собираем сертификат для текущего пользователя
+                        await src.answer(
+                            MESSAGES['CERTIFICATE']
+                        )
+
+                        from_html_to_pdf(
+                            html_text=course.certificate_body,
+                            image_url=course.certificate_img,
+                            user_chat_id=src.chat.id,
+                            username=src.from_user.username
+                        )
+                        file_path = f'/Users/macbook/PycharmProjects/mvp_bot/bot/851230989_certificate.pdf'
+                        certificate = FSInputFile(file_path)
+                        await src.bot.send_document(
+                            chat_id=data['chat_id'],
+                            document=certificate
+                        )
 
         async def start_text_task_after_lesson(message: Message, state: FSMContext):
             data = await state.get_data()
