@@ -17,8 +17,8 @@ app = FastAPI(
 async def func_sociability_api(
         quiz_attempt_id: int
 ):
-    print(quiz_attempt_id)
     answers = await QuizService.get_answers_by_attempt(quiz_attempt_id)
-    print(answers)
-    print(await func_sociability(answers))
-    return await func_sociability(answers)
+    print(f'answers {answers}')
+    res = await func_sociability(answers)
+    print(f'result {res}')
+    return res
