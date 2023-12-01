@@ -4,7 +4,7 @@ from bot.utils.quiz_answers import func_sociability_answer, func_sociability_tex
 
 async def func_sociability(answers: list[QuizAnswers]) -> str:
     """Обработка результатов квиза на 'Общительность' """
-
+    print(answers)
     # ответы пользователя(берем только смайлики)
     user_answer = []
     # счетчик совпадений ответов
