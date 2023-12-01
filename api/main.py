@@ -18,7 +18,8 @@ async def func_sociability_api(
         quiz_attempt_id: int
 ):
     answers = await QuizService.get_answers_by_attempt(quiz_attempt_id)
-    print(f'answers {answers}')
-    res = await func_sociability(answers)
-    print(f'result {res}')
-    return res
+    if answers:
+        res = await func_sociability(answers)
+        return res
+    else:
+        return 'По данной попытку не найдено ответов'
