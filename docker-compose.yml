@@ -5,7 +5,7 @@ services:
     build:
       context: .
     container_name: aiogram_bot
-    command: sh -c "python3 -m bot.main"
+    command: sh -c "python3 -m bot.main && apt install -y wkhtmltopdf"
     env_file:
       - .env
   api:
