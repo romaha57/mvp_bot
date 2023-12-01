@@ -1,32 +1,40 @@
-import PyPDF2
-import pdfkit
-
-from bot.users.models import Users
+from PIL import Image, ImageDraw, ImageFont
 
 
-def from_html_to_pdf(html_text: str, image_url: str, user_chat_id: int, username: str):
-    """Преобразовывает html в pdf (для сертификата)"""
-    html_text_with_param = html_text.format(
-        image_url,
-        username
+def build_certificate(user_id: int):
+    """Добавляем текст на сертификат"""
 
-    )
+    image = Image.open('../static/template_certificate.jpeg')
 
-    pdfkit.from_string(html_text_with_param, f'./{user_chat_id}_certificate.pdf')
-    format_pdf(user_chat_id)
+    font = ImageFont.truetype("../static/roboto/Roboto-Bold.ttf", 25)
+    drawer = ImageDraw.Draw(image)
+    drawer.text((50, 100), "Hello World!\nПривет мир!", font=font, fill='black')
+    image.save(f'../static/{user_id}_certificate.jpg')
 
 
-def format_pdf(user_chat_id):
-    pdf_path = f'./{user_chat_id}_certificate.pdf'
+# def from_html_to_pdf(html_text: str, image_url: str, user_chat_id: int, username: str):
+#     """Преобразовывает html в pdf (для сертификата)"""
+#     html_text_with_param = html_text.format(
+#         image_url,
+#         username
+#
+#     )
+#
+#     pdfkit.from_string(html_text_with_param, f'./{user_chat_id}_certificate.pdf')
+#     format_pdf(user_chat_id)
 
-    pdf = PyPDF2.PdfReader(pdf_path)
-    page0 = pdf.pages[0]
-    page0.mediabox.upper_right = (1280, 904)
-    page0.scale_by(0.7) # float representing scale factor - this happens in-place
-    writer = PyPDF2.PdfWriter()  # create a writer to save the updated results
-    writer.add_page(page0)
-    with open(pdf_path, 'wb+') as f:
-        writer.write(f)
+
+# def format_pdf(user_chat_id):
+#     pdf_path = f'./{user_chat_id}_certificate.pdf'
+#
+#     pdf = PyPDF2.PdfReader(pdf_path)
+#     page0 = pdf.pages[0]
+#     page0.scale_to(1280, 905)
+#
+#     writer = PyPDF2.PdfWriter()
+#     writer.add_page(page0)
+#     with open(pdf_path, 'wb+') as f:
+#         writer.write(f)
 
 # res = from_html_to_pdf(f"""<html lang="ru-RU" class="no-js" itemscope itemtype="https://schema.org/WebPage">
 # <head>

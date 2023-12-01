@@ -16,7 +16,7 @@ from bot.lessons.states import LessonChooseState
 from bot.middleware import CheckPromocodeMiddleware
 from bot.settings.keyboards import BaseKeyboard
 from bot.utils.answers import format_answers_text, send_user_answers_to_group
-from bot.utils.certificate import from_html_to_pdf
+from bot.utils.certificate import build_certificate
 from bot.utils.delete_messages import delete_messages
 from bot.utils.messages import MESSAGES
 
@@ -443,6 +443,7 @@ class LessonHandler(Handler):
                     await state.set_state(LessonChooseState.lesson)
                     await state.update_data(msg1=msg1.message_id)
                 else:
+
                     # отмечаем курс как 'Пройден'
                     course_history_id = await CourseService.get_course_history_id_by_lesson_history(
                         data['lesson_history_id'])
@@ -525,17 +526,14 @@ class LessonHandler(Handler):
                             MESSAGES['CERTIFICATE']
                         )
 
-                        from_html_to_pdf(
-                            html_text=course.certificate_body,
-                            image_url=course.certificate_img,
-                            user_chat_id=src.chat.id,
-                            username=src.from_user.username
+                        build_certificate(
+                            user_id=src.chat.id
                         )
-                        file_path = f'/Users/macbook/PycharmProjects/mvp_bot/bot/851230989_certificate.pdf'
+                        file_path = f'../static/{src.chat.id}_certificate.jpg'
                         certificate = FSInputFile(file_path)
-                        await src.bot.send_document(
+                        await src.bot.send_photo(
                             chat_id=data['chat_id'],
-                            document=certificate
+                            photo=certificate
                         )
 
         async def start_text_task_after_lesson(message: Message, state: FSMContext):
