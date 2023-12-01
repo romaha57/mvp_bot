@@ -13,7 +13,7 @@ app = FastAPI(
 )
 
 
-@app.get('/func_sociability', response_model=StrResponse)
+@app.get('/func_sociability')
 async def func_sociability_api(
         quiz_attempt_id: int
 ):
