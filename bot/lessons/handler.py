@@ -442,6 +442,13 @@ class LessonHandler(Handler):
                     )
                     await state.set_state(LessonChooseState.lesson)
                     await state.update_data(msg1=msg1.message_id)
+
+                    menu_msg = await src.message.answer(
+                        MESSAGES['GO_TO_MENU'],
+                        reply_markup=await self.base_kb.menu_btn()
+                    )
+
+                    await state.update_data(menu_msg=menu_msg.message_id)
                 else:
 
                     # отмечаем курс как 'Пройден'
@@ -476,6 +483,13 @@ class LessonHandler(Handler):
                             chat_id=data['chat_id'],
                             document=certificate
                         )
+
+                        menu_msg = await src.message.answer(
+                            MESSAGES['GO_TO_MENU'],
+                            reply_markup=await self.base_kb.menu_btn()
+                        )
+
+                        await state.update_data(menu_msg=menu_msg.message_id)
 
             else:
                 if additional_task:
@@ -517,6 +531,13 @@ class LessonHandler(Handler):
                     )
                     await state.set_state(LessonChooseState.lesson)
                     await state.update_data(msg1=msg1.message_id)
+
+                    menu_msg = await src.answer(
+                        MESSAGES['GO_TO_MENU'],
+                        reply_markup=await self.base_kb.menu_btn()
+                    )
+
+                    await state.update_data(menu_msg=menu_msg.message_id)
                 else:
                     # отмечаем курс как 'Пройден'
                     course_history_id = await CourseService.get_course_history_id_by_lesson_history(
@@ -549,6 +570,13 @@ class LessonHandler(Handler):
                             document=certificate
                         )
 
+                        menu_msg = await src.answer(
+                            MESSAGES['GO_TO_MENU'],
+                            reply_markup=await self.base_kb.menu_btn()
+                        )
+
+                        await state.update_data(menu_msg=menu_msg.message_id)
+
         async def start_text_task_after_lesson(message: Message, state: FSMContext):
             data = await state.get_data()
 
@@ -562,6 +590,8 @@ class LessonHandler(Handler):
         async def get_text_answer(message: Message, state: FSMContext):
             data = await state.get_data()
             lesson = data['lesson']
+
+            await state.set_state(state=None)
 
             if message.content_type == ContentType.TEXT:
                 await self.db.save_user_answer(
@@ -595,6 +625,8 @@ class LessonHandler(Handler):
 
             data = await state.get_data()
             lesson = data['lesson']
+
+            await state.set_state(state=None)
 
             if message.content_type == ContentType.PHOTO:
                 answer = message.photo[-1].file_id
@@ -631,6 +663,8 @@ class LessonHandler(Handler):
             data = await state.get_data()
             lesson = data['lesson']
 
+            await state.set_state(state=None)
+
             if message.content_type == ContentType.VIDEO:
                 answer = message.video.file_id
                 await self.db.save_user_answer(
@@ -666,6 +700,8 @@ class LessonHandler(Handler):
             data = await state.get_data()
             lesson = data['lesson']
 
+            await state.set_state(state=None)
+
             if message.content_type == ContentType.DOCUMENT:
                 answer = message.document.file_id
                 await self.db.save_user_answer(
@@ -700,6 +736,8 @@ class LessonHandler(Handler):
 
             data = await state.get_data()
             lesson = data['lesson']
+
+            await state.set_state(state=None)
 
             if message.content_type == ContentType.VIDEO_NOTE:
                 answer = message.video_note.file_id
@@ -790,8 +828,22 @@ class LessonHandler(Handler):
                 await state.set_state(LessonChooseState.lesson)
                 await state.update_data(msg1=msg1.message_id)
 
+                menu_msg = await callback.message.answer(
+                    MESSAGES['GO_TO_MENU'],
+                    reply_markup=await self.base_kb.menu_btn()
+                )
+
+                await state.update_data(menu_msg=menu_msg.message_id)
+
             else:
                 await callback.message.answer(
                     MESSAGES['ALL_LESSONS_DONE'],
                     reply_markup=await self.base_kb.menu_btn()
                 )
+
+                menu_msg = await callback.message.answer(
+                    MESSAGES['GO_TO_MENU'],
+                    reply_markup=await self.base_kb.menu_btn()
+                )
+
+                await state.update_data(menu_msg=menu_msg.message_id)

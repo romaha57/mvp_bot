@@ -1,8 +1,10 @@
 from aiogram import Bot, F, Router
+from aiogram.filters import or_f, and_f
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
 
 from bot.handlers.base_handler import Handler
+from bot.lessons.states import LessonChooseState
 from bot.middleware import CheckPromocodeMiddleware
 from bot.services.base_service import BaseService
 from bot.settings.keyboards import BaseKeyboard
@@ -29,7 +31,7 @@ class TextHandler(Handler):
             file_id = await get_file_id_by_content_type(message)
             await message.answer(f'{message.content_type} - {file_id}')
 
-        @self.router.message(F.text == BUTTONS['MENU'])
+        @self.router.message(or_f(F.text.startswith(BUTTONS['MENU']), and_f(F.text.startswith(BUTTONS['MENU']), LessonChooseState.lesson)))
         async def get_menu(message: Message, state: FSMContext):
             """Отлов кнопки 'Меню' """
 
