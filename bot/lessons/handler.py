@@ -461,16 +461,20 @@ class LessonHandler(Handler):
                         await src.message.answer(
                             MESSAGES['CERTIFICATE']
                         )
+
                         # формируем сертификат
                         build_certificate(
-                            user_id=src.message.chat.id
+                            user_id=src.chat.id,
+                            fullname=src.from_user.full_name,
+                            course_name=course.title
                         )
+
                         # читаем файл и отправляем пользователю
-                        file_path = f'../static/{src.chat.id}_certificate.jpg'
+                        file_path = f'/app/static/{src.chat.id}_certificate.pdf'
                         certificate = FSInputFile(file_path)
-                        await src.bot.send_photo(
+                        await src.bot.send_document(
                             chat_id=data['chat_id'],
-                            photo=certificate
+                            document=certificate
                         )
 
             else:
@@ -533,14 +537,16 @@ class LessonHandler(Handler):
 
                         # формируем сертификат
                         build_certificate(
-                            user_id=src.chat.id
+                            user_id=src.chat.id,
+                            fullname=src.from_user.full_name,
+                            course_name=course.title
                         )
                         # читаем файл и отправляем пользователю
-                        file_path = f'../static/{src.chat.id}_certificate.jpg'
+                        file_path = f'/app/static/{src.chat.id}_certificate.pdf'
                         certificate = FSInputFile(file_path)
-                        await src.bot.send_photo(
+                        await src.bot.send_document(
                             chat_id=data['chat_id'],
-                            photo=certificate
+                            document=certificate
                         )
 
         async def start_text_task_after_lesson(message: Message, state: FSMContext):
