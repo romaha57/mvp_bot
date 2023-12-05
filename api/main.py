@@ -7,7 +7,6 @@ from bot.settings_bot import settings
 from bot.users.service import UserService
 from bot.utils.algorithms import func_sociability
 
-
 app = FastAPI(
     title='API для Реалогика-Бот',
     version='1.0.0'

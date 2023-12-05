@@ -1,5 +1,6 @@
 from bot.quiz.models import QuizAnswers
-from bot.utils.quiz_answers import func_sociability_answer, func_sociability_text_answer
+from bot.utils.quiz_answers import (func_sociability_answer,
+                                    func_sociability_text_answer)
 
 
 async def func_sociability(answers: list[QuizAnswers]) -> str:

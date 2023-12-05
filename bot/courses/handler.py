@@ -1,6 +1,6 @@
 from aiogram import Bot, F, Router
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import CallbackQuery, Message
 
 from bot.courses.keyboards import CourseKeyboard
 from bot.courses.service import CourseService
@@ -8,8 +8,6 @@ from bot.courses.states import CourseChooseState
 from bot.handlers.base_handler import Handler
 from bot.lessons.keyboards import LessonKeyboard
 from bot.lessons.states import LessonChooseState
-from bot.middleware import CheckPromocodeMiddleware
-from bot.services.base_service import BaseService
 from bot.settings.keyboards import BaseKeyboard
 from bot.utils.buttons import BUTTONS
 from bot.utils.delete_messages import delete_messages

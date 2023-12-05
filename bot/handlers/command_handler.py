@@ -4,7 +4,6 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
 from bot.handlers.base_handler import Handler
-from bot.middleware import CheckPromocodeMiddleware
 from bot.settings.keyboards import BaseKeyboard
 from bot.settings.service import SettingsService
 from bot.users.service import UserService

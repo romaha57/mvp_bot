@@ -1,11 +1,10 @@
 from aiogram import Bot, F, Router
-from aiogram.filters import or_f, and_f
+from aiogram.filters import and_f, or_f
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message
 
 from bot.handlers.base_handler import Handler
 from bot.lessons.states import LessonChooseState
-from bot.middleware import CheckPromocodeMiddleware
 from bot.services.base_service import BaseService
 from bot.settings.keyboards import BaseKeyboard
 from bot.utils.answers import get_file_id_by_content_type
@@ -63,4 +62,3 @@ class TextHandler(Handler):
                 MESSAGES['ANY_TEXT'],
                 reply_markup=await self.kb.start_btn(data['promocode'])
             )
-

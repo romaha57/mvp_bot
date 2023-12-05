@@ -1,13 +1,12 @@
-from sqlalchemy import insert, select, func
-from sqlalchemy.exc import OperationalError
+from sqlalchemy import func, insert, select
 
 from bot.courses.service import CourseService
 from bot.db_connect import async_session
 from bot.lessons.service import LessonService
 from bot.quiz.service import QuizService
 from bot.services.base_service import BaseService, Singleton
-from bot.users.models import UserAccount, Users, BonusRewards, BonusRewardsTypes, PromocodeTypes, Promocodes
-from bot.utils.answers import generate_promocode
+from bot.users.models import (BonusRewards, Promocodes, PromocodeTypes,
+                              UserAccount, Users)
 
 
 class UserService(BaseService, metaclass=Singleton):
@@ -63,8 +62,6 @@ class UserService(BaseService, metaclass=Singleton):
                 account = res.scalars().first()
 
             return account
-
-
 
     @classmethod
     async def get_or_create_user(cls, username: str, tg_id: int, bot_id: int = None,

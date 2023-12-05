@@ -1,19 +1,16 @@
-import asyncio
 import json
 from typing import Union
 
 from aiogram import Bot, F, Router
 from aiogram.enums import ContentType
-from aiogram.filters import or_f, StateFilter
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, Message, FSInputFile, BufferedInputFile, InputMediaDocument
+from aiogram.types import CallbackQuery, FSInputFile, Message
 
 from bot.courses.service import CourseService
 from bot.handlers.base_handler import Handler
 from bot.lessons.keyboards import LessonKeyboard
 from bot.lessons.service import LessonService
 from bot.lessons.states import LessonChooseState
-from bot.middleware import CheckPromocodeMiddleware
 from bot.settings.keyboards import BaseKeyboard
 from bot.utils.answers import format_answers_text, send_user_answers_to_group
 from bot.utils.certificate import build_certificate
@@ -812,7 +809,7 @@ class LessonHandler(Handler):
                     MESSAGES['ADD_REWARD_AFTER_TIME']
                 )
 
-            # получаем следующий урок 
+            # получаем следующий урок
             lesson = data['lesson']
 
             await self.db.mark_lesson_history_on_status_done(data['lesson_history_id'])

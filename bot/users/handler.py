@@ -1,18 +1,16 @@
-from aiogram import Bot, Router, F
+from aiogram import Bot, F, Router
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import CallbackQuery, Message
 
-from bot.courses.service import CourseService
 from bot.handlers.base_handler import Handler
-from bot.middleware import CheckPromocodeMiddleware
-from bot.quiz.service import QuizService
 from bot.settings.keyboards import BaseKeyboard
 from bot.users.keyboards import UserKeyboard
 from bot.users.service import UserService
 from bot.users.states import GeneratePromocodeState
-from bot.utils.answers import generate_promocode, format_created_promocodes_text
+from bot.utils.answers import (format_created_promocodes_text,
+                               generate_promocode)
 from bot.utils.buttons import BUTTONS
-from bot.utils.constants import EMPTY, LINK
+from bot.utils.constants import LINK
 from bot.utils.delete_messages import delete_messages
 from bot.utils.messages import MESSAGES
 

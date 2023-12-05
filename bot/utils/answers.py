@@ -1,14 +1,12 @@
-import string
 import random
-from typing import Union
+import string
 
 from aiogram import Bot
 from aiogram.exceptions import TelegramForbiddenError
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message
 
 from bot.courses.service import CourseService
 from bot.quiz.models import QuizAnswers
-from bot.quiz.service import QuizService
 from bot.users.models import Promocodes
 from bot.utils.algorithms import func_sociability
 from bot.utils.constants import LINK
@@ -111,6 +109,3 @@ async def format_created_promocodes_text(promocodes: list[Promocodes]) -> str:
                   f'Количество активаций: <b>{promocode.count_start}</b>\n\n'
 
     return answer
-
-
-

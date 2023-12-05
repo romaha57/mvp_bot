@@ -36,7 +36,7 @@ class QuizKeyboard:
 
         # пытаемся получить предыдущую запись
         try:
-            previous = attempts_list[index + 1]
+            attempts_list[index + 1]
         except IndexError:
             pass
         else:
@@ -48,7 +48,7 @@ class QuizKeyboard:
         if index != 0:
             # пытаемся получить следующую запись
             try:
-                next = attempts_list[index - 1]
+                attempts_list[index - 1]
             except IndexError:
                 pass
             else:

@@ -1,10 +1,10 @@
 from asyncio import IncompleteReadError
 
-from sqlalchemy import select, text
+from sqlalchemy import select
 
 from bot.db_connect import async_session
 from bot.settings.model import Settings
-from bot.users.models import Promocodes, Users, UserAccount
+from bot.users.models import Promocodes, UserAccount, Users
 
 
 class Singleton(type):

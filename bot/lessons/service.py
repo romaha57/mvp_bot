@@ -3,11 +3,14 @@ from typing import Union
 from sqlalchemy import desc, insert, select, update
 
 from bot.db_connect import async_session
-from bot.lessons.models import (LessonHistory, LessonHistoryStatuses, Lessons,
-                                TestLessonHistory, TestLessonHistoryStatuses, LessonWorkTypes, LessonAdditionalTasks,
-                                LessonAdditionalTaskHistory, LessonAdditionalTaskHistoryStatuses)
+from bot.lessons.models import (LessonAdditionalTaskHistory,
+                                LessonAdditionalTaskHistoryStatuses,
+                                LessonAdditionalTasks, LessonHistory,
+                                LessonHistoryStatuses, Lessons,
+                                LessonWorkTypes, TestLessonHistory,
+                                TestLessonHistoryStatuses)
 from bot.services.base_service import BaseService, Singleton
-from bot.users.models import Users, UserAccount, BonusRewards, BonusRewardsTypes
+from bot.users.models import BonusRewards, BonusRewardsTypes, Users
 
 
 class LessonService(BaseService, metaclass=Singleton):

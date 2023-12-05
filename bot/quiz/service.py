@@ -156,13 +156,6 @@ class QuizService(BaseService, metaclass=Singleton):
     async def get_answers_by_attempt(cls, attempt_id: int) -> list[QuizAnswers]:
         """Получение всех ответов для данной попытки прохождения квиза"""
 
-        """
-        SELECT `$_quiz_questions`.`title`,`$_quiz_question_options`.`title`
-FROM `$_quiz_question_options` 
-JOIN `$_quiz_answers` ON `$_quiz_question_options`.`id` = `$_quiz_answers`.`option_id`
-JOIN `$_quiz_questions` ON `$_quiz_questions`.`id` = `$_quiz_question_options`.`question_id`
-WHERE `$_quiz_answers`.`attempt_id` = 135"""
-
         async with async_session() as session:
             query = select(
                 QuizQuestions.title.label('question'),

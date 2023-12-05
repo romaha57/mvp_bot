@@ -1,10 +1,8 @@
-from aiogram.types import ReplyKeyboardMarkup, InlineKeyboardMarkup
-from aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardBuilder
+from aiogram.types import InlineKeyboardMarkup
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from bot.courses.models import Course
 from bot.courses.service import CourseService
 from bot.lessons.service import LessonService
-from bot.utils.buttons import BUTTONS
 from bot.utils.messages import MESSAGES
 
 

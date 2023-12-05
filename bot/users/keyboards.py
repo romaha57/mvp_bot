@@ -1,12 +1,12 @@
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup
-from aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardBuilder
+from aiogram.types import (InlineKeyboardMarkup, KeyboardButton,
+                           ReplyKeyboardMarkup)
+from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
 
 from bot.courses.service import CourseService
 from bot.quiz.service import QuizService
 from bot.users.service import UserService
 from bot.utils.buttons import BUTTONS
 from bot.utils.constants import EMPTY
-from bot.utils.messages import MESSAGES
 
 
 class UserKeyboard:
@@ -94,5 +94,3 @@ class UserKeyboard:
             resize_keyboard=True,
             one_time_keyboard=True
         )
-
-

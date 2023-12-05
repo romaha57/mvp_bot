@@ -200,4 +200,3 @@ class LessonAdditionalTaskHistory(Base):
 
     def __str__(self):
         return f'{self.user_id} - {self.lesson_history_id}'
-

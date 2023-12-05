@@ -1,13 +1,12 @@
 from typing import Union
 
-from sqlalchemy import desc, insert, select, func, distinct, or_, update
+from sqlalchemy import desc, insert, or_, select, update
 
 from bot.courses.models import (Course, CourseBots, CourseHistory,
                                 CourseHistoryStatuses)
 from bot.db_connect import async_session
 from bot.lessons.models import LessonHistory
 from bot.services.base_service import BaseService, Singleton
-from bot.users.models import Promocodes
 
 
 class CourseService(BaseService, metaclass=Singleton):

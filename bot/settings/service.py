@@ -19,9 +19,6 @@ class SettingsService(BaseService):
 
             return result.scalars().one_or_none()
 
-    
-
-
     @classmethod
     async def increment_count_promocode(cls, promocode: Promocodes):
         """Увеличиваем счет активированных пользователей"""

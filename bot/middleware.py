@@ -1,7 +1,8 @@
-from typing import Callable, Any, Awaitable
+from typing import Any, Awaitable, Callable
 
 from aiogram import BaseMiddleware
 from aiogram.types import TelegramObject
+
 from bot.users.service import UserService
 from bot.utils.delete_messages import delete_messages
 from bot.utils.messages import MESSAGES
