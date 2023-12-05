@@ -30,7 +30,8 @@ class TextHandler(Handler):
             file_id = await get_file_id_by_content_type(message)
             await message.answer(f'{message.content_type} - {file_id}')
 
-        @self.router.message(or_f(F.text.startswith(BUTTONS['MENU']), and_f(F.text.startswith(BUTTONS['MENU']), LessonChooseState.lesson)))
+        @self.router.message(or_f(F.text.startswith(BUTTONS['MENU']),
+                                  and_f(F.text.startswith(BUTTONS['MENU']), LessonChooseState.lesson)))
         async def get_menu(message: Message, state: FSMContext):
             """Отлов кнопки 'Меню' """
 

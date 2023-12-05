@@ -9,7 +9,7 @@ from bot.utils.messages import MESSAGES
 
 
 async def send_message_after_30_minutes():
-    """Отправляем сообщение с прохождение доп задания через 30 минут"""
+    """Отправляем сообщение с прохождения доп задания через 30 минут"""
 
     # список tg_id пользователей у кого статус в ожидании
     users_data = await LessonService.get_users_in_awaited_status()
@@ -32,4 +32,3 @@ async def send_message_after_30_minutes():
                 comment=f'Начислено за задание: {record["title"]}'
             )
 
-asyncio.run(send_message_after_30_minutes())
