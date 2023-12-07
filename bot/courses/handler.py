@@ -78,6 +78,13 @@ class CourseHandler(Handler):
                     course_id=course.id,
                     tg_id=callback.message.chat.id
                 )
+
+                # выводим приветственное видео курса, если оно есть
+                if course.intro_video:
+                    await callback.message.answer_video(
+                        video=course.intro_video
+                    )
+
                 await callback.message.answer(course.title)
                 msg = await callback.message.answer(
                     course.intro,

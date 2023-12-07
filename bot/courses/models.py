@@ -19,6 +19,10 @@ class Course(Base):
     group_id = Column(String)
     certificate_body = Column(Text)
     certificate_img = Column(Text)
+    intro_video = Column(Text)
+    outro_video = Column(Text)
+    intro_video_type_id = Column(Integer, ForeignKey('$_video_types.id'))
+    outro_video_type_id = Column(Integer, ForeignKey('$_video_types.id'))
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, onupdate=func.now())
 
@@ -86,6 +90,23 @@ class CourseHistoryStatuses(Base):
     updated_at = Column(DateTime, onupdate=func.now())
 
     course_history = relationship('CourseHistory', back_populates='status')
+
+    def __str__(self):
+        return f'{self.name}'
+
+
+class VideoTypes(Base):
+    __tablename__ = '$_video_types'
+    __tableargs__ = {
+        'comment': 'Тип видео'
+    }
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String, nullable=False)
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, onupdate=func.now())
+
+    lesson = relationship('Lessons', back_populates='video_type')
 
     def __str__(self):
         return f'{self.name}'

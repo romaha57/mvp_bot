@@ -21,6 +21,7 @@ class Lessons(Base):
     course_id = Column(Integer, ForeignKey('$_courses.id'))
     work_type_id = Column(Integer, ForeignKey('$_lesson_work_types.id'))
     additional_task_id = Column(Integer, ForeignKey('$_lesson_additional_tasks.id'))
+    video_type_id = Column(Integer, ForeignKey('$_video_types.id'))
     title = Column(String, nullable=False)
     video = Column(String)
     updated_at = Column(DateTime, onupdate=func.now)
@@ -31,6 +32,7 @@ class Lessons(Base):
     lesson_history = relationship('LessonHistory', back_populates='lesson')
     test_lesson_history = relationship('TestLessonHistory', back_populates='lesson')
     additional_task = relationship('LessonAdditionalTasks', back_populates='lesson')
+    video_type = relationship('VideoTypes', back_populates='lesson')
 
     def __str__(self):
         return f'{self.title}'

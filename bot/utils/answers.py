@@ -28,6 +28,8 @@ async def get_file_id_by_content_type(message: Message):
         return message.sticker.file_id
     elif message.voice:
         return message.voice.file_id
+    elif message.video_note:
+        return message.video_note.file_id
 
 
 async def format_quiz_results(answers: list[QuizAnswers.details]) -> str:

@@ -459,6 +459,13 @@ class LessonHandler(Handler):
                     )
 
                     course = await CourseService.get_course_by_course_history_id(course_history_id)
+
+                    # выводим завершающее видео курса
+                    if course.outro_video:
+                        await src.message.answer_video(
+                            video=course.outro_video
+                        )
+
                     if course.certificate_img and course.certificate_body:
 
                         # собираем сертификат для текущего пользователя
@@ -547,6 +554,13 @@ class LessonHandler(Handler):
                     )
 
                     course = await CourseService.get_course_by_course_history_id(course_history_id)
+
+                    # выводим завершающее видео курса
+                    if course.outro_video:
+                        await src.answer_video(
+                            video=course.outro_video
+                        )
+
                     if course.certificate_img and course.certificate_body:
                         # собираем сертификат для текущего пользователя
                         await src.answer(
