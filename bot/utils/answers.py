@@ -1,3 +1,4 @@
+import json
 import random
 import string
 
@@ -6,6 +7,7 @@ from aiogram.exceptions import TelegramForbiddenError
 from aiogram.types import Message
 
 from bot.courses.service import CourseService
+from bot.lessons.models import Lessons
 from bot.quiz.models import QuizAnswers
 from bot.users.models import Promocodes
 from bot.utils.algorithms import func_sociability
@@ -111,3 +113,18 @@ async def format_created_promocodes_text(promocodes: list[Promocodes]) -> str:
                   f'Количество активаций: <b>{promocode.count_start}</b>\n\n'
 
     return answer
+
+
+async def get_images_by_place(place: str, lesson: Lessons) -> list[str]:
+    """Получение всех картинок для данного места (place)"""
+
+    result_images = []
+    lesson_images = json.loads(lesson.images)
+
+    for images_info in lesson_images:
+        if images_info['place'] == place:
+            result_images.append(images_info['img'])
+
+    return result_images
+
+

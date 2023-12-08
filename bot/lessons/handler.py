@@ -4,6 +4,7 @@ from typing import Union
 from aiogram import Bot, F, Router
 from aiogram.enums import ContentType
 from aiogram.fsm.context import FSMContext
+from aiogram.methods import SendPhoto
 from aiogram.types import CallbackQuery, FSInputFile, Message
 
 from bot.courses.service import CourseService
@@ -12,7 +13,7 @@ from bot.lessons.keyboards import LessonKeyboard
 from bot.lessons.service import LessonService
 from bot.lessons.states import LessonChooseState
 from bot.settings.keyboards import BaseKeyboard
-from bot.utils.answers import format_answers_text, send_user_answers_to_group
+from bot.utils.answers import format_answers_text, send_user_answers_to_group, get_images_by_place
 from bot.utils.certificate import build_certificate
 from bot.utils.delete_messages import delete_messages
 from bot.utils.messages import MESSAGES
@@ -63,6 +64,13 @@ class LessonHandler(Handler):
 
             # вывод информации об уроке
             if lesson:
+
+                # отправка доп. изображений к уроку
+                images = await get_images_by_place('before_video', lesson)
+                for image in images:
+                    await callback.message.answer_photo(
+                        photo=image
+                    )
                 if lesson.video:
                     video_msg = await callback.message.answer_video(
                         lesson.video,
@@ -72,6 +80,13 @@ class LessonHandler(Handler):
                     video_description_msg = await callback.message.answer(
                         lesson.description
                     )
+
+                    # отправка доп. изображений к уроку
+                    images = await get_images_by_place('after_video', lesson)
+                    for image in images:
+                        await callback.message.answer_photo(
+                            photo=image
+                        )
 
                     # сохраняем message_id, чтобы потом их удалить
                     await state.update_data(video_msg=video_msg.message_id)
@@ -151,6 +166,13 @@ class LessonHandler(Handler):
             )
 
             lesson = data['lesson']
+
+            # отправка доп. изображений к уроку
+            images = await get_images_by_place('before_work', lesson)
+            for image in images:
+                await callback.message.answer_photo(
+                    photo=image
+                )
 
             # получаем тип задания к уроку
             task_type_id = await self.db.get_type_task_for_lesson(lesson)
@@ -399,6 +421,13 @@ class LessonHandler(Handler):
             # в зависимости от callback или message меняется отправка сообщения
             if isinstance(src, CallbackQuery):
 
+                # отправка доп. изображений к уроку
+                images = await get_images_by_place('after_work', lesson)
+                for image in images:
+                    await src.message.answer_photo(
+                        photo=image
+                    )
+
                 # выводим доп задание с кнопками 'пропустить' и 'выполнил'
                 if additional_task:
                     tg_id = src.message.chat.id
@@ -496,6 +525,14 @@ class LessonHandler(Handler):
                         await state.update_data(menu_msg=menu_msg.message_id)
 
             else:
+
+                # отправка доп. изображений к уроку
+                images = await get_images_by_place('after_work', lesson)
+                for image in images:
+                    await src.answer_photo(
+                        photo=image
+                    )
+
                 if additional_task:
                     tg_id = src.from_user.id
                     # создаем запись прохождения доп задания в БД

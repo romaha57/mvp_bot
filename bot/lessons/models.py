@@ -24,6 +24,7 @@ class Lessons(Base):
     video_type_id = Column(Integer, ForeignKey('$_video_types.id'))
     title = Column(String, nullable=False)
     video = Column(String)
+    images = Column(Text)
     updated_at = Column(DateTime, onupdate=func.now)
     created_at = Column(DateTime, server_default=func.now())
 
