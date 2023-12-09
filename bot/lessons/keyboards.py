@@ -1,3 +1,5 @@
+import json
+
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
@@ -44,8 +46,16 @@ class LessonKeyboard:
         lessons_from_db = await self.db.get_lessons(course_id)
         result = {}
 
+        raw_lessons = []
+        # преобразуем status_id = None в = 0
+        for i in lessons_from_db:
+            i = dict(i)
+            if i['status_id'] is None:
+                i['status_id'] = 0
+            raw_lessons.append(i)
+
         # сортируем список уроков по порядковому номеру и статусу
-        sorted_lessons_by_status_id = sorted(lessons_from_db, key=lambda elem: (elem['order_num'], elem['status_id']))
+        sorted_lessons_by_status_id = sorted(raw_lessons, key=lambda elem: (elem['order_num'], elem.get('status_id', 0)))
         for lesson in sorted_lessons_by_status_id:
             result[lesson['title']] = (lesson['status_id'], lesson['user_id'])
         # формируем кнопки в зависимости от статуса прохождения урока

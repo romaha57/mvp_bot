@@ -58,13 +58,23 @@ class CourseService(BaseService, metaclass=Singleton):
         user = await cls.get_user_by_tg_id(tg_id)
         status = await cls.get_course_history_status('Открыт')
         async with async_session() as session:
-            query = insert(CourseHistory).values(
+            get_history = select(CourseHistory).filter_by(
                 course_id=course_id,
-                user_id=user.id,
-                status_id=status.id
+                user_id=user.id
             )
-            await session.execute(query)
-            await session.commit()
+            res = await session.execute(get_history)
+            history = res.scalars().first()
+
+            # создаем новую историю прохождения курса, если у данного пользователя еще нет
+            if not history:
+
+                query = insert(CourseHistory).values(
+                    course_id=course_id,
+                    user_id=user.id,
+                    status_id=status.id
+                )
+                await session.execute(query)
+                await session.commit()
 
     @classmethod
     async def get_course_history_status(cls, status_name: str) -> CourseHistoryStatuses:

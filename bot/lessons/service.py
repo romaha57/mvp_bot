@@ -66,14 +66,23 @@ class LessonService(BaseService, metaclass=Singleton):
         status = await cls.get_lesson_history_status('Видео')
 
         async with async_session() as session:
-            query = insert(LessonHistory).values(
+            get_lesson_history = select(LessonHistory).filter_by(
                 lesson_id=lesson_id,
                 user_id=user_id,
-                status_id=status.id,
                 course_history_id=course_history_id
             )
-            await session.execute(query)
-            await session.commit()
+            res = await session.execute(get_lesson_history)
+            lesson_history = res.scalars().first()
+
+            if not lesson_history:
+                query = insert(LessonHistory).values(
+                    lesson_id=lesson_id,
+                    user_id=user_id,
+                    status_id=status.id,
+                    course_history_id=course_history_id
+                )
+                await session.execute(query)
+                await session.commit()
 
     @classmethod
     async def get_actual_lesson_history(cls, user_id: int, lesson_id: int) -> LessonHistory:

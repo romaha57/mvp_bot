@@ -4,6 +4,7 @@ import sys
 
 from aiogram import Bot, Dispatcher
 from aiogram.enums.parse_mode import ParseMode
+from aiogram.exceptions import TelegramNetworkError
 from aiogram.fsm.storage.memory import MemoryStorage
 
 from bot.handlers.main_handler import MainHandler
@@ -39,7 +40,10 @@ class MainBot:
         """Основная точка входа в бота и его запуск"""
 
         await self.start()
-        await self.dp.start_polling(self.bot, polling_timeout=100000)
+        try:
+            await self.dp.start_polling(self.bot, polling_timeout=100000)
+        except TelegramNetworkError:
+            pass
 
 
 if __name__ == '__main__':

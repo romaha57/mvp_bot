@@ -119,11 +119,12 @@ async def get_images_by_place(place: str, lesson: Lessons) -> list[str]:
     """Получение всех картинок для данного места (place)"""
 
     result_images = []
-    lesson_images = json.loads(lesson.images)
+    if lesson.images:
+        lesson_images = json.loads(lesson.images)
 
-    for images_info in lesson_images:
-        if images_info['place'] == place:
-            result_images.append(images_info['img'])
+        for images_info in lesson_images:
+            if images_info['place'] == place:
+                result_images.append(images_info['img'])
 
     return result_images
 
