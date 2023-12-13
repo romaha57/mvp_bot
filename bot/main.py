@@ -21,7 +21,7 @@ class MainBot:
     def __init__(self):
         self.bot = Bot(token=settings.bot_token, parse_mode=ParseMode.HTML)
         self.dp = Dispatcher(storage=MemoryStorage())
-        self.dp.message.middleware(CheckPromocodeMiddleware())
+        # self.dp.message.middleware(CheckPromocodeMiddleware())
         self.handler = MainHandler(self.bot)
 
     async def start(self):

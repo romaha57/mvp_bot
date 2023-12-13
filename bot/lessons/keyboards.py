@@ -66,22 +66,22 @@ class LessonKeyboard:
             if result[lesson][0] == 4 and result[lesson][1] == user_id:
                 builder.button(
                     text=lesson + '✅',
-                    callback_data=f'lesson_{lesson}'
+                    callback_data=f'lesson_{lesson[:20]}'
                 )
             elif result[lesson][0] == 3 and result[lesson][1] == user_id:
                 builder.button(
                     text=lesson + '❗',
-                    callback_data=f'lesson_{lesson}'
+                    callback_data=f'lesson_{lesson[:20]}'
                 )
             elif result[lesson][0] in (1, 2) and result[lesson][1] == user_id:
                 builder.button(
                     text=lesson + '👀 ',
-                    callback_data=f'lesson_{lesson}'
+                    callback_data=f'lesson_{lesson[:20]}'
                 )
             else:
                 builder.button(
                         text=lesson,
-                        callback_data=f'lesson_{lesson}'
+                        callback_data=f'lesson_{lesson[:20]}'
                 )
 
         builder.adjust(1)
@@ -177,7 +177,7 @@ class LessonKeyboard:
         builder = InlineKeyboardBuilder()
         builder.button(
             text=BUTTONS['AGAIN'],
-            callback_data=f'lesson_{lesson.title}'
+            callback_data=f'lesson_{lesson.title[:20]}'
         )
         builder.adjust(1)
 

@@ -1,4 +1,5 @@
 import json
+import pprint
 from typing import Union
 
 from aiogram import Bot, F, Router
@@ -67,10 +68,11 @@ class LessonHandler(Handler):
 
                 # отправка доп. изображений к уроку
                 images = await get_images_by_place('before_video', lesson)
-                for image in images:
-                    await callback.message.answer_photo(
-                        photo=image
-                    )
+                if images:
+                    for image in images:
+                        await callback.message.answer_photo(
+                            photo=image
+                        )
                 if lesson.video:
                     video_msg = await callback.message.answer_video(
                         lesson.video,
@@ -83,10 +85,11 @@ class LessonHandler(Handler):
 
                     # отправка доп. изображений к уроку
                     images = await get_images_by_place('after_video', lesson)
-                    for image in images:
-                        await callback.message.answer_photo(
-                            photo=image
-                        )
+                    if images:
+                        for image in images:
+                            await callback.message.answer_photo(
+                                photo=image
+                            )
 
                     # сохраняем message_id, чтобы потом их удалить
                     await state.update_data(video_msg=video_msg.message_id)
@@ -169,10 +172,11 @@ class LessonHandler(Handler):
 
             # отправка доп. изображений к уроку
             images = await get_images_by_place('before_work', lesson)
-            for image in images:
-                await callback.message.answer_photo(
-                    photo=image
-                )
+            if images:
+                for image in images:
+                    await callback.message.answer_photo(
+                        photo=image
+                    )
 
             # получаем тип задания к уроку
             task_type_id = await self.db.get_type_task_for_lesson(lesson)
@@ -362,7 +366,7 @@ class LessonHandler(Handler):
                 user_percent_answer = int((self.result_count / data['questions_count']) * 100)
 
                 # если пользователь набрал нужный % прохождения
-                if user_percent_answer > data['lesson'].questions_percent:
+                if user_percent_answer >= data['lesson'].questions_percent:
                     msg = await callback.message.edit_text(
                         MESSAGES['SUCCESS_TEST'].format(
                             user_percent_answer
@@ -423,10 +427,11 @@ class LessonHandler(Handler):
 
                 # отправка доп. изображений к уроку
                 images = await get_images_by_place('after_work', lesson)
-                for image in images:
-                    await src.message.answer_photo(
-                        photo=image
-                    )
+                if images:
+                    for image in images:
+                        await src.message.answer_photo(
+                            photo=image
+                        )
 
                 # выводим доп задание с кнопками 'пропустить' и 'выполнил'
                 if additional_task:
@@ -504,13 +509,13 @@ class LessonHandler(Handler):
 
                         # формируем сертификат
                         build_certificate(
-                            user_id=src.chat.id,
-                            fullname=src.from_user.full_name,
+                            user_id=src.message.chat.id,
+                            fullname=src.message.chat.full_name,
                             course_name=course.title
                         )
 
                         # читаем файл и отправляем пользователю
-                        file_path = f'/app/static/{src.chat.id}_certificate.pdf'
+                        file_path = f'/app/static/{src.message.chat.id}_certificate.pdf'
                         certificate = FSInputFile(file_path)
                         await src.bot.send_document(
                             chat_id=data['chat_id'],
@@ -528,10 +533,11 @@ class LessonHandler(Handler):
 
                 # отправка доп. изображений к уроку
                 images = await get_images_by_place('after_work', lesson)
-                for image in images:
-                    await src.answer_photo(
-                        photo=image
-                    )
+                if images:
+                    for image in images:
+                        await src.answer_photo(
+                            photo=image
+                        )
 
                 if additional_task:
                     tg_id = src.from_user.id

@@ -1,6 +1,7 @@
 from typing import Union
 
 from sqlalchemy import desc, insert, select, update
+from sqlalchemy.exc import MultipleResultsFound
 
 from bot.db_connect import async_session
 from bot.lessons.models import (LessonAdditionalTaskHistory,
@@ -211,7 +212,13 @@ class LessonService(BaseService, metaclass=Singleton):
             query = select(Lessons).filter_by(course_id=course_id, order_num=order_num)
             result = await session.execute(query)
 
-            return result.scalars().one_or_none()
+            try:
+                res = result.scalars().one_or_none()
+            except MultipleResultsFound:
+                result = await session.execute(query)
+                res = result.scalars().first()
+
+            return res
 
     @classmethod
     async def get_type_task_for_lesson(cls, lesson: Lessons):
