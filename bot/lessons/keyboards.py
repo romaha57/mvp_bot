@@ -144,7 +144,7 @@ class LessonKeyboard:
         builder = InlineKeyboardBuilder()
         builder.button(
             text=lesson.title,
-            callback_data=f'lesson_{lesson.title}'
+            callback_data=f'lesson_{lesson.title[:20]}'
 
         )
 

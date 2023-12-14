@@ -39,20 +39,26 @@ class TextHandler(Handler):
             await state.set_state(state=None)
 
             data = await state.get_data()
-            promocode = data['promocode']
+            promocode = data.get('promocode')
+            if promocode:
 
-            await delete_messages(
-                src=message,
-                data=data,
-                state=state
-            )
+                await delete_messages(
+                    src=message,
+                    data=data,
+                    state=state
+                )
 
-            await message.delete()
-            menu_msg = await message.answer(
-                MESSAGES['MENU'],
-                reply_markup=await self.kb.start_btn(promocode)
-            )
-            await state.update_data(menu_msg=menu_msg.message_id)
+                await message.delete()
+                menu_msg = await message.answer(
+                    MESSAGES['MENU'],
+                    reply_markup=await self.kb.start_btn(promocode)
+                )
+                await state.update_data(menu_msg=menu_msg.message_id)
+            else:
+                await message.answer(
+                    MESSAGES['ERROR_PROMOCODE'],
+                    reply_markup=await self.kb.menu_btn()
+                )
 
         @self.router.message(F.text)
         async def any_text(message: Message, state: FSMContext):
