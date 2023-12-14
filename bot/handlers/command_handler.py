@@ -68,4 +68,4 @@ class CommandHandler(Handler):
             """Отправляем telegram_id пользователя"""
 
             user_id = str(message.from_user.id)
-            await message.answer(f'Ваш id - {user_id}')
+            await message.answer(f'Ваш id - <b>{user_id}</b>')

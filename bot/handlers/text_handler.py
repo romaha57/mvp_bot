@@ -28,7 +28,7 @@ class TextHandler(Handler):
             """При отправке медиа файла пользователю возвращается тип документа и его file_id"""
 
             file_id = await get_file_id_by_content_type(message)
-            await message.answer(f'{message.content_type} - {file_id}')
+            await message.answer(f'{message.content_type} - <b>{file_id}</b>')
 
         @self.router.message(or_f(F.text.startswith(BUTTONS['MENU']),
                                   and_f(F.text.startswith(BUTTONS['MENU']), LessonChooseState.lesson)))

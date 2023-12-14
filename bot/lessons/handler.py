@@ -4,6 +4,7 @@ from typing import Union
 
 from aiogram import Bot, F, Router
 from aiogram.enums import ContentType
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 from aiogram.methods import SendPhoto
 from aiogram.types import CallbackQuery, FSInputFile, Message
@@ -74,11 +75,20 @@ class LessonHandler(Handler):
                             photo=image
                         )
                 if lesson.video:
-                    video_msg = await callback.message.answer_video(
-                        lesson.video,
-                        caption=lesson.title,
-                        reply_markup=await self.kb.lesson_menu_btn(lesson)
-                    )
+                    try:
+                        video_msg = await callback.message.answer_video(
+                            lesson.video,
+                            caption=lesson.title,
+
+                        )
+                        # сохраняем id message, чтобы потом удалить
+                        await state.update_data(video_msg=video_msg.message_id)
+                    # отлов ошибки при неправильном file_id
+                    except TelegramBadRequest:
+                        await callback.message.answer(
+                            MESSAGES['VIDEO_ERROR'],
+                            reply_markup=await self.kb.lesson_menu_btn(lesson)
+                        )
                     video_description_msg = await callback.message.answer(
                         lesson.description
                     )
@@ -87,12 +97,15 @@ class LessonHandler(Handler):
                     images = await get_images_by_place('after_video', lesson)
                     if images:
                         for image in images:
-                            await callback.message.answer_photo(
-                                photo=image
-                            )
+                            try:
+                                await callback.message.answer_photo(
+                                    photo=image
+                                )
+                            # отлов ошибки при неправильном file_id
+                            except TelegramBadRequest:
+                                pass
 
                     # сохраняем message_id, чтобы потом их удалить
-                    await state.update_data(video_msg=video_msg.message_id)
                     await state.update_data(video_description_msg=video_description_msg.message_id)
 
                 else:
@@ -174,9 +187,13 @@ class LessonHandler(Handler):
             images = await get_images_by_place('before_work', lesson)
             if images:
                 for image in images:
-                    await callback.message.answer_photo(
-                        photo=image
-                    )
+                    try:
+                        await callback.message.answer_photo(
+                            photo=image
+                        )
+                    # отлов ошибки при неправильном file_id
+                    except TelegramBadRequest:
+                        pass
 
             # получаем тип задания к уроку
             task_type_id = await self.db.get_type_task_for_lesson(lesson)
@@ -429,9 +446,13 @@ class LessonHandler(Handler):
                 images = await get_images_by_place('after_work', lesson)
                 if images:
                     for image in images:
-                        await src.message.answer_photo(
-                            photo=image
-                        )
+                        try:
+                            await src.message.answer_photo(
+                                photo=image
+                            )
+                        # отлов ошибки при неправильном file_id
+                        except TelegramBadRequest:
+                            pass
 
                 # выводим доп задание с кнопками 'пропустить' и 'выполнил'
                 if additional_task:
@@ -535,9 +556,13 @@ class LessonHandler(Handler):
                 images = await get_images_by_place('after_work', lesson)
                 if images:
                     for image in images:
-                        await src.answer_photo(
-                            photo=image
-                        )
+                        try:
+                            await src.answer_photo(
+                                photo=image
+                            )
+                        # отлов ошибки при неправильном file_id
+                        except TelegramBadRequest:
+                            pass
 
                 if additional_task:
                     tg_id = src.from_user.id
