@@ -79,6 +79,7 @@ class LessonHandler(Handler):
                         video_msg = await callback.message.answer_video(
                             lesson.video,
                             caption=lesson.title,
+                            reply_markup=await self.kb.lesson_menu_btn(lesson)
 
                         )
                         # сохраняем id message, чтобы потом удалить
