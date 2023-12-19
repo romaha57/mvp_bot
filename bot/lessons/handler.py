@@ -241,7 +241,7 @@ class LessonHandler(Handler):
             # и записываем количество вариантов ответа для формирования кнопок с выбором
             first_question = self.test_questions.pop()
             answers_text = await format_answers_text(first_question['questions'])
-            text = f"{first_question['title']} \n {answers_text}"
+            text = f"{first_question['title']} \n\n{answers_text}"
             count_questions = len(first_question['questions'])
 
             msg = await callback.message.answer(
@@ -353,7 +353,7 @@ class LessonHandler(Handler):
 
                 # формируем текст ответа и записываем кол-во вариантов ответа для формирования кнопок
                 answers_text = await format_answers_text(question['questions'])
-                text = f"{question['title']} \n {answers_text}"
+                text = f"{question['title']} \n\n{answers_text}"
                 count_questions = len(question['questions'])
 
                 msg = await callback.message.edit_text(
@@ -381,23 +381,33 @@ class LessonHandler(Handler):
 
                 # вывод результат теста с подсчетом % правильных
                 user_percent_answer = int((self.result_count / data['questions_count']) * 100)
-
                 # если пользователь набрал нужный % прохождения
                 if user_percent_answer >= data['lesson'].questions_percent:
-                    msg = await callback.message.edit_text(
+                    await callback.message.edit_text(
                         MESSAGES['SUCCESS_TEST'].format(
                             user_percent_answer
                         ),
-                        reply_markup=await self.kb.close_lesson_btn(data['lesson'])
                     )
+
                     await self.db.mark_lesson_history_on_status_done(data['lesson_history_id'])
 
-                    # сохраняем msg_id чтобы потом удалить
-                    await state.update_data(msg1=msg.message_id)
+                    # обнуляем счетчик правильных ответов
+                    self.result_count = 0
+
+                    await close_lesson(
+                        src=callback,
+                        state=state
+                    )
 
                 else:
+                    # обнуляем счетчик правильных ответов
+                    self.result_count = 0
+
                     msg = await callback.message.edit_text(
-                        MESSAGES['FAIL_TEST'],
+                        MESSAGES['FAIL_TEST'].format(
+                            user_percent_answer,
+                            data['lesson'].questions_percent
+                        ),
                         reply_markup=await self.kb.start_again_lesson(data['lesson'])
                     )
                     await state.set_state(LessonChooseState.lesson)
@@ -407,14 +417,8 @@ class LessonHandler(Handler):
 
                     await self.db.mark_lesson_history_on_status_fail_test(data['lesson_history_id'])
 
-                # обнуляем счетчик правильных ответов
-                self.result_count = 0
 
-                menu_msg = await callback.message.answer(
-                    MESSAGES['GO_TO_MENU'],
-                    reply_markup=await self.base_kb.menu_btn()
-                )
-                await state.update_data(menu_msg=menu_msg.message_id)
+
 
         @self.router.callback_query(F.data.startswith('close_lesson'))
         async def close_lesson(src: Union[CallbackQuery, Message], state: FSMContext):
@@ -467,22 +471,17 @@ class LessonHandler(Handler):
                     # сохраняем в состоянии id истории
                     await state.update_data(additional_task_history_id=additional_task_history.id)
 
-                    await src.answer(
-                        MESSAGES['ADDITIONAL_TASK'].format(
-                            additional_task.title
+                    # не выводим название доп задания для урока 2.3
+                    if lesson.id != 17:
+                        await src.answer(
+                            MESSAGES['ADDITIONAL_TASK'].format(
+                                additional_task.title
+                            )
                         )
-                    )
                     additional_msg = await src.message.answer(
                         additional_task.description,
                         reply_markup=await self.kb.additional_task_btn()
                     )
-
-                    menu_msg = await src.message.answer(
-                        MESSAGES['GO_TO_MENU'],
-                        reply_markup=await self.base_kb.menu_btn()
-                    )
-
-                    await state.update_data(menu_msg=menu_msg.message_id)
 
                     await state.update_data(additional_msg=additional_msg.message_id)
 
@@ -576,22 +575,17 @@ class LessonHandler(Handler):
                     # сохраняем в состоянии id истории
                     await state.update_data(additional_task_history_id=additional_task_history.id)
 
-                    await src.answer(
-                        MESSAGES['ADDITIONAL_TASK'].format(
-                            additional_task.title
+                    # не выводим название доп задания для урока 2.3
+                    if lesson.id != 17:
+                        await src.answer(
+                            MESSAGES['ADDITIONAL_TASK'].format(
+                                additional_task.title
+                            )
                         )
-                    )
                     additional_msg = await src.answer(
                         additional_task.description,
                         reply_markup=await self.kb.additional_task_btn()
                     )
-
-                    menu_msg = await src.answer(
-                        MESSAGES['GO_TO_MENU'],
-                        reply_markup=await self.base_kb.menu_btn()
-                    )
-
-                    await state.update_data(menu_msg=menu_msg.message_id)
 
                     await state.update_data(additional_msg=additional_msg.message_id)
 

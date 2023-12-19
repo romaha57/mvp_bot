@@ -3,7 +3,7 @@ import random
 import string
 
 from aiogram import Bot
-from aiogram.exceptions import TelegramForbiddenError
+from aiogram.exceptions import TelegramForbiddenError, TelegramBadRequest
 from aiogram.types import Message
 
 from bot.courses.service import CourseService
@@ -61,7 +61,7 @@ async def format_answers_text(answers: list[str]):
 
     for number, answer in enumerate(answers, 1):
         result += f'{letter_list[number]}. '
-        result += answer['title'] + '\n'
+        result += answer['title'] + '\n\n'
 
     return result
 
@@ -90,7 +90,7 @@ async def send_user_answers_to_group(bot: Bot, course_id: int, name: str, lesson
         )
         try:
             await bot.send_message(group_id, text)
-        except TelegramForbiddenError:
+        except (TelegramForbiddenError, TelegramBadRequest):
             print('Бот не добавлен в группу')
 
 
