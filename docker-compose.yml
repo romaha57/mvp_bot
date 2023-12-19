@@ -8,12 +8,3 @@ services:
     command: sh -c "python3 -m bot.main"
     env_file:
       - .env
-  api:
-    build:
-      context: .
-    container_name: api_for_admin
-    command: sh -c "gunicorn api.main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind=0.0.0.0:8000"
-    env_file:
-      - .env
-    ports:
-      - 8000:8000
