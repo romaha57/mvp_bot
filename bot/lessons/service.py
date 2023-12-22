@@ -18,18 +18,28 @@ class LessonService(BaseService, metaclass=Singleton):
     model = None
 
     @classmethod
-    async def get_lessons(cls, course_id: str) -> list[dict]:
+    async def get_lessons(cls, course_id: str, user_id: int) -> list[dict]:
         """Получение всех уроков для данного курса"""
 
         async with async_session() as session:
             query = select(Lessons.title, LessonHistory.status_id, LessonHistory.user_id, Lessons.order_num).\
                 join(LessonHistory, LessonHistory.lesson_id == Lessons.id, isouter=True).\
                 join(Users, Users.id == LessonHistory.user_id, isouter=True). \
-                where(Lessons.course_id == course_id).\
+                where(Lessons.course_id == course_id, LessonHistory.user_id == user_id).\
                 order_by('order_num')
 
             result = await session.execute(query)
             return result.mappings().all()
+
+    @classmethod
+    async def get_first_lesson(cls, course_id: str):
+        """Получение первого урока"""
+
+        async with async_session() as session:
+            query = select(Lessons.title).where(Lessons.course_id == course_id).order_by('order_num').limit(1)
+
+            result = await session.execute(query)
+            return result.scalars().first()
 
     @classmethod
     async def get_lesson_by_name(cls, name: str) -> Union[Lessons, None]:
@@ -376,3 +386,18 @@ class LessonService(BaseService, metaclass=Singleton):
 
             res = await session.execute(query)
             return res.mappings().all()
+
+    @classmethod
+    async def check_is_new_user(cls, user_id: int):
+        """Проверяем есть ли у пользователя хоть 1 запись в истории прохождения курса"""
+
+        async with async_session() as session:
+            query = select(LessonHistory).where(LessonHistory.user_id == user_id)
+
+            res = await session.execute(query)
+            result = res.scalars().first()
+
+            if result is None:
+                return True
+            return False
+

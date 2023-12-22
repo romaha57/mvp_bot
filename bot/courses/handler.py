@@ -34,35 +34,71 @@ class CourseHandler(Handler):
                 tg_id=message.from_user.id
             )
 
+            user = await self.db.get_user_by_tg_id(message.chat.id)
+
             all_courses = await self.db.get_course_by_promo_and_bot(
                 bot_id=user_data['bot_id'],
                 promocode_course_id=user_data['course_id']
             )
+            if len(all_courses) == 1:
+                course = await self.db.get_course_by_name(all_courses[0])
+                # создаем запись в истории прохождения курса со статусом 'Открыт'
+                await self.db.create_history(
+                    course_id=course.id,
+                    tg_id=message.chat.id
+                )
 
-            msg1 = await message.answer(
-                MESSAGES['CHOOSE_COURSE'],
-                reply_markup=await self.kb.courses_btn(all_courses)
-            )
+                # выводим приветственное видео курса, если оно есть
+                if course.intro_video:
+                    await message.answer_video(
+                        video=course.intro_video
+                    )
 
-            await state.update_data(msg1=msg1.message_id)
-            # устанавливаем отлов состояния на название курса
-            await state.set_state(CourseChooseState.course)
+                await message.answer(course.title)
+                msg = await message.answer(
+                    course.intro,
+                    reply_markup=await self.lesson_kb.lessons_btn(course.id, user.id)
+                )
+                await state.update_data(chat_id=message.chat.id)
+                await state.update_data(delete_message_id=msg.message_id)
 
-            menu_msg = await message.answer(
-                MESSAGES['GO_TO_MENU'],
-                reply_markup=await self.base_kb.menu_btn()
-            )
+                menu_msg = await message.answer(
+                    MESSAGES['GO_TO_MENU'],
+                    reply_markup=await self.base_kb.menu_btn()
+                )
 
-            await state.update_data(menu_msg=menu_msg.message_id)
+                await state.update_data(menu_msg=menu_msg.message_id)
+
+                # устанавливаем отлов состояния на название урока
+                await state.set_state(LessonChooseState.lesson)
+            else:
+                msg1 = await message.answer(
+                    MESSAGES['CHOOSE_COURSE'],
+                    reply_markup=await self.kb.courses_btn(all_courses)
+                )
+
+                await state.update_data(msg1=msg1.message_id)
+                # устанавливаем отлов состояния на название курса
+                await state.set_state(CourseChooseState.course)
+
+                menu_msg = await message.answer(
+                    MESSAGES['GO_TO_MENU'],
+                    reply_markup=await self.base_kb.menu_btn()
+                )
+
+                await state.update_data(menu_msg=menu_msg.message_id)
 
         @self.router.callback_query(CourseChooseState.course, F.data)
-        async def get_lesson(callback: CallbackQuery, state: FSMContext):
+        async def get_lesson(callback: CallbackQuery, state: FSMContext, course: str = None):
             """Отлавливаем выбранный пользователем курс"""
 
             data = await state.get_data()
 
             user = await self.db.get_user_by_tg_id(callback.message.chat.id)
-            course = await self.db.get_course_by_name(callback.data)
+            if not course:
+                course = await self.db.get_course_by_name(callback.data)
+            else:
+                course = course
 
             await delete_messages(
                 src=callback,

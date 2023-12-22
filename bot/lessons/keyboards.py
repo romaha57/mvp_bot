@@ -43,45 +43,40 @@ class LessonKeyboard:
         """Кнопки со списком уроков"""
 
         builder = InlineKeyboardBuilder()
-        lessons_from_db = await self.db.get_lessons(course_id)
-        result = {}
+        lessons_from_db = await self.db.get_lessons(course_id, user_id)
+        print(lessons_from_db)
 
-        raw_lessons = []
-        # преобразуем status_id = None в = 0
-        for i in lessons_from_db:
-            i = dict(i)
-            if i['status_id'] is None:
-                i['status_id'] = 0
-            raw_lessons.append(i)
+        if not lessons_from_db:
+            # получаем первый урок, чтобы не отображать весь список уроков
+            first_lesson = await self.db.get_first_lesson(course_id)
+            builder.button(
+                text=first_lesson,
+                callback_data=f'lesson_{first_lesson[:20]}'
+            )
 
-        # сортируем список уроков по порядковому номеру и статусу
-        sorted_lessons_by_status_id = sorted(raw_lessons, key=lambda elem: (elem['order_num'], elem.get('status_id', 0)))
-        for lesson in sorted_lessons_by_status_id:
-            result[lesson['title']] = (lesson['status_id'], lesson['user_id'])
-        # формируем кнопки в зависимости от статуса прохождения урока
-        # при успешном прохождении - '✅'(id статуса = 4)
-        # при заваленном тесте - '❗' (id статуса = 3)
-        # при открытом уроке - '👀' (id статуса = 1 или 2)
-        for lesson in result:
-            if result[lesson][0] == 4 and result[lesson][1] == user_id:
+            builder.adjust(1)
+
+            return builder.as_markup(
+                resize_keyboard=True,
+                input_field_placeholder=MESSAGES['CHOOSE_LESSONS'],
+                one_time_keyboard=True
+            )
+
+        for lesson in lessons_from_db:
+            if lesson['status_id'] == 4:
                 builder.button(
-                    text=lesson + '✅',
-                    callback_data=f'lesson_{lesson[:20]}'
+                    text=lesson['title'] + '✅',
+                    callback_data=f'lesson_{lesson["title"][:20]}'
                 )
-            elif result[lesson][0] == 3 and result[lesson][1] == user_id:
+            elif lesson['status_id'] == 3:
                 builder.button(
-                    text=lesson + '❗',
-                    callback_data=f'lesson_{lesson[:20]}'
+                    text=lesson['title'] + '❗',
+                    callback_data=f'lesson_{lesson["title"][:20]}'
                 )
-            elif result[lesson][0] in (1, 2) and result[lesson][1] == user_id:
+            elif lesson['status_id'] in (1, 2):
                 builder.button(
-                    text=lesson + '👀 ',
-                    callback_data=f'lesson_{lesson[:20]}'
-                )
-            else:
-                builder.button(
-                        text=lesson,
-                        callback_data=f'lesson_{lesson[:20]}'
+                    text=lesson['title'] + '👀 ',
+                    callback_data=f'lesson_{lesson["title"][:20]}'
                 )
 
         builder.adjust(1)
