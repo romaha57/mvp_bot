@@ -44,7 +44,6 @@ class LessonKeyboard:
 
         builder = InlineKeyboardBuilder()
         lessons_from_db = await self.db.get_lessons(course_id, user_id)
-        print(lessons_from_db)
 
         if not lessons_from_db:
             # получаем первый урок, чтобы не отображать весь список уроков
