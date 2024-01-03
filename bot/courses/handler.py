@@ -40,6 +40,8 @@ class CourseHandler(Handler):
                 bot_id=user_data['bot_id'],
                 promocode_course_id=user_data['course_id']
             )
+
+            # ---------------------Логика для перехода сразу к списку уроков, если курс всего 1-----------------
             if len(all_courses) == 1:
                 course = await self.db.get_course_by_name(all_courses[0])
                 # создаем запись в истории прохождения курса со статусом 'Открыт'
@@ -48,19 +50,32 @@ class CourseHandler(Handler):
                     tg_id=message.chat.id
                 )
 
-                # выводим приветственное видео курса, если оно есть
-                if course.intro_video:
-                    await message.answer_video(
-                        video=course.intro_video
-                    )
+                if user.is_show_course_description:
+                    # убираем флаг у юзера, чтобы ему больше не показывалось видео курса
+                    await self.db.mark_user_show_course_description(user)
 
-                await message.answer(course.title)
-                msg = await message.answer(
-                    course.intro,
-                    reply_markup=await self.lesson_kb.lessons_btn(course.id, user.id)
-                )
-                await state.update_data(chat_id=message.chat.id)
-                await state.update_data(delete_message_id=msg.message_id)
+                    # выводим приветственное видео курса, если оно есть
+                    if course.intro_video:
+                        await message.answer_video(
+                            video=course.intro_video
+                        )
+
+                    await message.answer(course.title)
+
+                    msg = await message.answer(
+                        course.intro,
+                        reply_markup=await self.lesson_kb.lessons_btn(course.id, user.id)
+                    )
+                    await state.update_data(chat_id=message.chat.id)
+                    await state.update_data(delete_message_id=msg.message_id)
+
+                else:
+                    msg = await message.answer(
+                        'Уроки курса:',
+                        reply_markup=await self.lesson_kb.lessons_btn(course.id, user.id)
+                    )
+                    await state.update_data(chat_id=message.chat.id)
+                    await state.update_data(delete_message_id=msg.message_id)
 
                 menu_msg = await message.answer(
                     MESSAGES['GO_TO_MENU'],
@@ -71,6 +86,9 @@ class CourseHandler(Handler):
 
                 # устанавливаем отлов состояния на название урока
                 await state.set_state(LessonChooseState.lesson)
+
+            # -------------------------Логика если курсов больше 1----------------------------------
+
             else:
                 msg1 = await message.answer(
                     MESSAGES['CHOOSE_COURSE'],
@@ -115,19 +133,29 @@ class CourseHandler(Handler):
                     tg_id=callback.message.chat.id
                 )
 
-                # выводим приветственное видео курса, если оно есть
-                if course.intro_video:
-                    await callback.message.answer_video(
-                        video=course.intro_video
-                    )
+                if user.is_show_course_description:
+                    # выводим приветственное видео курса, если оно есть
+                    if course.intro_video:
+                        await callback.message.answer_video(
+                            video=course.intro_video
+                        )
 
-                await callback.message.answer(course.title)
-                msg = await callback.message.answer(
-                    course.intro,
-                    reply_markup=await self.lesson_kb.lessons_btn(course.id, user.id)
-                )
-                await state.update_data(chat_id=callback.message.chat.id)
-                await state.update_data(delete_message_id=msg.message_id)
+                    await callback.message.answer(course.title)
+
+                    msg = await callback.message.answer(
+                        course.intro,
+                        reply_markup=await self.lesson_kb.lessons_btn(course.id, user.id)
+                    )
+                    await state.update_data(chat_id=callback.message.chat.id)
+                    await state.update_data(delete_message_id=msg.message_id)
+                else:
+                    msg = await callback.message.answer(
+                        'Уроки курса:',
+                        reply_markup=await self.lesson_kb.lessons_btn(course.id, user.id)
+                    )
+                    await state.update_data(chat_id=callback.message.chat.id)
+                    await state.update_data(delete_message_id=msg.message_id)
+
 
                 menu_msg = await callback.message.answer(
                     MESSAGES['GO_TO_MENU'],

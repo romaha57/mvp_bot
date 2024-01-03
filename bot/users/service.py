@@ -1,12 +1,13 @@
-from sqlalchemy import func, insert, select
+from sqlalchemy import func, insert, select, update
 
 from bot.courses.service import CourseService
 from bot.db_connect import async_session
+from bot.lessons.models import Lessons
 from bot.lessons.service import LessonService
 from bot.quiz.service import QuizService
 from bot.services.base_service import BaseService, Singleton
 from bot.users.models import (BonusRewards, Promocodes, PromocodeTypes,
-                              UserAccount, Users)
+                              UserAccount, Users, RatingLesson)
 
 
 class UserService(BaseService, metaclass=Singleton):
@@ -14,6 +15,7 @@ class UserService(BaseService, metaclass=Singleton):
     @classmethod
     async def get_users_by_tg_id(cls, tg_id: int):
         """Получаем всех пользователей из таблицы $_users по их telegram_id"""
+
 
         async with async_session() as session:
             query = select(Users).filter_by(external_id=tg_id)
@@ -174,3 +176,18 @@ class UserService(BaseService, metaclass=Singleton):
             res = await session.execute(query)
 
             return res.scalars().all()
+
+
+    @classmethod
+    async def get_users_rating_by_lesson(cls, tg_id: int, lesson_name: str):
+        """Получаем оценку юзера на данный урок"""
+
+        async with async_session() as session:
+            query = select(RatingLesson.rating).\
+                join(Users, Users.id == RatingLesson.user_id).\
+                join(Lessons, Lessons.id == RatingLesson.lesson_id).\
+                where(Lessons.title == lesson_name, Users.external_id == tg_id)
+
+            res = await session.execute(query)
+
+            return res.scalars().first()

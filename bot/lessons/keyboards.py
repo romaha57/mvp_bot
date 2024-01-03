@@ -13,10 +13,21 @@ class LessonKeyboard:
     def __init__(self):
         self.db = LessonService()
 
-    async def lesson_menu_btn(self, lesson: Lessons) -> InlineKeyboardMarkup:
+    async def lesson_menu_btn(self, lesson: Lessons, emoji_list: list = None) -> InlineKeyboardMarkup:
         """Кнопки меню для урока"""
 
         builder = InlineKeyboardBuilder()
+
+        # отрисовываем кнопки со смайликами
+        if emoji_list:
+            for emoji in emoji_list:
+                builder.add(
+                    InlineKeyboardButton(
+                        text=f'{emoji["button"]}({emoji["count"]})',
+                        callback_data=f'emoji_{emoji["button"]}'
+                    )
+                )
+
         builder.button(
             text=BUTTONS['BACK'],
             callback_data=f'back_{lesson.course_id}'
@@ -95,12 +106,12 @@ class LessonKeyboard:
         for num in range(1, count_answers + 1):
             if selected and num in selected:
                 builder.button(
-                    text=f'{letter_list[num]} ✅',
+                    text=f'Вариант {letter_list[num]} ✅',
                     callback_data=f'test_answers_{num}'
                 )
                 continue
             builder.button(
-                text=letter_list[num],
+                text=f'Вариант {letter_list[num]}',
                 callback_data=f'test_answers_{num}'
             )
 

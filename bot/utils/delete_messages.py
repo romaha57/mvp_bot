@@ -78,6 +78,13 @@ async def delete_messages(data: dict, state: FSMContext, src: Union[CallbackQuer
 
             await state.update_data(additional_msg=None)
     else:
+
+        if data.get('video_msg'):
+            await src.bot.edit_message_reply_markup(
+                chat_id=data.get('chat_id'),
+                message_id=data.get('video_msg')
+            )
+            await state.update_data(video_msg=None)
         # убираем кнопки управление уроком(Назад, Выполнить задание)
         if data.get('video_description_msg'):
             await src.bot.edit_message_reply_markup(

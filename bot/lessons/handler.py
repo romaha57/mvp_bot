@@ -15,6 +15,7 @@ from bot.lessons.keyboards import LessonKeyboard
 from bot.lessons.service import LessonService
 from bot.lessons.states import LessonChooseState
 from bot.settings.keyboards import BaseKeyboard
+from bot.users.service import UserService
 from bot.utils.answers import format_answers_text, send_user_answers_to_group, get_images_by_place
 from bot.utils.certificate import build_certificate
 from bot.utils.delete_messages import delete_messages
@@ -27,10 +28,12 @@ class LessonHandler(Handler):
         self.router = Router()
         self.db = LessonService()
         self.course_db = CourseService()
+        self.user_db = UserService()
         self.kb = LessonKeyboard()
         self.base_kb = BaseKeyboard()
         self.test_questions = None
         self.result_count = 0
+        self.emoji_list = None
 
     def handle(self):
 
@@ -74,12 +77,20 @@ class LessonHandler(Handler):
                         await callback.message.answer_photo(
                             photo=image
                         )
+
                 if lesson.video:
                     try:
+                        # список смайликов для оценки курса
+
+                        if lesson.buttons_rates:
+                            self.emoji_list = json.loads(lesson.buttons_rates)
+
                         video_msg = await callback.message.answer_video(
                             lesson.video,
-                            caption=lesson.title
+                            caption=lesson.description,
+                            reply_markup=await self.kb.lesson_menu_btn(lesson, self.emoji_list)
                         )
+                        self.emoji_list = None
                         # сохраняем id message, чтобы потом удалить
                         await state.update_data(video_msg=video_msg.message_id)
                     # отлов ошибки при неправильном file_id
@@ -88,10 +99,6 @@ class LessonHandler(Handler):
                             MESSAGES['VIDEO_ERROR'],
                             reply_markup=await self.kb.lesson_menu_btn(lesson)
                         )
-                    video_description_msg = await callback.message.answer(
-                        lesson.description,
-                        reply_markup=await self.kb.lesson_menu_btn(lesson)
-                    )
 
                     # отправка доп. изображений к уроку
                     images = await get_images_by_place('after_video', lesson)
@@ -105,15 +112,16 @@ class LessonHandler(Handler):
                             except TelegramBadRequest:
                                 pass
 
-                    # сохраняем message_id, чтобы потом их удалить
-                    await state.update_data(video_description_msg=video_description_msg.message_id)
-
                 else:
+                    if lesson.buttons_rates:
+                        self.emoji_list = json.loads(lesson.buttons_rates)
+
                     lesson_msg1 = await callback.message.answer(lesson.title)
                     lesson_msg2 = await callback.message.answer(
                         lesson.description,
-                        reply_markup=await self.kb.lesson_menu_btn(lesson)
+                        reply_markup=await self.kb.lesson_menu_btn(lesson, self.emoji_list)
                     )
+                    self.emoji_list = None
                     # сохраняем message_id, чтобы потом их удалить
                     await state.update_data(lesson_msg1=lesson_msg1.message_id)
                     await state.update_data(lesson_msg2=lesson_msg2.message_id)
@@ -920,3 +928,43 @@ class LessonHandler(Handler):
                 )
 
                 await state.update_data(menu_msg=menu_msg.message_id)
+
+        @self.router.callback_query(F.data.startswith('emoji'))
+        async def increment_emoji_count(callback: CallbackQuery, state: FSMContext):
+            """Отлавливаем нажатие на кнопку по смайликом"""
+
+            data = await state.get_data()
+            emoji_from_user = callback.data.split('_')[-1]
+
+            # получаем текущий урок
+            lesson = data.get('lesson')
+            lessons_ratings = lesson.buttons_rates
+            if lessons_ratings:
+                lessons_ratings = json.loads(lessons_ratings)
+
+            # ---------------------Логика добавления оценки к уроку --------------------------
+
+                for rate in lessons_ratings:
+                    if rate['button'] == emoji_from_user:
+                        rate['count'] += 1
+
+                lessons_ratings_str = json.dumps(lessons_ratings, ensure_ascii=False)
+                await self.db.increment_emoji_count(lesson, lessons_ratings_str)
+                # ----------------------------------- КОНЕЦ --------------------------------------
+
+                try:
+                    if data.get('video_msg'):
+                        await callback.bot.edit_message_reply_markup(
+                            chat_id=data['chat_id'],
+                            message_id=data['video_msg'],
+                            reply_markup=await self.kb.lesson_menu_btn(lesson, lessons_ratings)
+                        )
+
+                    if data.get('lesson_msg2'):
+                        await callback.bot.edit_message_reply_markup(
+                            chat_id=data['chat_id'],
+                            message_id=data['lesson_msg2'],
+                            reply_markup=await self.kb.lesson_menu_btn(lesson, lessons_ratings)
+                        )
+                except TelegramBadRequest:
+                    pass

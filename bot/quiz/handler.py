@@ -28,6 +28,26 @@ class QuizHandler(Handler):
     def handle(self):
 
         @self.router.message(F.text == BUTTONS['QUIZ'])
+        async def quiz_menu(message: Message, state: FSMContext):
+            """Отслеживание кнопки 'Тестирование'"""
+
+            data = await state.get_data()
+            user = await self.db.get_user_by_tg_id(message.from_user.id)
+
+            # удаляем сообщения
+            await delete_messages(
+                src=message,
+                data=data,
+                state=state
+            )
+
+            await message.answer(
+                MESSAGES['QUIZ_SELECTION'],
+                reply_markup=await self.kb.quiz_menu_btn()
+            )
+
+
+        @self.router.message(F.text == BUTTONS['START_QUIZ'])
         async def start_quiz(message: Message, state: FSMContext):
             """Обработка начала тестирования"""
 

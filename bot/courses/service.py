@@ -7,6 +7,7 @@ from bot.courses.models import (Course, CourseBots, CourseHistory,
 from bot.db_connect import async_session
 from bot.lessons.models import LessonHistory
 from bot.services.base_service import BaseService, Singleton
+from bot.users.models import Users
 
 
 class CourseService(BaseService, metaclass=Singleton):
@@ -147,3 +148,16 @@ class CourseService(BaseService, metaclass=Singleton):
 
             await session.execute(query)
             await session.commit()
+
+    @classmethod
+    async def mark_user_show_course_description(cls, user: Users):
+        """Отмечаем флаг на false, чтобы не показывать видео курса"""
+
+        async with async_session() as session:
+            query = update(Users). \
+                where(Users.id == user.id). \
+                values(is_show_course_description=False)
+
+            await session.execute(query)
+            await session.commit()
+

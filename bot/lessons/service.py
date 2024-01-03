@@ -1,6 +1,7 @@
+import json
 from typing import Union
 
-from sqlalchemy import desc, insert, select, update
+from sqlalchemy import desc, insert, select, update, delete
 from sqlalchemy.exc import MultipleResultsFound
 
 from bot.db_connect import async_session
@@ -400,4 +401,16 @@ class LessonService(BaseService, metaclass=Singleton):
             if result is None:
                 return True
             return False
+
+    @classmethod
+    async def increment_emoji_count(cls, lesson: Lessons, emoji_list: str):
+        """Увеличиваем счетчик emoji на 1"""
+
+        async with async_session() as session:
+            query = update(Lessons).\
+                where(Lessons.id == lesson.id).\
+                values(buttons_rates=emoji_list)
+
+            await session.execute(query)
+            await session.commit()
 

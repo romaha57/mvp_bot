@@ -33,17 +33,15 @@ class UserHandler(Handler):
 
         @self.router.message(F.text == BUTTONS['BALANCE'])
         async def get_balance(message: Message):
-            user_account = await self.db.get_account_by_tg_id(message.from_user.id)
-
-            # получаем баланс текущего пользователя
-            user_balance = await self.db.get_balance(
-                account_id=user_account.id
-            )
+            # user_account = await self.db.get_account_by_tg_id(message.from_user.id)
+            #
+            # # получаем баланс текущего пользователя
+            # user_balance = await self.db.get_balance(
+            #     account_id=user_account.id
+            # )
 
             await message.answer(
-                MESSAGES['BALANCE'].format(
-                    user_balance
-                ),
+                MESSAGES['BALANCE'],
                 reply_markup=await self.base_kb.menu_btn()
             )
 

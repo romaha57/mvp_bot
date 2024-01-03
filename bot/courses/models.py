@@ -1,5 +1,5 @@
 from sqlalchemy import (Column, DateTime, ForeignKey, Integer, String, Text,
-                        func)
+                        func, Boolean)
 from sqlalchemy.orm import relationship
 
 from bot.db_connect import Base

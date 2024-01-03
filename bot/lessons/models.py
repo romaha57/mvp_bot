@@ -18,6 +18,7 @@ class Lessons(Base):
     questions = Column(Text)
     questions_percent = Column(Integer)
     work_description = Column(Text)
+    buttons_rates = Column(Text)
     course_id = Column(Integer, ForeignKey('$_courses.id'))
     work_type_id = Column(Integer, ForeignKey('$_lesson_work_types.id'))
     additional_task_id = Column(Integer, ForeignKey('$_lesson_additional_tasks.id'))
@@ -34,6 +35,7 @@ class Lessons(Base):
     test_lesson_history = relationship('TestLessonHistory', back_populates='lesson')
     additional_task = relationship('LessonAdditionalTasks', back_populates='lesson')
     video_type = relationship('VideoTypes', back_populates='lesson')
+    rating = relationship('RatingLesson', back_populates='lesson')
 
     def __str__(self):
         return f'{self.title}'

@@ -1,4 +1,4 @@
-from aiogram.types import InlineKeyboardMarkup
+from aiogram.types import InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
 
 from bot.quiz.service import QuizService
@@ -61,6 +61,24 @@ class QuizKeyboard:
         )
 
         builder.adjust(1)
+
+        return builder.as_markup(
+            resize_keyboard=True,
+            one_time_keyboard=True
+        )
+
+    async def quiz_menu_btn(self) -> ReplyKeyboardMarkup:
+        """Кнопки управления тестированием """
+
+        builder = ReplyKeyboardBuilder()
+
+        builder.row(
+            KeyboardButton(text=BUTTONS['START_QUIZ']),
+            KeyboardButton(text=BUTTONS['RESULTS_QUIZ'])
+        )
+        builder.row(
+            KeyboardButton(text=BUTTONS['MENU'])
+        )
 
         return builder.as_markup(
             resize_keyboard=True,

@@ -25,13 +25,11 @@ class BaseKeyboard:
             builder.row(
                 KeyboardButton(text=await self._get_button('QUIZ')),
                 KeyboardButton(text=await self._get_button('EDUCATION')),
-                KeyboardButton(text=await self._get_button('RESULTS_QUIZ')),
             )
 
         if promocode.quiz_id and not promocode.course_id:
             builder.row(
                 KeyboardButton(text=await self._get_button('QUIZ')),
-                KeyboardButton(text=await self._get_button('RESULTS_QUIZ')),
             )
         elif promocode.course_id and not promocode.quiz_id:
             builder.row(
