@@ -161,3 +161,17 @@ class CourseService(BaseService, metaclass=Singleton):
             await session.execute(query)
             await session.commit()
 
+    @classmethod
+    async def get_actual_lesson_history(cls, user_id: int, lesson_id: int) -> LessonHistory:
+        """Получаем актуальную попытку прохождения урока"""
+
+        async with async_session() as session:
+            query = select(LessonHistory). \
+                filter_by(user_id=user_id, lesson_id=lesson_id). \
+                order_by(desc('id')).limit(1)
+
+            result = await session.execute(query)
+
+            return result.scalars().first()
+
+

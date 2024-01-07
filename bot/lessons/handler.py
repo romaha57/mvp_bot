@@ -79,7 +79,7 @@ class LessonHandler(Handler):
                         )
 
                 await show_lesson_info(
-                    callback=callback,
+                    message=callback.message,
                     state=state,
                     self=self,
                     lesson=lesson,

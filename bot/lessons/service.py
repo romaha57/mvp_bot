@@ -414,3 +414,31 @@ class LessonService(BaseService, metaclass=Singleton):
             await session.execute(query)
             await session.commit()
 
+    @classmethod
+    async def get_last_passed_lesson(cls, tg_id: int, course_id: int = None):
+        """Получаем последний пройденный урок пользователя"""
+
+        lesson = None
+
+        async with async_session() as session:
+
+            # пробуем получить урок со статусом 'Пройден'
+            query = select(Lessons).\
+                join(LessonHistory, LessonHistory.lesson_id == Lessons.id).\
+                join(Users, Users.id == LessonHistory.user_id).\
+                where(Users.external_id == tg_id, LessonHistory.status_id == 4).order_by(LessonHistory.lesson_id.desc()).limit(1)
+
+            res = await session.execute(query)
+            current_lesson = res.scalars().first()
+
+            # если нашли пройденный урок, то берем следующий по порядковому номеру
+            if current_lesson:
+                lesson = await cls.get_lesson_by_order_num(course_id, current_lesson.order_num + 1)
+
+            # если такого нет, то берем 1 урок из данного курса
+            if lesson is None:
+                lesson = await cls.get_lesson_by_order_num(course_id, 2)
+
+            return lesson
+
+

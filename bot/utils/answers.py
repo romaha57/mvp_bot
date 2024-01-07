@@ -130,7 +130,7 @@ async def get_images_by_place(place: str, lesson: Lessons) -> list[str]:
     return result_images
 
 
-async def show_lesson_info(self, callback: CallbackQuery, state: FSMContext, lesson: Lessons, user_id: int):
+async def show_lesson_info(message: Message, state: FSMContext, lesson: Lessons, user_id: int, self = None):
     """Отображение урока, используется при нажатии на 'Обучение' и при переходе из списка уроков"""
 
     if lesson.video:
@@ -140,7 +140,7 @@ async def show_lesson_info(self, callback: CallbackQuery, state: FSMContext, les
             if lesson.buttons_rates:
                 self.emoji_list = json.loads(lesson.buttons_rates)
 
-            video_msg = await callback.message.answer_video(
+            video_msg = await message.answer_video(
                 lesson.video,
                 caption=lesson.description,
                 reply_markup=await self.kb.lesson_menu_btn(lesson, self.emoji_list)
@@ -151,7 +151,7 @@ async def show_lesson_info(self, callback: CallbackQuery, state: FSMContext, les
 
         # отлов ошибки при неправильном file_id
         except TelegramBadRequest:
-            await callback.message.answer(
+            await message.answer(
                 MESSAGES['VIDEO_ERROR'],
                 reply_markup=await self.kb.lesson_menu_btn(lesson)
             )
@@ -161,7 +161,7 @@ async def show_lesson_info(self, callback: CallbackQuery, state: FSMContext, les
         if images:
             for image in images:
                 try:
-                    await callback.message.answer_photo(
+                    await message.answer_photo(
                         photo=image
                     )
                 # отлов ошибки при неправильном file_id
@@ -172,8 +172,8 @@ async def show_lesson_info(self, callback: CallbackQuery, state: FSMContext, les
         if lesson.buttons_rates:
             self.emoji_list = json.loads(lesson.buttons_rates)
 
-        lesson_msg1 = await callback.message.answer(lesson.title)
-        lesson_msg2 = await callback.message.answer(
+        lesson_msg1 = await message.answer(lesson.title)
+        lesson_msg2 = await message.answer(
             lesson.description,
             reply_markup=await self.kb.lesson_menu_btn(lesson, self.emoji_list)
         )
@@ -188,4 +188,4 @@ async def show_lesson_info(self, callback: CallbackQuery, state: FSMContext, les
         lesson_id=lesson.id
     )
     await state.update_data(lesson_history_id=actual_lesson_history.id)
-    await state.update_data(chat_id=callback.message.chat.id)
+    await state.update_data(chat_id=message.chat.id)

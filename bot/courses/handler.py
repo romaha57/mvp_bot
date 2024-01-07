@@ -7,8 +7,10 @@ from bot.courses.service import CourseService
 from bot.courses.states import CourseChooseState
 from bot.handlers.base_handler import Handler
 from bot.lessons.keyboards import LessonKeyboard
+from bot.lessons.service import LessonService
 from bot.lessons.states import LessonChooseState
 from bot.settings.keyboards import BaseKeyboard
+from bot.utils.answers import show_lesson_info
 from bot.utils.buttons import BUTTONS
 from bot.utils.delete_messages import delete_messages
 from bot.utils.messages import MESSAGES
@@ -19,9 +21,11 @@ class CourseHandler(Handler):
         super().__init__(bot)
         self.router = Router()
         self.db = CourseService()
+        self.lesson_db = LessonService()
         self.kb = CourseKeyboard()
         self.base_kb = BaseKeyboard()
         self.lesson_kb = LessonKeyboard()
+        self.emoji_list = None
 
     def handle(self):
 
@@ -66,30 +70,66 @@ class CourseHandler(Handler):
                         course.intro,
                         reply_markup=await self.lesson_kb.lessons_btn(course.id, user.id)
                     )
+
+                    # устанавливаем отлов состояния на название урока
+                    await state.set_state(LessonChooseState.lesson)
+
                     await state.update_data(chat_id=message.chat.id)
                     await state.update_data(delete_message_id=msg.message_id)
+
+                    menu_msg = await message.answer(
+                        MESSAGES['GO_TO_MENU'],
+                        reply_markup=await self.base_kb.menu_btn()
+                    )
+
+                    await state.update_data(menu_msg=menu_msg.message_id)
 
                 else:
-                    msg = await message.answer(
-                        'Уроки курса:',
-                        reply_markup=await self.lesson_kb.lessons_btn(course.id, user.id)
+
+                    # сразу переводим пользователя на последний урок, после нажатия на 'Обучение'
+
+                    # получаем актуальную для текущего пользователя попытку прохождения курса
+                    actual_course_attempt = await self.db.get_actual_course_attempt(
+                        user_id=user.id,
+                        course_id=course.id
                     )
-                    await state.update_data(chat_id=message.chat.id)
-                    await state.update_data(delete_message_id=msg.message_id)
 
-                menu_msg = await message.answer(
-                    MESSAGES['GO_TO_MENU'],
-                    reply_markup=await self.base_kb.menu_btn()
-                )
+                    lesson = await self.lesson_db.get_last_passed_lesson(
+                        tg_id=message.from_user.id,
+                        course_id=course.id
+                    )
 
-                await state.update_data(menu_msg=menu_msg.message_id)
+                    # создаем запись истории прохождения урока
+                    await self.lesson_db.create_history(
+                        lesson_id=lesson.id,
+                        user_id=user.id,
+                        course_history_id=actual_course_attempt.id
+                    )
 
-                # устанавливаем отлов состояния на название урока
-                await state.set_state(LessonChooseState.lesson)
+                    await state.update_data(lesson=lesson)
+
+                    await show_lesson_info(
+                        self=self,
+                        lesson=lesson,
+                        state=state,
+                        message=message,
+                        user_id=user.id
+                    )
+
+                    menu_msg = await message.answer(
+                        MESSAGES['GO_TO_MENU'],
+                        reply_markup=await self.base_kb.menu_btn()
+                    )
+
+                    await state.update_data(menu_msg=menu_msg.message_id)
+
 
             # -------------------------Логика если курсов больше 1----------------------------------
 
             else:
+                # устанавливаем отлов состояния на название урока
+                await state.set_state(LessonChooseState.lesson)
+
                 msg1 = await message.answer(
                     MESSAGES['CHOOSE_COURSE'],
                     reply_markup=await self.kb.courses_btn(all_courses)
