@@ -27,7 +27,7 @@ class CourseHandler(Handler):
 
         @self.router.message(F.text == BUTTONS['EDUCATION'])
         async def get_course(message: Message, state: FSMContext):
-            """Отлов кнопки 'Обучение' и вывод списка доступынх курсов"""
+            """Отлов кнопки 'Обучение' и вывод списка доступных курсов"""
 
             # получаем id бота текущего юзера и id курса для текущего пользователя и его промокода
             user_data = await self.db.get_bot_id_and_promocode_course_id_by_user(

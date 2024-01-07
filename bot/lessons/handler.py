@@ -16,7 +16,7 @@ from bot.lessons.service import LessonService
 from bot.lessons.states import LessonChooseState
 from bot.settings.keyboards import BaseKeyboard
 from bot.users.service import UserService
-from bot.utils.answers import format_answers_text, send_user_answers_to_group, get_images_by_place
+from bot.utils.answers import format_answers_text, send_user_answers_to_group, get_images_by_place, show_lesson_info
 from bot.utils.certificate import build_certificate
 from bot.utils.delete_messages import delete_messages
 from bot.utils.messages import MESSAGES
@@ -78,61 +78,13 @@ class LessonHandler(Handler):
                             photo=image
                         )
 
-                if lesson.video:
-                    try:
-                        # список смайликов для оценки курса
-
-                        if lesson.buttons_rates:
-                            self.emoji_list = json.loads(lesson.buttons_rates)
-
-                        video_msg = await callback.message.answer_video(
-                            lesson.video,
-                            caption=lesson.description,
-                            reply_markup=await self.kb.lesson_menu_btn(lesson, self.emoji_list)
-                        )
-                        self.emoji_list = None
-                        # сохраняем id message, чтобы потом удалить
-                        await state.update_data(video_msg=video_msg.message_id)
-                    # отлов ошибки при неправильном file_id
-                    except TelegramBadRequest:
-                        await callback.message.answer(
-                            MESSAGES['VIDEO_ERROR'],
-                            reply_markup=await self.kb.lesson_menu_btn(lesson)
-                        )
-
-                    # отправка доп. изображений к уроку
-                    images = await get_images_by_place('after_video', lesson)
-                    if images:
-                        for image in images:
-                            try:
-                                await callback.message.answer_photo(
-                                    photo=image
-                                )
-                            # отлов ошибки при неправильном file_id
-                            except TelegramBadRequest:
-                                pass
-
-                else:
-                    if lesson.buttons_rates:
-                        self.emoji_list = json.loads(lesson.buttons_rates)
-
-                    lesson_msg1 = await callback.message.answer(lesson.title)
-                    lesson_msg2 = await callback.message.answer(
-                        lesson.description,
-                        reply_markup=await self.kb.lesson_menu_btn(lesson, self.emoji_list)
-                    )
-                    self.emoji_list = None
-                    # сохраняем message_id, чтобы потом их удалить
-                    await state.update_data(lesson_msg1=lesson_msg1.message_id)
-                    await state.update_data(lesson_msg2=lesson_msg2.message_id)
-
-                # получаем актуальную попытку прохождения урока
-                actual_lesson_history = await self.db.get_actual_lesson_history(
-                    user_id=user.id,
-                    lesson_id=lesson.id
+                await show_lesson_info(
+                    callback=callback,
+                    state=state,
+                    self=self,
+                    lesson=lesson,
+                    user_id=user.id
                 )
-                await state.update_data(lesson_history_id=actual_lesson_history.id)
-                await state.update_data(chat_id=callback.message.chat.id)
 
             else:
                 await callback.message.answer(MESSAGES['NOT_FOUND_LESSON'])
@@ -190,7 +142,6 @@ class LessonHandler(Handler):
             )
 
             lesson = data['lesson']
-            print(f'{lesson=}')
 
             # отправка доп. изображений к уроку
             images = await get_images_by_place('before_work', lesson)

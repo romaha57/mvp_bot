@@ -4,7 +4,8 @@ import string
 
 from aiogram import Bot
 from aiogram.exceptions import TelegramForbiddenError, TelegramBadRequest
-from aiogram.types import Message
+from aiogram.fsm.context import FSMContext
+from aiogram.types import Message, CallbackQuery
 
 from bot.courses.service import CourseService
 from bot.lessons.models import Lessons
@@ -58,11 +59,9 @@ async def format_answers_text(answers: list[str]):
     """
     result = ''
     letter_list = ['1', 'А', 'Б', 'В', 'Г', 'Д', 'Е', 'Ж', 'З', 'И']
-    print(len(answers))
+
     for number, answer in enumerate(answers, 1):
-        print(f'{number=} ------- {answer=}')
         result += f'{letter_list[number]}. '
-        print(f'{result=}')
         result += answer['title'] + '\n\n'
 
     return result
@@ -131,3 +130,62 @@ async def get_images_by_place(place: str, lesson: Lessons) -> list[str]:
     return result_images
 
 
+async def show_lesson_info(self, callback: CallbackQuery, state: FSMContext, lesson: Lessons, user_id: int):
+    """Отображение урока, используется при нажатии на 'Обучение' и при переходе из списка уроков"""
+
+    if lesson.video:
+        try:
+            # список смайликов для оценки курса
+
+            if lesson.buttons_rates:
+                self.emoji_list = json.loads(lesson.buttons_rates)
+
+            video_msg = await callback.message.answer_video(
+                lesson.video,
+                caption=lesson.description,
+                reply_markup=await self.kb.lesson_menu_btn(lesson, self.emoji_list)
+            )
+            self.emoji_list = None
+            # сохраняем id message, чтобы потом удалить
+            await state.update_data(video_msg=video_msg.message_id)
+
+        # отлов ошибки при неправильном file_id
+        except TelegramBadRequest:
+            await callback.message.answer(
+                MESSAGES['VIDEO_ERROR'],
+                reply_markup=await self.kb.lesson_menu_btn(lesson)
+            )
+
+        # отправка доп. изображений к уроку
+        images = await get_images_by_place('after_video', lesson)
+        if images:
+            for image in images:
+                try:
+                    await callback.message.answer_photo(
+                        photo=image
+                    )
+                # отлов ошибки при неправильном file_id
+                except TelegramBadRequest:
+                    pass
+
+    else:
+        if lesson.buttons_rates:
+            self.emoji_list = json.loads(lesson.buttons_rates)
+
+        lesson_msg1 = await callback.message.answer(lesson.title)
+        lesson_msg2 = await callback.message.answer(
+            lesson.description,
+            reply_markup=await self.kb.lesson_menu_btn(lesson, self.emoji_list)
+        )
+        self.emoji_list = None
+        # сохраняем message_id, чтобы потом их удалить
+        await state.update_data(lesson_msg1=lesson_msg1.message_id)
+        await state.update_data(lesson_msg2=lesson_msg2.message_id)
+
+    # получаем актуальную попытку прохождения урока
+    actual_lesson_history = await self.db.get_actual_lesson_history(
+        user_id=user_id,
+        lesson_id=lesson.id
+    )
+    await state.update_data(lesson_history_id=actual_lesson_history.id)
+    await state.update_data(chat_id=callback.message.chat.id)
