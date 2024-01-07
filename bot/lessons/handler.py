@@ -178,7 +178,7 @@ class LessonHandler(Handler):
             await state.update_data(delete_message_id=msg.message_id)
             await state.update_data(chat_id=callback.message.chat.id)
 
-        @self.router.callback_query(F.data.startswith('start_task'), LessonChooseState.start_task)
+        @self.router.callback_query(F.data.startswith('start_task'))
         async def start_task_after_lesson(callback: CallbackQuery, state: FSMContext):
             data = await state.get_data()
 
