@@ -100,7 +100,7 @@ class LessonKeyboard:
     async def test_answers_btn(self, count_answers: int, selected: list[int] = None) -> InlineKeyboardMarkup:
         """Кнопки с вариантами ответа на тестовые вопросы после урока"""
 
-        letter_list = ['1', 'А', 'Б', 'В', 'Г', 'Д', 'Е']
+        letter_list = ['1', 'А', 'Б', 'В', 'Г', 'Д', 'Е', 'Ж', 'З', 'И']
 
         builder = InlineKeyboardBuilder()
         for num in range(1, count_answers + 1):

@@ -190,6 +190,7 @@ class LessonHandler(Handler):
             )
 
             lesson = data['lesson']
+            print(f'{lesson=}')
 
             # отправка доп. изображений к уроку
             images = await get_images_by_place('before_work', lesson)
