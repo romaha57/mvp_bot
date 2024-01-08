@@ -418,7 +418,6 @@ class LessonService(BaseService, metaclass=Singleton):
     async def get_last_passed_lesson(cls, tg_id: int, course_id: int = None):
         """Получаем последний пройденный урок пользователя"""
 
-        lesson = None
 
         async with async_session() as session:
 
@@ -434,9 +433,12 @@ class LessonService(BaseService, metaclass=Singleton):
             # если нашли пройденный урок, то берем следующий по порядковому номеру
             if current_lesson:
                 lesson = await cls.get_lesson_by_order_num(course_id, current_lesson.order_num + 1)
+                # если нет следующего урока
+                if not lesson:
+                    return 'all_lesson_done'
 
             # если такого нет, то берем 1 урок из данного курса
-            if lesson is None:
+            else:
                 lesson = await cls.get_lesson_by_order_num(course_id, 2)
 
             return lesson

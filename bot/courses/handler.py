@@ -99,29 +99,36 @@ class CourseHandler(Handler):
                         course_id=course.id
                     )
 
-                    # создаем запись истории прохождения урока
-                    await self.lesson_db.create_history(
-                        lesson_id=lesson.id,
-                        user_id=user.id,
-                        course_history_id=actual_course_attempt.id
-                    )
+                    # когда все уроки пройдены и нет следующего урока, то выводим сообщение об этом
+                    if lesson == 'all_lesson_done':
+                        await message.answer(
+                            MESSAGES['ALL_LESSON_DONE'],
+                            reply_markup=await self.base_kb.menu_btn()
+                        )
+                    else:
+                        # создаем запись истории прохождения урока
+                        await self.lesson_db.create_history(
+                            lesson_id=lesson.id,
+                            user_id=user.id,
+                            course_history_id=actual_course_attempt.id
+                        )
 
-                    await state.update_data(lesson=lesson)
+                        await state.update_data(lesson=lesson)
 
-                    await show_lesson_info(
-                        self=self,
-                        lesson=lesson,
-                        state=state,
-                        message=message,
-                        user_id=user.id
-                    )
+                        await show_lesson_info(
+                            self=self,
+                            lesson=lesson,
+                            state=state,
+                            message=message,
+                            user_id=user.id
+                        )
 
-                    menu_msg = await message.answer(
-                        MESSAGES['GO_TO_MENU'],
-                        reply_markup=await self.base_kb.menu_btn()
-                    )
+                        menu_msg = await message.answer(
+                            MESSAGES['GO_TO_MENU'],
+                            reply_markup=await self.base_kb.menu_btn()
+                        )
 
-                    await state.update_data(menu_msg=menu_msg.message_id)
+                        await state.update_data(menu_msg=menu_msg.message_id)
 
 
             # -------------------------Логика если курсов больше 1----------------------------------
