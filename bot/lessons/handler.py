@@ -275,10 +275,11 @@ class LessonHandler(Handler):
                     )
 
                 else:
+                    letter_list = ['1', 'А', 'Б', 'В', 'Г', 'Д', 'Е', 'Ж', 'З', 'И']
                     # получаем текст правильных ответов
                     answer = ''
                     for correct_answer_index in correct_answers:
-                        answer += '\n' + question['questions'][correct_answer_index - 1]['title']
+                        answer += f'\n{letter_list[correct_answer_index]}. ' + question['questions'][correct_answer_index - 1]['title']
 
                     await callback.message.answer(
                         MESSAGES['INCORRECT_ANSWER'].format(
