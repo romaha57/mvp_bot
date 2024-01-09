@@ -423,7 +423,7 @@ class LessonService(BaseService, metaclass=Singleton):
             query = select(Lessons).\
                 join(LessonHistory, LessonHistory.lesson_id == Lessons.id).\
                 join(Users, Users.id == LessonHistory.user_id).\
-                where(Users.external_id == tg_id, LessonHistory.status_id == 4).order_by(LessonHistory.lesson_id.desc()).limit(1)
+                where(Users.external_id == tg_id, LessonHistory.status_id == 4).order_by(Lessons.order_num.desc()).limit(1)
 
             res = await session.execute(query)
             current_lesson = res.scalars().first()

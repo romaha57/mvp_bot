@@ -48,6 +48,8 @@ class CourseHandler(Handler):
             # ---------------------Логика для перехода сразу к списку уроков, если курс всего 1-----------------
             if len(all_courses) == 1:
                 course = await self.db.get_course_by_name(all_courses[0])
+
+                await state.update_data(course=course)
                 # создаем запись в истории прохождения курса со статусом 'Открыт'
                 await self.db.create_history(
                     course_id=course.id,
@@ -101,10 +103,22 @@ class CourseHandler(Handler):
 
                     # когда все уроки пройдены и нет следующего урока, то выводим сообщение об этом
                     if lesson == 'all_lesson_done':
-                        await message.answer(
-                            MESSAGES['ALL_LESSON_DONE'],
+                        msg = await message.answer(
+                            course.intro,
+                            reply_markup=await self.lesson_kb.lessons_btn(course.id, user.id)
+                        )
+
+                        # устанавливаем отлов состояния на название урока
+                        await state.set_state(LessonChooseState.lesson)
+                        await state.update_data(delete_message_id=msg.message_id)
+
+                        menu_msg = await message.answer(
+                            MESSAGES['GO_TO_MENU'],
                             reply_markup=await self.base_kb.menu_btn()
                         )
+
+                        await state.update_data(menu_msg=menu_msg.message_id)
+
                     else:
                         # создаем запись истории прохождения урока
                         await self.lesson_db.create_history(
@@ -163,6 +177,8 @@ class CourseHandler(Handler):
                 course = await self.db.get_course_by_name(callback.data)
             else:
                 course = course
+
+            await state.update_data(course=course)
 
             await delete_messages(
                 src=callback,

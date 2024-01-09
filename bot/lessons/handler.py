@@ -483,8 +483,9 @@ class LessonHandler(Handler):
                         data['lesson_history_id'])
                     await CourseService.mark_course_done(course_history_id)
 
+                    outro_course_text = data.get('course').outro
                     await src.message.answer(
-                        MESSAGES['ALL_LESSONS_DONE'],
+                        outro_course_text,
                         reply_markup=await self.base_kb.menu_btn()
                     )
 
@@ -513,6 +514,7 @@ class LessonHandler(Handler):
                         # читаем файл и отправляем пользователю
                         file_path = f'/app/static/{src.message.chat.id}_certificate.pdf'
                         certificate = FSInputFile(file_path)
+                        print(certificate)
                         await src.bot.send_document(
                             chat_id=data['chat_id'],
                             document=certificate
@@ -586,8 +588,9 @@ class LessonHandler(Handler):
                         data['lesson_history_id'])
                     await CourseService.mark_course_done(course_history_id)
 
+                    outro_course_text = data.get('course').outro
                     await src.answer(
-                        MESSAGES['ALL_LESSONS_DONE'],
+                        outro_course_text,
                         reply_markup=await self.base_kb.menu_btn()
                     )
 
@@ -614,6 +617,7 @@ class LessonHandler(Handler):
                         # читаем файл и отправляем пользователю
                         file_path = f'/app/static/{src.chat.id}_certificate.pdf'
                         certificate = FSInputFile(file_path)
+                        print(certificate)
                         await src.bot.send_document(
                             chat_id=data['chat_id'],
                             document=certificate
@@ -661,13 +665,6 @@ class LessonHandler(Handler):
 
             else:
                 await message.answer(MESSAGES['PLEASE_WRITE_CORRECT_ANSWER'])
-
-            menu_msg = await message.answer(
-                MESSAGES['GO_TO_MENU'],
-                reply_markup=await self.base_kb.menu_btn()
-            )
-
-            await state.update_data(menu_msg=menu_msg.message_id)
 
         async def start_image_task_after_lesson(message: Message, state: FSMContext):
             data = await state.get_data()
@@ -913,25 +910,12 @@ class LessonHandler(Handler):
                 await state.set_state(LessonChooseState.lesson)
                 await state.update_data(msg1=msg1.message_id)
 
-                menu_msg = await callback.message.answer(
-                    MESSAGES['GO_TO_MENU'],
-                    reply_markup=await self.base_kb.menu_btn()
-                )
-
-                await state.update_data(menu_msg=menu_msg.message_id)
-
             else:
+                outro_course_text = data.get('course').outro
                 await callback.message.answer(
-                    MESSAGES['ALL_LESSONS_DONE'],
+                    outro_course_text,
                     reply_markup=await self.base_kb.menu_btn()
                 )
-
-                menu_msg = await callback.message.answer(
-                    MESSAGES['GO_TO_MENU'],
-                    reply_markup=await self.base_kb.menu_btn()
-                )
-
-                await state.update_data(menu_msg=menu_msg.message_id)
 
         @self.router.callback_query(F.data.startswith('emoji'))
         async def increment_emoji_count(callback: CallbackQuery, state: FSMContext):
