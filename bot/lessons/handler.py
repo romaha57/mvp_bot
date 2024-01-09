@@ -514,7 +514,6 @@ class LessonHandler(Handler):
                         # читаем файл и отправляем пользователю
                         file_path = f'/app/static/{src.message.chat.id}_certificate.pdf'
                         certificate = FSInputFile(file_path)
-                        print(certificate)
                         await src.bot.send_document(
                             chat_id=data['chat_id'],
                             document=certificate
@@ -617,7 +616,6 @@ class LessonHandler(Handler):
                         # читаем файл и отправляем пользователю
                         file_path = f'/app/static/{src.chat.id}_certificate.pdf'
                         certificate = FSInputFile(file_path)
-                        print(certificate)
                         await src.bot.send_document(
                             chat_id=data['chat_id'],
                             document=certificate

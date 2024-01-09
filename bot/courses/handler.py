@@ -1,6 +1,6 @@
 from aiogram import Bot, F, Router
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, Message
+from aiogram.types import CallbackQuery, Message, FSInputFile
 
 from bot.courses.keyboards import CourseKeyboard
 from bot.courses.service import CourseService
@@ -12,6 +12,7 @@ from bot.lessons.states import LessonChooseState
 from bot.settings.keyboards import BaseKeyboard
 from bot.utils.answers import show_lesson_info
 from bot.utils.buttons import BUTTONS
+from bot.utils.certificate import build_certificate
 from bot.utils.delete_messages import delete_messages
 from bot.utils.messages import MESSAGES
 
@@ -32,6 +33,8 @@ class CourseHandler(Handler):
         @self.router.message(F.text == BUTTONS['EDUCATION'])
         async def get_course(message: Message, state: FSMContext):
             """Отлов кнопки 'Обучение' и вывод списка доступных курсов"""
+
+            data = await state.get_data()
 
             # получаем id бота текущего юзера и id курса для текущего пользователя и его промокода
             user_data = await self.db.get_bot_id_and_promocode_course_id_by_user(
@@ -103,6 +106,7 @@ class CourseHandler(Handler):
 
                     # когда все уроки пройдены и нет следующего урока, то выводим сообщение об этом
                     if lesson == 'all_lesson_done':
+
                         msg = await message.answer(
                             course.intro,
                             reply_markup=await self.lesson_kb.lessons_btn(course.id, user.id)
@@ -114,7 +118,7 @@ class CourseHandler(Handler):
 
                         menu_msg = await message.answer(
                             MESSAGES['GO_TO_MENU'],
-                            reply_markup=await self.base_kb.menu_btn()
+                            reply_markup=await self.base_kb.menu_btn_with_certificate()
                         )
 
                         await state.update_data(menu_msg=menu_msg.message_id)
@@ -233,3 +237,30 @@ class CourseHandler(Handler):
                     MESSAGES['MENU'],
                     reply_markup=await self.base_kb.start_btn(promocode=data['promocode'])
                 )
+
+        @self.router.message(F.text == BUTTONS['GET_CERTIFICATE'])
+        async def get_certificate(message: Message, state: FSMContext):
+            """Отлов кнопки 'Получить сертификат' и его выдача"""
+            data = await state.get_data()
+            course = data.get('course')
+
+            # формируем сертификат
+            build_certificate(
+                user_id=message.chat.id,
+                fullname=message.from_user.full_name,
+                course_name=course.title
+            )
+            # читаем файл и отправляем пользователю
+            file_path = f'/app/static/{message.chat.id}_certificate.pdf'
+            certificate = FSInputFile(file_path)
+            await message.bot.send_document(
+                chat_id=data['chat_id'],
+                document=certificate
+            )
+
+            menu_msg = await message.answer(
+                MESSAGES['GO_TO_MENU'],
+                reply_markup=await self.base_kb.menu_btn()
+            )
+
+            await state.update_data(menu_msg=menu_msg.message_id)

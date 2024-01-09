@@ -83,3 +83,18 @@ class BaseKeyboard:
             input_field_placeholder=MESSAGES['KB_PLACEHOLDER'],
             one_time_keyboard=True
         )
+
+    async def menu_btn_with_certificate(self) -> ReplyKeyboardMarkup:
+        """Кнопка на главное меню"""
+
+        builder = ReplyKeyboardBuilder()
+        builder.row(
+            KeyboardButton(text=await self._get_button('MENU')),
+        )
+        builder.row(
+            KeyboardButton(text=await self._get_button('GET_CERTIFICATE')),
+        )
+        return builder.as_markup(
+            resize_keyboard=True,
+            one_time_keyboard=True
+        )
