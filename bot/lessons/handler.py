@@ -1,12 +1,10 @@
 import json
-import pprint
 from typing import Union
 
 from aiogram import Bot, F, Router
 from aiogram.enums import ContentType
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
-from aiogram.methods import SendPhoto
 from aiogram.types import CallbackQuery, FSInputFile, Message
 
 from bot.courses.service import CourseService
@@ -16,7 +14,8 @@ from bot.lessons.service import LessonService
 from bot.lessons.states import LessonChooseState
 from bot.settings.keyboards import BaseKeyboard
 from bot.users.service import UserService
-from bot.utils.answers import format_answers_text, send_user_answers_to_group, get_images_by_place, show_lesson_info
+from bot.utils.answers import (format_answers_text, get_images_by_place,
+                               send_user_answers_to_group, show_lesson_info)
 from bot.utils.certificate import build_certificate
 from bot.utils.delete_messages import delete_messages
 from bot.utils.messages import MESSAGES
@@ -42,6 +41,10 @@ class LessonHandler(Handler):
             # await state.clear()
 
             data = await state.get_data()
+            self.result_count = 0
+
+            # список для сохранения ответов пользователя
+            await state.update_data(users_answers=[])
 
             lesson_name = callback.data.split('_')[1]
             lesson = await self.db.get_lesson_by_name(lesson_name)
@@ -243,7 +246,7 @@ class LessonHandler(Handler):
             )
 
         @self.router.callback_query(F.data.startswith('check_answer'))
-        async def check_answer_on_quiz(callback: CallbackQuery, state: FSMContext):
+        async def check_answer_on_test_lesson(callback: CallbackQuery, state: FSMContext):
             data = await state.get_data()
 
             if data.get('delete_test_message') and data['selected']:
@@ -256,6 +259,9 @@ class LessonHandler(Handler):
             if data['selected']:
                 # получаем все выбранные пользователям ответы и сортируем по возрастанию цифр
                 data['selected'].sort()
+                users_answers = data['users_answers']
+                # добавляем в список ответов пользователя, выбранный им ответ
+                users_answers.extend(data['selected'])
                 selected = data['selected']
 
                 # получаем вопрос на который отвечал пользователь
@@ -342,6 +348,17 @@ class LessonHandler(Handler):
 
                 # вывод результат теста с подсчетом % правильных
                 user_percent_answer = int((self.result_count / data['questions_count']) * 100)
+
+                # преобразовываем ответы пользователя из цифр в буквы
+                letter_list = ['1', 'А', 'Б', 'В', 'Г', 'Д', 'Е', 'Ж', 'З', 'И']
+                answer = [letter_list[i] for i in data['users_answers']]
+                answer = str(answer)
+                # сохраняем ответы юзера на тесты
+                await self.db.save_user_answer(
+                    answer=answer,
+                    lesson_history_id=data['lesson_history_id']
+                )
+
                 # если пользователь набрал нужный % прохождения
                 if user_percent_answer >= data['lesson'].questions_percent:
                     await callback.message.edit_text(
@@ -352,18 +369,15 @@ class LessonHandler(Handler):
 
                     await self.db.mark_lesson_history_on_status_done(data['lesson_history_id'])
 
-                    # обнуляем счетчик правильных ответов
-                    self.result_count = 0
-
                     await close_lesson(
                         src=callback,
                         state=state
                     )
 
-                else:
                     # обнуляем счетчик правильных ответов
                     self.result_count = 0
 
+                else:
                     msg = await callback.message.edit_text(
                         MESSAGES['FAIL_TEST'].format(
                             user_percent_answer,
@@ -378,7 +392,8 @@ class LessonHandler(Handler):
 
                     await self.db.mark_lesson_history_on_status_fail_test(data['lesson_history_id'])
 
-
+                    # обнуляем счетчик правильных ответов
+                    self.result_count = 0
 
 
         @self.router.callback_query(F.data.startswith('close_lesson'))
@@ -643,8 +658,16 @@ class LessonHandler(Handler):
                     lesson_name=lesson.title,
                     homework=lesson.work_description
                 )
+
             else:
                 await message.answer(MESSAGES['PLEASE_WRITE_CORRECT_ANSWER'])
+
+            menu_msg = await message.answer(
+                MESSAGES['GO_TO_MENU'],
+                reply_markup=await self.base_kb.menu_btn()
+            )
+
+            await state.update_data(menu_msg=menu_msg.message_id)
 
         async def start_image_task_after_lesson(message: Message, state: FSMContext):
             data = await state.get_data()
@@ -683,6 +706,13 @@ class LessonHandler(Handler):
             else:
                 await message.answer(MESSAGES['PLEASE_WRITE_CORRECT_ANSWER'])
 
+            menu_msg = await message.answer(
+                MESSAGES['GO_TO_MENU'],
+                reply_markup=await self.base_kb.menu_btn()
+            )
+
+            await state.update_data(menu_msg=menu_msg.message_id)
+
         async def start_video_task_after_lesson(message: Message, state: FSMContext):
             data = await state.get_data()
 
@@ -719,6 +749,13 @@ class LessonHandler(Handler):
 
             else:
                 await message.answer(MESSAGES['PLEASE_WRITE_CORRECT_ANSWER'])
+
+            menu_msg = await message.answer(
+                MESSAGES['GO_TO_MENU'],
+                reply_markup=await self.base_kb.menu_btn()
+            )
+
+            await state.update_data(menu_msg=menu_msg.message_id)
 
         async def start_file_task_after_lesson(message: Message, state: FSMContext):
             data = await state.get_data()
@@ -757,6 +794,13 @@ class LessonHandler(Handler):
             else:
                 await message.answer(MESSAGES['PLEASE_WRITE_CORRECT_ANSWER'])
 
+            menu_msg = await message.answer(
+                MESSAGES['GO_TO_MENU'],
+                reply_markup=await self.base_kb.menu_btn()
+            )
+
+            await state.update_data(menu_msg=menu_msg.message_id)
+
         async def start_circle_task_after_lesson(message: Message, state: FSMContext):
             data = await state.get_data()
 
@@ -793,6 +837,13 @@ class LessonHandler(Handler):
 
             else:
                 await message.answer(MESSAGES['PLEASE_WRITE_CORRECT_ANSWER'])
+
+            menu_msg = await message.answer(
+                MESSAGES['GO_TO_MENU'],
+                reply_markup=await self.base_kb.menu_btn()
+            )
+
+            await state.update_data(menu_msg=menu_msg.message_id)
 
         @self.router.callback_query(LessonChooseState.lesson, F.data.startswith('skip_additional_task'))
         async def skip_additional_task(callback: CallbackQuery, state: FSMContext):

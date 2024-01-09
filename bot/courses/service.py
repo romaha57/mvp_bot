@@ -173,5 +173,3 @@ class CourseService(BaseService, metaclass=Singleton):
             result = await session.execute(query)
 
             return result.scalars().first()
-
-

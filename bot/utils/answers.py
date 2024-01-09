@@ -3,9 +3,9 @@ import random
 import string
 
 from aiogram import Bot
-from aiogram.exceptions import TelegramForbiddenError, TelegramBadRequest
+from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message
 
 from bot.courses.service import CourseService
 from bot.lessons.models import Lessons
@@ -130,8 +130,10 @@ async def get_images_by_place(place: str, lesson: Lessons) -> list[str]:
     return result_images
 
 
-async def show_lesson_info(message: Message, state: FSMContext, lesson: Lessons, user_id: int, self = None):
+async def show_lesson_info(message: Message, state: FSMContext, lesson: Lessons, user_id: int, self=None):
     """Отображение урока, используется при нажатии на 'Обучение' и при переходе из списка уроков"""
+
+    video_text = f'<b>{lesson.title}</b>\n\n{lesson.description}'
 
     if lesson.video:
         try:
@@ -142,7 +144,7 @@ async def show_lesson_info(message: Message, state: FSMContext, lesson: Lessons,
 
             video_msg = await message.answer_video(
                 lesson.video,
-                caption=lesson.description,
+                caption=video_text,
                 reply_markup=await self.kb.lesson_menu_btn(lesson, self.emoji_list)
             )
             self.emoji_list = None
@@ -156,7 +158,7 @@ async def show_lesson_info(message: Message, state: FSMContext, lesson: Lessons,
                 reply_markup=await self.kb.lesson_menu_btn(lesson)
             )
 
-        # отправка доп. изображений к уроку
+        # Отправка доп. изображений к уроку
         images = await get_images_by_place('after_video', lesson)
         if images:
             for image in images:
@@ -172,15 +174,13 @@ async def show_lesson_info(message: Message, state: FSMContext, lesson: Lessons,
         if lesson.buttons_rates:
             self.emoji_list = json.loads(lesson.buttons_rates)
 
-        lesson_msg1 = await message.answer(lesson.title)
-        lesson_msg2 = await message.answer(
-            lesson.description,
+        lesson_msg1 = await message.answer(
+            video_text,
             reply_markup=await self.kb.lesson_menu_btn(lesson, self.emoji_list)
         )
         self.emoji_list = None
         # сохраняем message_id, чтобы потом их удалить
         await state.update_data(lesson_msg1=lesson_msg1.message_id)
-        await state.update_data(lesson_msg2=lesson_msg2.message_id)
 
     # получаем актуальную попытку прохождения урока
     actual_lesson_history = await self.db.get_actual_lesson_history(

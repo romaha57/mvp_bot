@@ -130,7 +130,6 @@ class CourseHandler(Handler):
 
                         await state.update_data(menu_msg=menu_msg.message_id)
 
-
             # -------------------------Логика если курсов больше 1----------------------------------
 
             else:
@@ -202,7 +201,6 @@ class CourseHandler(Handler):
                     )
                     await state.update_data(chat_id=callback.message.chat.id)
                     await state.update_data(delete_message_id=msg.message_id)
-
 
                 menu_msg = await callback.message.answer(
                     MESSAGES['GO_TO_MENU'],

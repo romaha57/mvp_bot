@@ -82,3 +82,16 @@ class BaseService(metaclass=Singleton):
             result = await session.execute(query)
 
             return result.mappings().first()
+
+    @classmethod
+    async def get_promocode_by_tg_id(cls, tg_id: int):
+        """Получаем промокод по telegram_id"""
+
+        async with async_session() as session:
+            query = select(Promocodes).\
+                join(Users, Users.promocode_id == Promocodes.id).\
+                where(Users.external_id == tg_id)
+
+            result = await session.execute(query)
+
+            return result.scalars().first()

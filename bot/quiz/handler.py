@@ -32,7 +32,6 @@ class QuizHandler(Handler):
             """Отслеживание кнопки 'Тестирование'"""
 
             data = await state.get_data()
-            user = await self.db.get_user_by_tg_id(message.from_user.id)
 
             # удаляем сообщения
             await delete_messages(
@@ -45,7 +44,6 @@ class QuizHandler(Handler):
                 MESSAGES['QUIZ_SELECTION'],
                 reply_markup=await self.kb.quiz_menu_btn()
             )
-
 
         @self.router.message(F.text == BUTTONS['START_QUIZ'])
         async def start_quiz(message: Message, state: FSMContext):

@@ -1,7 +1,6 @@
-import json
 from typing import Union
 
-from sqlalchemy import desc, insert, select, update, delete
+from sqlalchemy import desc, insert, select, update
 from sqlalchemy.exc import MultipleResultsFound
 
 from bot.db_connect import async_session
@@ -418,7 +417,6 @@ class LessonService(BaseService, metaclass=Singleton):
     async def get_last_passed_lesson(cls, tg_id: int, course_id: int = None):
         """Получаем последний пройденный урок пользователя"""
 
-
         async with async_session() as session:
 
             # пробуем получить урок со статусом 'Пройден'
@@ -442,5 +440,3 @@ class LessonService(BaseService, metaclass=Singleton):
                 lesson = await cls.get_lesson_by_order_num(course_id, 2)
 
             return lesson
-
-

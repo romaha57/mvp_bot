@@ -1,4 +1,3 @@
-import asyncio
 import datetime
 
 import requests
@@ -31,4 +30,3 @@ async def send_message_after_30_minutes():
                 reward=record['reward'],
                 comment=f'Начислено за задание: {record["title"]}'
             )
-

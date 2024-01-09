@@ -1,4 +1,5 @@
-from aiogram.types import InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
+from aiogram.types import (InlineKeyboardMarkup, KeyboardButton,
+                           ReplyKeyboardMarkup)
 from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
 
 from bot.quiz.service import QuizService

@@ -18,12 +18,12 @@ async def delete_messages(data: dict, state: FSMContext, src: Union[CallbackQuer
             await state.update_data(video_msg=None)
 
         # убираем кнопки управление уроком(Назад, Выполнить задание)
-        if data.get('lesson_msg2'):
+        if data.get('lesson_msg1'):
             await src.edit_message_reply_markup(
                 chat_id=data.get('chat_id'),
-                message_id=data.get('lesson_msg2')
+                message_id=data.get('lesson_msg1')
             )
-            await state.update_data(lesson_msg2=None)
+            await state.update_data(lesson_msg1=None)
 
         if data.get('msg1'):
             await src.delete_message(
@@ -94,12 +94,12 @@ async def delete_messages(data: dict, state: FSMContext, src: Union[CallbackQuer
             await state.update_data(video_description_msg=None)
 
         # убираем кнопки управление уроком(Назад, Выполнить задание)
-        if data.get('lesson_msg2'):
+        if data.get('lesson_msg1'):
             await src.bot.edit_message_reply_markup(
                 chat_id=data.get('chat_id'),
-                message_id=data.get('lesson_msg2')
+                message_id=data.get('lesson_msg1')
             )
-            await state.update_data(lesson_msg2=None)
+            await state.update_data(lesson_msg1=None)
 
         if data.get('msg1'):
             await src.bot.delete_message(

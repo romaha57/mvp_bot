@@ -1,5 +1,4 @@
 import asyncio
-import logging
 import sys
 
 from aiogram import Bot, Dispatcher
@@ -8,7 +7,6 @@ from aiogram.exceptions import TelegramNetworkError
 from aiogram.fsm.storage.memory import MemoryStorage
 
 from bot.handlers.main_handler import MainHandler
-from bot.middleware import CheckPromocodeMiddleware
 from bot.settings_bot import settings
 
 # для удобного импорта модулей
