@@ -12,10 +12,10 @@ def warning_only(record):
 
 
 def debug_log_write():
-    logger.add('debug.log', format="{time} {level} {message}", level="DEBUG", rotation="50 KB",
+    logger.add('debug.log', format="{time} {level} {message}", level="DEBUG", rotation="10 MB",
                compression="zip", filter=debug_only)
 
 
 def warning_log_write():
-    logger.add('warning.log', format="{time} {level} {message}", level="WARNING", rotation="50 KB",
+    logger.add('warning.log', format="{time} {level} {message}", level="WARNING", rotation="10 MB",
                compression="zip", filter=warning_only)
