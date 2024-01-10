@@ -6,6 +6,7 @@ from aiogram.enums.parse_mode import ParseMode
 from aiogram.exceptions import TelegramNetworkError
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.storage.redis import RedisStorage
+from loguru import logger
 
 from bot.handlers.main_handler import MainHandler
 from bot.settings_bot import settings
@@ -55,6 +56,9 @@ class MainBot:
 
 
 if __name__ == '__main__':
-    bot = MainBot()
-    print('START BOT')
-    asyncio.run(bot.main())
+    try:
+        bot = MainBot()
+        print('START BOT')
+        asyncio.run(bot.main())
+    except Exception as error:
+        logger.warning(error)
