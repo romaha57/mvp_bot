@@ -9,6 +9,7 @@ from aiogram.fsm.storage.redis import RedisStorage
 
 from bot.handlers.main_handler import MainHandler
 from bot.settings_bot import settings
+from bot.utils.logger import debug_log_write, warning_log_write
 
 # для удобного импорта модулей
 sys.path.append("/Users/macbook/PycharmProjects/mvp_bot")
@@ -19,7 +20,7 @@ class MainBot:
 
     def __init__(self):
         self.bot = Bot(token=settings.bot_token, parse_mode=ParseMode.HTML)
-        storage = RedisStorage.from_url('redis://redis:6379/0')
+        storage = RedisStorage.from_url('redis://localhost:6379/0')
         self.dp = Dispatcher(storage=storage)
         # self.dp.message.middleware(CheckPromocodeMiddleware())
         self.handler = MainHandler(self.bot)
@@ -36,9 +37,16 @@ class MainBot:
         self.handler.handle()
         # logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 
+    async def start_logging(self):
+        """Запуск логгирования"""
+
+        debug_log_write()
+        warning_log_write()
+
     async def main(self):
         """Основная точка входа в бота и его запуск"""
 
+        await self.start_logging()
         await self.start()
         try:
             await self.dp.start_polling(self.bot, polling_timeout=100000)
