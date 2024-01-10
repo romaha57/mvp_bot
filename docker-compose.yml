@@ -6,5 +6,10 @@ services:
       context: .
     container_name: aiogram_bot
     command: sh -c "python3 -m bot.main"
+    depends_on:
+      - redis
     env_file:
       - .env
+  redis:
+    image: redis:7
+    container_name: redis

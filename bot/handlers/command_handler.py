@@ -38,7 +38,7 @@ class CommandHandler(Handler):
                     logger.debug(f"Пользователь {message.from_user.id} активировал промокод {promocode.code}")
 
                     # сохраняем промокод в состояние
-                    await state.update_data(promocode=promocode)
+                    await state.update_data(promocode_id=promocode.id)
 
                     # увеличиваем счетчик активированных пользователей на этом промокоде
                     await self.db.increment_count_promocode(

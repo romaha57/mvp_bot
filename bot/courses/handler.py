@@ -55,7 +55,7 @@ class CourseHandler(Handler):
                 course = await self.db.get_course_by_name(all_courses[0])
                 logger.debug(f"Пользователь {message.from_user.id} перешел на курс: {course}")
 
-                await state.update_data(course=course)
+                await state.update_data(course_id=course.id)
                 # создаем запись в истории прохождения курса со статусом 'Открыт'
                 await self.db.create_history(
                     course_id=course.id,
@@ -134,7 +134,7 @@ class CourseHandler(Handler):
                             course_history_id=actual_course_attempt.id
                         )
 
-                        await state.update_data(lesson=lesson)
+                        await state.update_data(lesson_id=lesson.id)
 
                         await show_lesson_info(
                             self=self,
@@ -186,7 +186,7 @@ class CourseHandler(Handler):
             else:
                 course = course
 
-            await state.update_data(course=course)
+            await state.update_data(course_id=course.id)
 
             await delete_messages(
                 src=callback,
@@ -237,9 +237,10 @@ class CourseHandler(Handler):
                 await state.set_state(LessonChooseState.lesson)
 
             else:
+                promocode = await self.db.get_promocode(data.get('promocode_id'))
                 await callback.message.answer(
                     MESSAGES['MENU'],
-                    reply_markup=await self.base_kb.start_btn(promocode=data['promocode'])
+                    reply_markup=await self.base_kb.start_btn(promocode=promocode)
                 )
 
         @self.router.message(F.text == BUTTONS['GET_CERTIFICATE'])

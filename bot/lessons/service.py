@@ -51,6 +51,24 @@ class LessonService(BaseService, metaclass=Singleton):
             return result.scalars().first()
 
     @classmethod
+    async def get_lesson_by_id(cls, lesson_id: str) -> Union[Lessons, None]:
+        """Получение урока по его названию"""
+
+        async with async_session() as session:
+            query = select(Lessons).filter(Lessons.id == lesson_id)
+            result = await session.execute(query)
+            return result.scalars().first()
+
+    @classmethod
+    async def get_additional_task_by_id(cls, additional_task_id: str) -> Union[LessonAdditionalTasks, None]:
+        """Получение задание к уроку по его id"""
+
+        async with async_session() as session:
+            query = select(LessonAdditionalTasks).filter(LessonAdditionalTasks.id == additional_task_id)
+            result = await session.execute(query)
+            return result.scalars().first()
+
+    @classmethod
     async def get_lesson_history_status(cls, name: str) -> LessonHistoryStatuses:
         """Получаем статус для истории прохождения урока"""
 

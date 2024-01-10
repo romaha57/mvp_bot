@@ -102,7 +102,7 @@ class LessonHandler(Handler):
 
             # состояние на прохождение теста после урока
             await state.set_state(LessonChooseState.start_task)
-            await state.update_data(lesson=lesson)
+            await state.update_data(lesson_id=lesson.id)
 
         @self.router.callback_query(F.data.startswith('back'))
         async def back_to_lesson_list(callback: CallbackQuery, state: FSMContext):
@@ -150,7 +150,8 @@ class LessonHandler(Handler):
                 state=state
             )
 
-            lesson = data['lesson']
+            lesson_id = data['lesson_id']
+            lesson = await self.db.get_lesson_by_id(lesson_id)
 
             # отправка доп. изображений к уроку
             images = await get_images_by_place('before_work', lesson)
@@ -185,7 +186,8 @@ class LessonHandler(Handler):
         async def start_test_after_lesson(callback: CallbackQuery, state: FSMContext):
             data = await state.get_data()
             logger.debug(f"Пользователь {callback.message.chat.id}, состояние: {data}, отлов: {await state.get_state()}")
-            lesson = data['lesson']
+            lesson_id = data['lesson_id']
+            lesson = await self.db.get_lesson_by_id(lesson_id)
             # получаем все тестовые вопросы по данному уроку и переворачиваем список, чтобы начиналось с №1
             self.test_questions = json.loads(lesson.questions)
             self.test_questions.reverse()
@@ -240,13 +242,17 @@ class LessonHandler(Handler):
 
             # получаем выбранный вариант пользователя
             selected = int(callback.data.split('_')[-1])
+            print(30 * '-', 1, selected)
             count_questions = len(data['question']['questions'])
 
             # логика по отметке выбранных ответов(добавляем в список выбранные или убираем из него, если такой уж есть)
             if selected in data['selected']:
                 data['selected'].remove(selected)
             else:
+
                 data['selected'].append(selected)
+
+            await state.update_data(selected=data['selected'])
 
             await callback.message.edit_reply_markup(
                 data['inline_message_id'],
@@ -369,8 +375,10 @@ class LessonHandler(Handler):
                     lesson_history_id=data['lesson_history_id']
                 )
 
+                lesson_id = data.get('lesson_id')
+                lesson = await self.db.get_lesson_by_id(lesson_id)
                 # если пользователь набрал нужный % прохождения
-                if user_percent_answer >= data['lesson'].questions_percent:
+                if user_percent_answer >= lesson.questions_percent:
                     await callback.message.edit_text(
                         MESSAGES['SUCCESS_TEST'].format(
                             user_percent_answer
@@ -391,9 +399,9 @@ class LessonHandler(Handler):
                     msg = await callback.message.edit_text(
                         MESSAGES['FAIL_TEST'].format(
                             user_percent_answer,
-                            data['lesson'].questions_percent
+                            lesson.questions_percent
                         ),
-                        reply_markup=await self.kb.start_again_lesson(data['lesson'])
+                        reply_markup=await self.kb.start_again_lesson(lesson)
                     )
                     await state.set_state(LessonChooseState.lesson)
 
@@ -404,7 +412,6 @@ class LessonHandler(Handler):
 
                     # обнуляем счетчик правильных ответов
                     self.result_count = 0
-
 
         @self.router.callback_query(F.data.startswith('close_lesson'))
         async def close_lesson(src: Union[CallbackQuery, Message], state: FSMContext):
@@ -417,7 +424,8 @@ class LessonHandler(Handler):
                 state=state
             )
 
-            lesson = data['lesson']
+            lesson_id = data.get('lesson_id')
+            lesson = await self.db.get_lesson_by_id(lesson_id)
 
             await self.db.mark_lesson_history_on_status_done(data['lesson_history_id'])
             next_lesson = await self.db.get_lesson_by_order_num(
@@ -427,7 +435,7 @@ class LessonHandler(Handler):
 
             # проверяем есть ли у данного урока доп задание
             additional_task = await self.db.get_additional_task_by_lesson(lesson)
-            await state.update_data(additional_task=additional_task)
+            await state.update_data(additional_task_id=additional_task.id)
 
             # в зависимости от callback или message меняется отправка сообщения
             if isinstance(src, CallbackQuery):
@@ -495,9 +503,10 @@ class LessonHandler(Handler):
                         data['lesson_history_id'])
                     await CourseService.mark_course_done(course_history_id)
 
-                    outro_course_text = data.get('course').outro
+                    course_id = data.get('course_id')
+                    course = await self.course_db.get_course_by_id(course_id)
                     await src.message.answer(
-                        outro_course_text,
+                        course.outro,
                         reply_markup=await self.base_kb.menu_btn()
                     )
 
@@ -602,9 +611,10 @@ class LessonHandler(Handler):
                         data['lesson_history_id'])
                     await CourseService.mark_course_done(course_history_id)
 
-                    outro_course_text = data.get('course').outro
+                    course_id = data.get('course_id')
+                    course = await self.course_db.get_course_by_id(course_id)
                     await src.answer(
-                        outro_course_text,
+                        course.outro,
                         reply_markup=await self.base_kb.menu_btn()
                     )
 
@@ -647,7 +657,9 @@ class LessonHandler(Handler):
             data = await state.get_data()
             logger.debug(f"Пользователь {message.from_user.id}, состояние: {data}, отлов: {await state.get_state()}")
 
-            lesson_work_description = data['lesson'].work_description
+            lesson_id = data.get('lesson_id')
+            lesson = await self.db.get_lesson_by_id(lesson_id)
+            lesson_work_description = lesson.work_description
 
             # получаем текст вопроса и выводим его, и затем отлавливаем ответ пользователя
             await message.answer(lesson_work_description)
@@ -657,7 +669,9 @@ class LessonHandler(Handler):
         async def get_text_answer(message: Message, state: FSMContext):
             data = await state.get_data()
             logger.debug(f"Пользователь {message.from_user.id}, состояние: {data}, отлов: {await state.get_state()}")
-            lesson = data['lesson']
+
+            lesson_id = data.get('lesson_id')
+            lesson = await self.db.get_lesson_by_id(lesson_id)
 
             await state.set_state(state=None)
 
@@ -685,7 +699,10 @@ class LessonHandler(Handler):
             data = await state.get_data()
             logger.debug(f"Пользователь {message.from_user.id}, состояние: {data}, отлов: {await state.get_state()}")
 
-            lesson_work_description = data['lesson'].work_description
+            lesson_id = data.get('lesson_id')
+            lesson = await self.db.get_lesson_by_id(lesson_id)
+            lesson_work_description = lesson.work_description
+
             # получаем текст вопроса и выводим его, и затем отлавливаем ответ пользователя
             await message.answer(lesson_work_description)
             await state.set_state(LessonChooseState.image_answer)
@@ -695,7 +712,9 @@ class LessonHandler(Handler):
 
             data = await state.get_data()
             logger.debug(f"Пользователь {message.from_user.id}, состояние: {data}, отлов: {await state.get_state()}")
-            lesson = data['lesson']
+
+            lesson_id = data.get('lesson_id')
+            lesson = await self.db.get_lesson_by_id(lesson_id)
 
             await state.set_state(state=None)
 
@@ -731,7 +750,10 @@ class LessonHandler(Handler):
             data = await state.get_data()
             logger.debug(f"Пользователь {message.from_user.id}, состояние: {data}, отлов: {await state.get_state()}")
 
-            lesson_work_description = data['lesson'].work_description
+            lesson_id = data.get('lesson_id')
+            lesson = await self.db.get_lesson_by_id(lesson_id)
+            lesson_work_description = lesson.work_description
+
             # получаем текст вопроса и выводим его, и затем отлавливаем ответ пользователя
             await message.answer(lesson_work_description)
             await state.set_state(LessonChooseState.video_answer)
@@ -741,7 +763,9 @@ class LessonHandler(Handler):
 
             data = await state.get_data()
             logger.debug(f"Пользователь {message.from_user.id}, состояние: {data}, отлов: {await state.get_state()}")
-            lesson = data['lesson']
+
+            lesson_id = data.get('lesson_id')
+            lesson = await self.db.get_lesson_by_id(lesson_id)
 
             await state.set_state(state=None)
 
@@ -777,7 +801,11 @@ class LessonHandler(Handler):
             data = await state.get_data()
             logger.debug(f"Пользователь {message.from_user.id}, состояние: {data}, отлов: {await state.get_state()}")
 
-            lesson_work_description = data['lesson'].work_description
+            lesson_id = data.get('lesson_id')
+            lesson = await self.db.get_lesson_by_id(lesson_id)
+
+            lesson_work_description = lesson.work_description
+
             # получаем текст вопроса и выводим его, и затем отлавливаем ответ пользователя
             await message.answer(lesson_work_description)
             await state.set_state(LessonChooseState.file_answer)
@@ -787,7 +815,9 @@ class LessonHandler(Handler):
 
             data = await state.get_data()
             logger.debug(f"Пользователь {message.from_user.id}, состояние: {data}, отлов: {await state.get_state()}")
-            lesson = data['lesson']
+
+            lesson_id = data.get('lesson_id')
+            lesson = await self.db.get_lesson_by_id(lesson_id)
 
             await state.set_state(state=None)
 
@@ -823,7 +853,10 @@ class LessonHandler(Handler):
             data = await state.get_data()
             logger.debug(f"Пользователь {message.from_user.id}, состояние: {data}, отлов: {await state.get_state()}")
 
-            lesson_work_description = data['lesson'].work_description
+            lesson_id = data.get('lesson_id')
+            lesson = await self.db.get_lesson_by_id(lesson_id)
+
+            lesson_work_description = lesson.work_description
             # получаем текст вопроса и выводим его, и затем отлавливаем ответ пользователя
             await message.answer(lesson_work_description)
             await state.set_state(LessonChooseState.circle_answer)
@@ -833,7 +866,9 @@ class LessonHandler(Handler):
 
             data = await state.get_data()
             logger.debug(f"Пользователь {message.from_user.id}, состояние: {data}, отлов: {await state.get_state()}")
-            lesson = data['lesson']
+
+            lesson_id = data.get('lesson_id')
+            lesson = await self.db.get_lesson_by_id(lesson_id)
 
             await state.set_state(state=None)
 
@@ -889,7 +924,8 @@ class LessonHandler(Handler):
                 state=state,
                 src=callback
             )
-            additional_task = data.get('additional_task')
+            additional_task_id = data.get('additional_task_id')
+            additional_task = await self.db.get_additional_task_by_id(additional_task_id)
 
             # если задание не нужно проверять, то начисляем сразу бонусы
             if not additional_task.checkup:
@@ -920,7 +956,8 @@ class LessonHandler(Handler):
                 )
 
             # получаем следующий урок
-            lesson = data['lesson']
+            lesson_id = data.get('lesson_id')
+            lesson = await self.db.get_lesson_by_id(lesson_id)
 
             await self.db.mark_lesson_history_on_status_done(data['lesson_history_id'])
             next_lesson = await self.db.get_lesson_by_order_num(
@@ -936,9 +973,10 @@ class LessonHandler(Handler):
                 await state.update_data(msg1=msg1.message_id)
 
             else:
-                outro_course_text = data.get('course').outro
+                course_id = data.get('course_id')
+                course = await self.course_db.get_course_by_id(course_id)
                 await callback.message.answer(
-                    outro_course_text,
+                    course.outro,
                     reply_markup=await self.base_kb.menu_btn()
                 )
 
@@ -951,7 +989,9 @@ class LessonHandler(Handler):
             emoji_from_user = callback.data.split('_')[-1]
 
             # получаем текущий урок
-            lesson = data.get('lesson')
+            lesson_id = data.get('lesson_id')
+            lesson = await self.db.get_lesson_by_id(lesson_id)
+
             lessons_ratings = lesson.buttons_rates
             if lessons_ratings:
                 lessons_ratings = json.loads(lessons_ratings)

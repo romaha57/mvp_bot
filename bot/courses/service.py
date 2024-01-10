@@ -43,6 +43,16 @@ class CourseService(BaseService, metaclass=Singleton):
             return result.scalars().one_or_none()
 
     @classmethod
+    async def get_course_by_id(cls, course_id: int) -> Union[Course, None]:
+        """Получаем курс по его id"""
+
+        async with async_session() as session:
+            query = select(Course).filter_by(id=course_id)
+            result = await session.execute(query)
+
+            return result.scalars().one_or_none()
+
+    @classmethod
     async def get_course_id_by_name(cls, course_name: str) -> Union[Course, None]:
         """Получаем курс по его названию"""
 

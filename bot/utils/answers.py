@@ -134,6 +134,7 @@ async def show_lesson_info(message: Message, state: FSMContext, lesson: Lessons,
     """Отображение урока, используется при нажатии на 'Обучение' и при переходе из списка уроков"""
 
     video_text = f'<b>{lesson.title}</b>\n\n{lesson.description}'
+    await state.update_data(users_answers=[])
 
     if lesson.video:
         try:
