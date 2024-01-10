@@ -2,6 +2,7 @@ from aiogram import Bot, F, Router
 from aiogram.filters import and_f, or_f
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
+from loguru import logger
 
 from bot.handlers.base_handler import Handler
 from bot.lessons.states import LessonChooseState
@@ -39,6 +40,7 @@ class TextHandler(Handler):
             await state.set_state(state=None)
 
             data = await state.get_data()
+            logger.debug(f"Пользователь {message.from_user.id}, состояние: {data}, отлов: {await state.get_state()}")
             promocode = await self.db.get_promocode_by_tg_id(message.from_user.id)
             if promocode:
 
@@ -63,6 +65,9 @@ class TextHandler(Handler):
         @self.router.message(F.text)
         async def any_text(message: Message, state: FSMContext):
             """Отлавливаем любые текстовые сообщения"""
+            data = await state.get_data()
+
+            logger.debug(f"Пользователь {message.from_user.id}, состояние: {data}, отлов: {await state.get_state()}")
 
             data = await state.get_data()
             await message.answer(

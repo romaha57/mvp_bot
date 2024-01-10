@@ -7,6 +7,7 @@ from bot.handlers.base_handler import Handler
 from bot.settings.keyboards import BaseKeyboard
 from bot.settings.service import SettingsService
 from bot.users.service import UserService
+from loguru import logger
 
 
 class CommandHandler(Handler):
@@ -34,6 +35,7 @@ class CommandHandler(Handler):
                 promocode = await self.db.check_promocode(promocode_in_msg[0])
                 if promocode.actual:
                     msg = await self.db.get_msg_by_key('have_promocode')
+                    logger.debug(f"Пользователь {message.from_user.id} активировал промокод {promocode.code}")
 
                     # сохраняем промокод в состояние
                     await state.update_data(promocode=promocode)

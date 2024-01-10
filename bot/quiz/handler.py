@@ -2,6 +2,7 @@ from aiogram import Bot, F, Router
 from aiogram.filters import or_f
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
+from loguru import logger
 
 from bot.handlers.base_handler import Handler
 from bot.quiz.keyboads import QuizKeyboard
@@ -32,6 +33,7 @@ class QuizHandler(Handler):
             """Отслеживание кнопки 'Тестирование'"""
 
             data = await state.get_data()
+            logger.debug(f"Пользователь {message.from_user.id}, состояние: {data}, отлов: {await state.get_state()}")
 
             # удаляем сообщения
             await delete_messages(
@@ -50,6 +52,7 @@ class QuizHandler(Handler):
             """Обработка начала тестирования"""
 
             data = await state.get_data()
+            logger.debug(f"Пользователь {message.from_user.id}, состояние: {data}, отлов: {await state.get_state()}")
             user = await self.db.get_user_by_tg_id(message.from_user.id)
 
             # удаляем сообщения
@@ -103,6 +106,7 @@ class QuizHandler(Handler):
         @self.router.callback_query(F.data.startswith('answer'), QuizState.answer)
         async def get_quiz_answer(callback: CallbackQuery, state: FSMContext):
             data = await state.get_data()
+            logger.debug(f"Пользователь {callback.message.chat.id}, состояние: {data}, отлов: {await state.get_state()}")
 
             # получаем ответ пользователя и создаем его в БД
             answer_id = callback.data.split('_')[1]
@@ -159,6 +163,7 @@ class QuizHandler(Handler):
         @self.router.message(F.text == BUTTONS['RESULTS_QUIZ'])
         async def get_results_quiz(message: Message, state: FSMContext):
             data = await state.get_data()
+            logger.debug(f"Пользователь {message.from_user.id}, состояние: {data}, отлов: {await state.get_state()}")
 
             # удаляем сообщения
             await delete_messages(
@@ -204,6 +209,7 @@ class QuizHandler(Handler):
         @self.router.message(or_f(F.text.startswith(BUTTONS['NEXT']), F.text.startswith(BUTTONS['PREVIOUS'])))
         async def get_other_result_quiz(message: Message, state: FSMContext):
             data = await state.get_data()
+            logger.debug(f"Пользователь {message.from_user.id}, состояние: {data}, отлов: {await state.get_state()}")
 
             # удаляем сообщения
             await delete_messages(

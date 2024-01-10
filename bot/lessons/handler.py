@@ -6,6 +6,7 @@ from aiogram.enums import ContentType
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, FSInputFile, Message
+from loguru import logger
 
 from bot.courses.service import CourseService
 from bot.handlers.base_handler import Handler
@@ -41,6 +42,7 @@ class LessonHandler(Handler):
             # await state.clear()
 
             data = await state.get_data()
+            logger.debug(f"Пользователь {callback.message.chat.id}, состояние: {data}, отлов: {await state.get_state()}")
             self.result_count = 0
 
             # список для сохранения ответов пользователя
@@ -106,6 +108,8 @@ class LessonHandler(Handler):
         async def back_to_lesson_list(callback: CallbackQuery, state: FSMContext):
             data = await state.get_data()
 
+            logger.debug(f"Пользователь {callback.message.chat.id}, состояние: {data}, отлов: {await state.get_state()}")
+
             # удаляем сообщения
             await delete_messages(
                 src=callback,
@@ -136,6 +140,8 @@ class LessonHandler(Handler):
         @self.router.callback_query(F.data.startswith('start_task'))
         async def start_task_after_lesson(callback: CallbackQuery, state: FSMContext):
             data = await state.get_data()
+
+            logger.debug(f"Пользователь {callback.message.chat.id}, состояние: {data}, отлов: {await state.get_state()}")
 
             # удаляем предыдущие сообщения с кнопками
             await delete_messages(
@@ -178,6 +184,7 @@ class LessonHandler(Handler):
 
         async def start_test_after_lesson(callback: CallbackQuery, state: FSMContext):
             data = await state.get_data()
+            logger.debug(f"Пользователь {callback.message.chat.id}, состояние: {data}, отлов: {await state.get_state()}")
             lesson = data['lesson']
             # получаем все тестовые вопросы по данному уроку и переворачиваем список, чтобы начиналось с №1
             self.test_questions = json.loads(lesson.questions)
@@ -229,6 +236,7 @@ class LessonHandler(Handler):
         @self.router.callback_query(F.data.startswith('test_answer'), LessonChooseState.test_answer)
         async def save_test_answer(callback: CallbackQuery, state: FSMContext):
             data = await state.get_data()
+            logger.debug(f"Пользователь {callback.message.chat.id}, состояние: {data}, отлов: {await state.get_state()}")
 
             # получаем выбранный вариант пользователя
             selected = int(callback.data.split('_')[-1])
@@ -248,6 +256,7 @@ class LessonHandler(Handler):
         @self.router.callback_query(F.data.startswith('check_answer'))
         async def check_answer_on_test_lesson(callback: CallbackQuery, state: FSMContext):
             data = await state.get_data()
+            logger.debug(f"Пользователь {callback.message.chat.id}, состояние: {data}, отлов: {await state.get_state()}")
 
             if data.get('delete_test_message') and data['selected']:
                 await callback.bot.delete_message(
@@ -300,6 +309,7 @@ class LessonHandler(Handler):
         @self.router.callback_query(F.data.startswith('next_question'))
         async def next_question_in_test_after_lesson(callback: CallbackQuery, state: FSMContext):
             data = await state.get_data()
+            logger.debug(f"Пользователь {callback.message.chat.id}, состояние: {data}, отлов: {await state.get_state()}")
 
             # убираем историю выбранных пользователем ответов
             await state.update_data(selected=[])
@@ -421,6 +431,8 @@ class LessonHandler(Handler):
 
             # в зависимости от callback или message меняется отправка сообщения
             if isinstance(src, CallbackQuery):
+                logger.debug(
+                    f"Пользователь {src.message.chat.id}, состояние: {data}, отлов: {await state.get_state()}")
 
                 # отправка доп. изображений к уроку
                 images = await get_images_by_place('after_work', lesson)
@@ -528,6 +540,9 @@ class LessonHandler(Handler):
 
             else:
 
+                logger.debug(
+                    f"Пользователь {src.from_user.id}, состояние: {data}, отлов: {await state.get_state()}")
+
                 # отправка доп. изображений к уроку
                 images = await get_images_by_place('after_work', lesson)
                 if images:
@@ -630,6 +645,7 @@ class LessonHandler(Handler):
 
         async def start_text_task_after_lesson(message: Message, state: FSMContext):
             data = await state.get_data()
+            logger.debug(f"Пользователь {message.from_user.id}, состояние: {data}, отлов: {await state.get_state()}")
 
             lesson_work_description = data['lesson'].work_description
 
@@ -640,6 +656,7 @@ class LessonHandler(Handler):
         @self.router.message(LessonChooseState.text_answer)
         async def get_text_answer(message: Message, state: FSMContext):
             data = await state.get_data()
+            logger.debug(f"Пользователь {message.from_user.id}, состояние: {data}, отлов: {await state.get_state()}")
             lesson = data['lesson']
 
             await state.set_state(state=None)
@@ -666,6 +683,7 @@ class LessonHandler(Handler):
 
         async def start_image_task_after_lesson(message: Message, state: FSMContext):
             data = await state.get_data()
+            logger.debug(f"Пользователь {message.from_user.id}, состояние: {data}, отлов: {await state.get_state()}")
 
             lesson_work_description = data['lesson'].work_description
             # получаем текст вопроса и выводим его, и затем отлавливаем ответ пользователя
@@ -676,6 +694,7 @@ class LessonHandler(Handler):
         async def get_image_answer(message: Message, state: FSMContext):
 
             data = await state.get_data()
+            logger.debug(f"Пользователь {message.from_user.id}, состояние: {data}, отлов: {await state.get_state()}")
             lesson = data['lesson']
 
             await state.set_state(state=None)
@@ -710,6 +729,7 @@ class LessonHandler(Handler):
 
         async def start_video_task_after_lesson(message: Message, state: FSMContext):
             data = await state.get_data()
+            logger.debug(f"Пользователь {message.from_user.id}, состояние: {data}, отлов: {await state.get_state()}")
 
             lesson_work_description = data['lesson'].work_description
             # получаем текст вопроса и выводим его, и затем отлавливаем ответ пользователя
@@ -720,6 +740,7 @@ class LessonHandler(Handler):
         async def get_video_answer(message: Message, state: FSMContext):
 
             data = await state.get_data()
+            logger.debug(f"Пользователь {message.from_user.id}, состояние: {data}, отлов: {await state.get_state()}")
             lesson = data['lesson']
 
             await state.set_state(state=None)
@@ -754,6 +775,7 @@ class LessonHandler(Handler):
 
         async def start_file_task_after_lesson(message: Message, state: FSMContext):
             data = await state.get_data()
+            logger.debug(f"Пользователь {message.from_user.id}, состояние: {data}, отлов: {await state.get_state()}")
 
             lesson_work_description = data['lesson'].work_description
             # получаем текст вопроса и выводим его, и затем отлавливаем ответ пользователя
@@ -764,6 +786,7 @@ class LessonHandler(Handler):
         async def get_file_answer(message: Message, state: FSMContext):
 
             data = await state.get_data()
+            logger.debug(f"Пользователь {message.from_user.id}, состояние: {data}, отлов: {await state.get_state()}")
             lesson = data['lesson']
 
             await state.set_state(state=None)
@@ -798,6 +821,7 @@ class LessonHandler(Handler):
 
         async def start_circle_task_after_lesson(message: Message, state: FSMContext):
             data = await state.get_data()
+            logger.debug(f"Пользователь {message.from_user.id}, состояние: {data}, отлов: {await state.get_state()}")
 
             lesson_work_description = data['lesson'].work_description
             # получаем текст вопроса и выводим его, и затем отлавливаем ответ пользователя
@@ -808,6 +832,7 @@ class LessonHandler(Handler):
         async def get_circle_answer(message: Message, state: FSMContext):
 
             data = await state.get_data()
+            logger.debug(f"Пользователь {message.from_user.id}, состояние: {data}, отлов: {await state.get_state()}")
             lesson = data['lesson']
 
             await state.set_state(state=None)
@@ -843,6 +868,7 @@ class LessonHandler(Handler):
         @self.router.callback_query(LessonChooseState.lesson, F.data.startswith('skip_additional_task'))
         async def skip_additional_task(callback: CallbackQuery, state: FSMContext):
             data = await state.get_data()
+            logger.debug(f"Пользователь {callback.message.chat.id}, состояние: {data}, отлов: {await state.get_state()}")
 
             # если пользователь нажал 'Пропустить', то удаляем это сообщение с кнопками
             if data.get('additional_msg'):
@@ -856,6 +882,7 @@ class LessonHandler(Handler):
         @self.router.callback_query(LessonChooseState.lesson, F.data.startswith('done_additional_task'))
         async def done_additional_task(callback: CallbackQuery, state: FSMContext):
             data = await state.get_data()
+            logger.debug(f"Пользователь {callback.message.chat.id}, состояние: {data}, отлов: {await state.get_state()}")
 
             await delete_messages(
                 data=data,
@@ -920,6 +947,7 @@ class LessonHandler(Handler):
             """Отлавливаем нажатие на кнопку по смайликом"""
 
             data = await state.get_data()
+            logger.debug(f"Пользователь {callback.message.chat.id}, состояние: {data}, отлов: {await state.get_state()}")
             emoji_from_user = callback.data.split('_')[-1]
 
             # получаем текущий урок

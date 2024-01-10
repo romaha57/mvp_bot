@@ -1,6 +1,7 @@
 from aiogram import Bot, F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message, FSInputFile
+from loguru import logger
 
 from bot.courses.keyboards import CourseKeyboard
 from bot.courses.service import CourseService
@@ -35,6 +36,7 @@ class CourseHandler(Handler):
             """Отлов кнопки 'Обучение' и вывод списка доступных курсов"""
 
             data = await state.get_data()
+            logger.debug(f"Пользователь {message.from_user.id}, состояние: {data}, отлов: {await state.get_state()}")
 
             # получаем id бота текущего юзера и id курса для текущего пользователя и его промокода
             user_data = await self.db.get_bot_id_and_promocode_course_id_by_user(
@@ -51,6 +53,7 @@ class CourseHandler(Handler):
             # ---------------------Логика для перехода сразу к списку уроков, если курс всего 1-----------------
             if len(all_courses) == 1:
                 course = await self.db.get_course_by_name(all_courses[0])
+                logger.debug(f"Пользователь {message.from_user.id} перешел на курс: {course}")
 
                 await state.update_data(course=course)
                 # создаем запись в истории прохождения курса со статусом 'Открыт'
@@ -175,6 +178,7 @@ class CourseHandler(Handler):
             """Отлавливаем выбранный пользователем курс"""
 
             data = await state.get_data()
+            logger.debug(f"Пользователь {callback.message.chat.id}, состояние: {data}, отлов: {await state.get_state()}")
 
             user = await self.db.get_user_by_tg_id(callback.message.chat.id)
             if not course:
@@ -241,7 +245,9 @@ class CourseHandler(Handler):
         @self.router.message(F.text == BUTTONS['GET_CERTIFICATE'])
         async def get_certificate(message: Message, state: FSMContext):
             """Отлов кнопки 'Получить сертификат' и его выдача"""
+
             data = await state.get_data()
+            logger.debug(f"Пользователь {message.from_user.id}, состояние: {data}, отлов: {await state.get_state()}")
             course = data.get('course')
 
             # формируем сертификат
