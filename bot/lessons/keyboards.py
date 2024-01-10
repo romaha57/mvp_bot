@@ -126,14 +126,20 @@ class LessonKeyboard:
             one_time_keyboard=True
         )
 
-    async def next_question_btn(self) -> InlineKeyboardMarkup:
+    async def next_question_btn(self, test_questions: list[dict]) -> InlineKeyboardMarkup:
         """Кнопка с переходом к следующему вопросу в тесте после урока"""
 
         builder = InlineKeyboardBuilder()
-        builder.button(
-            text='Следующий вопрос',
-            callback_data='next_question'
-        )
+        if len(test_questions) == 0:
+            builder.button(
+                text='Завершить тест',
+                callback_data='next_question'
+            )
+        else:
+            builder.button(
+                text='Следующий вопрос',
+                callback_data='next_question'
+            )
         builder.adjust(1)
 
         return builder.as_markup(

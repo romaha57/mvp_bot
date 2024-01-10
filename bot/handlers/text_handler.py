@@ -69,8 +69,8 @@ class TextHandler(Handler):
 
             logger.debug(f"Пользователь {message.from_user.id}, состояние: {data}, отлов: {await state.get_state()}")
 
-            data = await state.get_data()
+            promocode = await self.db.get_promocode_by_tg_id(message.from_user.id)
             await message.answer(
                 MESSAGES['ANY_TEXT'],
-                reply_markup=await self.kb.start_btn(data['promocode'])
+                reply_markup=await self.kb.start_btn(promocode)
             )

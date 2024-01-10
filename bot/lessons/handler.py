@@ -242,7 +242,6 @@ class LessonHandler(Handler):
 
             # получаем выбранный вариант пользователя
             selected = int(callback.data.split('_')[-1])
-            print(30 * '-', 1, selected)
             count_questions = len(data['question']['questions'])
 
             # логика по отметке выбранных ответов(добавляем в список выбранные или убираем из него, если такой уж есть)
@@ -292,7 +291,7 @@ class LessonHandler(Handler):
                     self.result_count += 1
                     await callback.message.answer(
                         MESSAGES['CORRECT_ANSWER'],
-                        reply_markup=await self.kb.next_question_btn()
+                        reply_markup=await self.kb.next_question_btn(self.test_questions)
                     )
 
                 else:
@@ -306,7 +305,7 @@ class LessonHandler(Handler):
                         MESSAGES['INCORRECT_ANSWER'].format(
                             answer
                         ),
-                        reply_markup=await self.kb.next_question_btn()
+                        reply_markup=await self.kb.next_question_btn(self.test_questions)
                     )
 
             else:
@@ -435,7 +434,8 @@ class LessonHandler(Handler):
 
             # проверяем есть ли у данного урока доп задание
             additional_task = await self.db.get_additional_task_by_lesson(lesson)
-            await state.update_data(additional_task_id=additional_task.id)
+            if additional_task:
+                await state.update_data(additional_task_id=additional_task.id)
 
             # в зависимости от callback или message меняется отправка сообщения
             if isinstance(src, CallbackQuery):
