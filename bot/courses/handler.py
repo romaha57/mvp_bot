@@ -249,7 +249,8 @@ class CourseHandler(Handler):
 
             data = await state.get_data()
             logger.debug(f"Пользователь {message.from_user.id}, состояние: {data}, отлов: {await state.get_state()}")
-            course = data.get('course')
+            course_id = data.get('course_id')
+            course = await self.db.get_course_by_id(course_id)
 
             # формируем сертификат
             build_certificate(
