@@ -257,9 +257,11 @@ class CourseHandler(Handler):
                 fullname=message.from_user.full_name,
                 course_name=course.title
             )
+
             # читаем файл и отправляем пользователю
             file_path = f'/app/static/{message.chat.id}_certificate.pdf'
             certificate = FSInputFile(file_path)
+            logger.debug(f"Пользователь {message.from_user.id}, {file_path} === {certificate}")
             await message.bot.send_document(
                 chat_id=data['chat_id'],
                 document=certificate
