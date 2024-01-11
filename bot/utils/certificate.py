@@ -12,4 +12,4 @@ def build_certificate(user_id: int, fullname: str, course_name: str):
     drawer = ImageDraw.Draw(image)
     drawer.text((400, 400), fullname, font=font, fill=(30, 132, 203))
     drawer.text((150, 570), course_name, font=font, fill=(30, 132, 203))
-    image.save(f'/app/static/{user_id}_certificate.pdf')
+    image.save(f'/app/static/certificate_{user_id}.pdf')

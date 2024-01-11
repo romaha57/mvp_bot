@@ -11,6 +11,7 @@ from bot.courses.service import CourseService
 from bot.lessons.models import Lessons
 from bot.quiz.models import QuizAnswers
 from bot.users.models import Promocodes
+from loguru import logger
 from bot.utils.algorithms import func_sociability
 from bot.utils.constants import LINK
 from bot.utils.messages import MESSAGES
@@ -92,7 +93,7 @@ async def send_user_answers_to_group(bot: Bot, course_id: int, name: str, lesson
         try:
             await bot.send_message(group_id, text)
         except (TelegramForbiddenError, TelegramBadRequest):
-            print('Бот не добавлен в группу')
+            logger.warning(f'Бот не добавлен в группу: {group_id}')
 
 
 async def generate_promocode(length: int = 6) -> str:

@@ -42,6 +42,7 @@ class LessonHandler(Handler):
             # await state.clear()
 
             data = await state.get_data()
+            await state.update_data(chat_id=callback.message.chat.id)
             logger.debug(f"Пользователь {callback.message.chat.id}, состояние: {data}, отлов: {await state.get_state()}")
             self.result_count = 0
 
@@ -528,7 +529,7 @@ class LessonHandler(Handler):
                         )
 
                         # читаем файл и отправляем пользователю
-                        file_path = f'/app/static/{src.message.chat.id}_certificate.pdf'
+                        file_path = f'/app/static/certificate_{src.message.chat.id}.pdf'
                         certificate = FSInputFile(file_path)
                         await src.bot.send_document(
                             chat_id=data['chat_id'],
@@ -634,7 +635,7 @@ class LessonHandler(Handler):
                             course_name=course.title
                         )
                         # читаем файл и отправляем пользователю
-                        file_path = f'/app/static/{src.chat.id}_certificate.pdf'
+                        file_path = f'/app/static/certificate_{src.chat.id}.pdf'
                         certificate = FSInputFile(file_path)
                         await src.bot.send_document(
                             chat_id=data['chat_id'],

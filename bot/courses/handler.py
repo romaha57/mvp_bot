@@ -36,6 +36,7 @@ class CourseHandler(Handler):
             """Отлов кнопки 'Обучение' и вывод списка доступных курсов"""
 
             data = await state.get_data()
+            await state.update_data(chat_id=message.chat.id)
             logger.debug(f"Пользователь {message.from_user.id}, состояние: {data}, отлов: {await state.get_state()}")
 
             # получаем id бота текущего юзера и id курса для текущего пользователя и его промокода
@@ -260,11 +261,11 @@ class CourseHandler(Handler):
             )
 
             # читаем файл и отправляем пользователю
-            file_path = f'/app/static/{message.chat.id}_certificate.pdf'
+            file_path = f'/app/static/certificate_{message.chat.id}.pdf'
             certificate = FSInputFile(file_path)
             logger.debug(f"Пользователь {message.from_user.id}, {file_path} === {certificate}")
             await message.bot.send_document(
-                chat_id=data['chat_id'],
+                chat_id=data.get('chat_id'),
                 document=certificate
             )
 

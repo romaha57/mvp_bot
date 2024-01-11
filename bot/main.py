@@ -51,14 +51,11 @@ class MainBot:
         await self.start()
         try:
             await self.dp.start_polling(self.bot, polling_timeout=100000)
-        except TelegramNetworkError:
-            pass
+        except Exception as e:
+            print(e)
 
 
 if __name__ == '__main__':
-    try:
-        bot = MainBot()
-        print('START BOT')
-        asyncio.run(bot.main())
-    except Exception as error:
-        logger.warning(error)
+    bot = MainBot()
+    print('START BOT')
+    asyncio.run(bot.main())
