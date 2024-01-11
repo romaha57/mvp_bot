@@ -1,3 +1,5 @@
+import traceback
+
 from aiogram import Bot, F, Router
 from aiogram.filters import and_f, or_f
 from aiogram.fsm.context import FSMContext
@@ -28,49 +30,64 @@ class TextHandler(Handler):
         async def any_media(message: Message):
             """При отправке медиа файла пользователю возвращается тип документа и его file_id"""
 
-            file_id = await get_file_id_by_content_type(message)
-            await message.answer(f'{message.content_type} - <b>{file_id}</b>')
+            try:
+
+                file_id = await get_file_id_by_content_type(message)
+                await message.answer(f'{message.content_type} - <b>{file_id}</b>')
+
+            except Exception:
+                logger.warning(traceback.format_exc())
 
         @self.router.message(or_f(F.text.startswith(BUTTONS['MENU']),
                                   and_f(F.text.startswith(BUTTONS['MENU']), LessonChooseState.lesson)))
         async def get_menu(message: Message, state: FSMContext):
             """Отлов кнопки 'Меню' """
 
-            # обнуляем отлов состояний
-            await state.set_state(state=None)
+            try:
 
-            data = await state.get_data()
-            logger.debug(f"Пользователь {message.from_user.id}, состояние: {data}, отлов: {await state.get_state()}")
-            promocode = await self.db.get_promocode_by_tg_id(message.from_user.id)
-            if promocode:
+                # обнуляем отлов состояний
+                await state.set_state(state=None)
 
-                await delete_messages(
-                    src=message,
-                    data=data,
-                    state=state
-                )
+                data = await state.get_data()
+                logger.debug(f"Пользователь {message.from_user.id}, состояние: {data}, отлов: {await state.get_state()}")
+                promocode = await self.db.get_promocode_by_tg_id(message.from_user.id)
+                if promocode:
 
-                await message.delete()
-                menu_msg = await message.answer(
-                    MESSAGES['MENU'],
-                    reply_markup=await self.kb.start_btn(promocode)
-                )
-                await state.update_data(menu_msg=menu_msg.message_id)
-            else:
-                await message.answer(
-                    MESSAGES['ERROR_PROMOCODE'],
-                    reply_markup=await self.kb.menu_btn()
-                )
+                    await delete_messages(
+                        src=message,
+                        data=data,
+                        state=state
+                    )
+
+                    await message.delete()
+                    menu_msg = await message.answer(
+                        MESSAGES['MENU'],
+                        reply_markup=await self.kb.start_btn(promocode)
+                    )
+                    await state.update_data(menu_msg=menu_msg.message_id)
+                else:
+                    await message.answer(
+                        MESSAGES['ERROR_PROMOCODE'],
+                        reply_markup=await self.kb.menu_btn()
+                    )
+
+            except Exception:
+                logger.warning(traceback.format_exc())
 
         @self.router.message(F.text)
         async def any_text(message: Message, state: FSMContext):
             """Отлавливаем любые текстовые сообщения"""
-            data = await state.get_data()
 
-            logger.debug(f"Пользователь {message.from_user.id}, состояние: {data}, отлов: {await state.get_state()}")
+            try:
+                data = await state.get_data()
 
-            promocode = await self.db.get_promocode_by_tg_id(message.from_user.id)
-            await message.answer(
-                MESSAGES['ANY_TEXT'],
-                reply_markup=await self.kb.start_btn(promocode)
-            )
+                logger.debug(f"Пользователь {message.from_user.id}, состояние: {data}, отлов: {await state.get_state()}")
+
+                promocode = await self.db.get_promocode_by_tg_id(message.from_user.id)
+                await message.answer(
+                    MESSAGES['ANY_TEXT'],
+                    reply_markup=await self.kb.start_btn(promocode)
+                )
+
+            except Exception:
+                logger.warning(traceback.format_exc())

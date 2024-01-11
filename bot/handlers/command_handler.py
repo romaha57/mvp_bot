@@ -1,3 +1,5 @@
+import traceback
+
 from aiogram import Bot, Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
@@ -23,51 +25,59 @@ class CommandHandler(Handler):
         async def start(message: Message, state: FSMContext):
             """Отлов команды /start"""
 
-            start_msg = await self.db.get_msg_by_key('intro')
-            await message.answer(start_msg)
+            try:
+                start_msg = await self.db.get_msg_by_key('intro')
+                await message.answer(start_msg)
 
-            await state.update_data(chat_id=message.chat.id)
+                await state.update_data(chat_id=message.chat.id)
 
-            # получаем промокод из сообщения пользователя
-            promocode_in_msg = message.text.split()[1:]
-            if promocode_in_msg:
-                # проверяем наличие промокода в БД
-                promocode = await self.db.check_promocode(promocode_in_msg[0])
-                if promocode.actual:
-                    msg = await self.db.get_msg_by_key('have_promocode')
-                    logger.debug(f"Пользователь {message.from_user.id} активировал промокод {promocode.code}")
+                # получаем промокод из сообщения пользователя
+                promocode_in_msg = message.text.split()[1:]
+                if promocode_in_msg:
+                    # проверяем наличие промокода в БД
+                    promocode = await self.db.check_promocode(promocode_in_msg[0])
+                    if promocode.actual:
+                        msg = await self.db.get_msg_by_key('have_promocode')
+                        logger.debug(f"Пользователь {message.from_user.id} активировал промокод {promocode.code}")
 
-                    # сохраняем промокод в состояние
-                    await state.update_data(promocode_id=promocode.id)
+                        # сохраняем промокод в состояние
+                        await state.update_data(promocode_id=promocode.id)
 
-                    # увеличиваем счетчик активированных пользователей на этом промокоде
-                    await self.db.increment_count_promocode(
-                        promocode
-                    )
+                        # увеличиваем счетчик активированных пользователей на этом промокоде
+                        await self.db.increment_count_promocode(
+                            promocode
+                        )
 
-                    # сохраняем пользователя в БД
-                    await self.user_db.get_or_create_user(
-                        username=message.from_user.username,
-                        tg_id=message.from_user.id,
-                        bot_id=promocode.bot_id,
-                        promocode_id=promocode.id,
-                        first_name=message.from_user.first_name,
-                        last_name=message.from_user.last_name
-                    )
-                    kb = await self.keyboard.start_btn(promocode)
+                        # сохраняем пользователя в БД
+                        await self.user_db.get_or_create_user(
+                            username=message.from_user.username,
+                            tg_id=message.from_user.id,
+                            bot_id=promocode.bot_id,
+                            promocode_id=promocode.id,
+                            first_name=message.from_user.first_name,
+                            last_name=message.from_user.last_name
+                        )
+                        kb = await self.keyboard.start_btn(promocode)
+                    else:
+                        msg = await self.db.get_msg_by_key('bad_promocode')
+                        kb = await self.keyboard.help_btn()
+
+                    await message.answer(msg, reply_markup=kb)
+
                 else:
-                    msg = await self.db.get_msg_by_key('bad_promocode')
-                    kb = await self.keyboard.help_btn()
+                    msg = await self.db.get_msg_by_key('empty_promocode')
+                    await message.answer(msg)
 
-                await message.answer(msg, reply_markup=kb)
-
-            else:
-                msg = await self.db.get_msg_by_key('empty_promocode')
-                await message.answer(msg)
+            except Exception:
+                logger.warning(traceback.format_exc())
 
         @self.router.message(Command('id'))
         async def get_tg_id(message: Message):
             """Отправляем telegram_id пользователя"""
 
-            user_id = str(message.from_user.id)
-            await message.answer(f'Ваш id - <b>{user_id}</b>')
+            try:
+
+                user_id = str(message.from_user.id)
+                await message.answer(f'Ваш id - <b>{user_id}</b>')
+            except Exception:
+                logger.warning(traceback.format_exc())
