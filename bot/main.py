@@ -1,5 +1,6 @@
 import asyncio
 import sys
+import traceback
 
 from aiogram import Bot, Dispatcher
 from aiogram.enums.parse_mode import ParseMode
@@ -52,7 +53,7 @@ class MainBot:
         try:
             await self.dp.start_polling(self.bot, polling_timeout=100000)
         except Exception as e:
-            print(e)
+            logger.warning(str(e), traceback.format_exc())
 
 
 if __name__ == '__main__':

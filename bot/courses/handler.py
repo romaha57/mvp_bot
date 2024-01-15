@@ -54,6 +54,7 @@ class CourseHandler(Handler):
                     bot_id=user_data['bot_id'],
                     promocode_course_id=user_data['course_id']
                 )
+                logger.debug(f'Пользователь: {message.from_user.id} доступны курсы: {all_courses}')
 
                 # ---------------------Логика для перехода сразу к списку уроков, если курс всего 1-----------------
                 if len(all_courses) == 1:

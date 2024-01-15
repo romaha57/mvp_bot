@@ -1064,7 +1064,7 @@ class LessonHandler(Handler):
 
                     lessons_ratings_str = json.dumps(lessons_ratings, ensure_ascii=False)
                     await self.db.increment_emoji_count(lesson, lessons_ratings_str)
-                    # ----------------------------------- КОНЕЦ --------------------------------------
+                # ----------------------------------- КОНЕЦ --------------------------------------
 
                     try:
                         if data.get('video_msg'):
