@@ -54,7 +54,6 @@ class CommandHandler(Handler):
                             username=message.from_user.username,
                             tg_id=message.from_user.id,
                             bot_id=promocode.bot_id,
-                            promocode_id=promocode.id,
                             first_name=message.from_user.first_name,
                             last_name=message.from_user.last_name
                         )
@@ -64,6 +63,10 @@ class CommandHandler(Handler):
                         kb = await self.keyboard.help_btn()
 
                     await message.answer(msg, reply_markup=kb)
+                    await self.user_db.add_promocode_to_user(
+                        tg_id=message.from_user.id,
+                        promocode_id=promocode.id
+                    )
 
                 else:
                     msg = await self.db.get_msg_by_key('empty_promocode')

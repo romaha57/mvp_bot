@@ -1,4 +1,4 @@
-from sqlalchemy import func, insert, select
+from sqlalchemy import func, insert, select, update
 
 from bot.courses.service import CourseService
 from bot.db_connect import async_session
@@ -66,7 +66,7 @@ class UserService(BaseService, metaclass=Singleton):
 
     @classmethod
     async def get_or_create_user(cls, username: str, tg_id: int, bot_id: int = None,
-                                 promocode_id: int = None, first_name: str = None, last_name: str = None):
+                                 first_name: str = None, last_name: str = None):
         """Создание или получение пользователя из БД"""
 
         user = await cls.get_users_by_tg_id(
@@ -83,7 +83,6 @@ class UserService(BaseService, metaclass=Singleton):
                     username=username,
                     bot_id=bot_id,
                     external_id=tg_id,
-                    promocode_id=promocode_id,
                     account_id=account.id
                 )
                 await session.execute(query)
@@ -189,3 +188,14 @@ class UserService(BaseService, metaclass=Singleton):
             res = await session.execute(query)
 
             return res.scalars().first()
+
+
+    @classmethod
+    async def add_promocode_to_user(cls, tg_id: int, promocode_id: int):
+        """Добавляем пользователю промокод"""
+
+        async with async_session() as session:
+            query = update(Users).where(Users.external_id == tg_id).values(promocode_id=promocode_id)
+
+            await session.execute(query)
+            await session.commit()
