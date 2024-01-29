@@ -267,6 +267,10 @@ class CourseHandler(Handler):
                 course_id = data.get('course_id')
                 course = await self.db.get_course_by_id(course_id)
 
+                await message.answer(
+                    MESSAGES['CERTIFICATE']
+                )
+
                 # формируем сертификат
                 build_certificate(
                     user_id=message.chat.id,
