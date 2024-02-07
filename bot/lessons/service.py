@@ -3,6 +3,7 @@ from typing import Union
 from sqlalchemy import desc, insert, select, update
 from sqlalchemy.exc import MultipleResultsFound
 
+from bot.courses.models import Course
 from bot.db_connect import async_session
 from bot.lessons.models import (LessonAdditionalTaskHistory,
                                 LessonAdditionalTaskHistoryStatuses,
@@ -441,7 +442,8 @@ class LessonService(BaseService, metaclass=Singleton):
             query = select(Lessons).\
                 join(LessonHistory, LessonHistory.lesson_id == Lessons.id).\
                 join(Users, Users.id == LessonHistory.user_id).\
-                where(Users.external_id == tg_id, LessonHistory.status_id == 4).order_by(Lessons.order_num.desc()).limit(1)
+                join(Course, Lessons.course_id == Course.id).\
+                where(Users.external_id == tg_id, LessonHistory.status_id == 4, Course.id == course_id).order_by(Lessons.order_num.desc()).limit(1)
 
             res = await session.execute(query)
             current_lesson = res.scalars().first()
@@ -455,6 +457,6 @@ class LessonService(BaseService, metaclass=Singleton):
 
             # если такого нет, то берем 1 урок из данного курса
             else:
-                lesson = await cls.get_lesson_by_order_num(course_id, 2)
+                lesson = await cls.get_lesson_by_order_num(course_id, 1)
 
             return lesson

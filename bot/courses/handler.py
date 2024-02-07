@@ -70,7 +70,7 @@ class CourseHandler(Handler):
 
                     if user.is_show_course_description:
                         # убираем флаг у юзера, чтобы ему больше не показывалось видео курса
-                        await self.db.mark_user_show_course_description(user)
+                        await self.db.mark_user_show_course_description(user, False)
 
                         # выводим приветственное видео курса, если оно есть
                         if course.intro_video:

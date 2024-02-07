@@ -5,6 +5,7 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
+from bot.courses.service import CourseService
 from bot.handlers.base_handler import Handler
 from bot.settings.keyboards import BaseKeyboard
 from bot.settings.service import SettingsService
@@ -18,6 +19,7 @@ class CommandHandler(Handler):
         self.router = Router()
         self.db = SettingsService()
         self.user_db = UserService()
+        self.course_db = CourseService()
         self.keyboard = BaseKeyboard()
 
     def handle(self):
@@ -58,6 +60,11 @@ class CommandHandler(Handler):
                             last_name=message.from_user.last_name
                         )
                         kb = await self.keyboard.start_btn(promocode)
+
+                        user = await self.db.get_user_by_tg_id(message.from_user.id)
+
+                        # добавляем флаг у юзера, чтобы ему показывать стартовое видео курса
+                        await self.course_db.mark_user_show_course_description(user, True)
                     else:
                         msg = await self.db.get_msg_by_key('bad_promocode')
                         kb = await self.keyboard.help_btn()

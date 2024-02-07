@@ -81,6 +81,12 @@ class QuizHandler(Handler):
 
                     await state.update_data(quiz_description_msg=quiz_description_msg.message_id)
 
+                menu_msg = await message.answer(
+                    MESSAGES['GO_TO_MENU'],
+                    reply_markup=await self.base_kb.menu_btn()
+                )
+                await state.update_data(menu_msg=menu_msg.message_id)
+
                 # запись в БД о начале тестирования данным пользователем
                 await self.db.create_attempt(
                     quiz_id=quiz.id,
@@ -101,13 +107,8 @@ class QuizHandler(Handler):
                     reply_markup=await self.kb.quiz_answers(question.id)
                 )
                 await state.update_data(delete_message_id=msg.message_id)
+                await state.update_data(inline_msg=msg.message_thread_id)
                 await state.update_data(chat_id=msg.chat.id)
-
-                menu_msg = await message.answer(
-                    MESSAGES['GO_TO_MENU'],
-                    reply_markup=await self.base_kb.menu_btn()
-                )
-                await state.update_data(menu_msg=menu_msg.message_id)
 
                 # состояния на отлов ответа на этот вопрос
                 await state.set_state(QuizState.answer)
@@ -124,7 +125,7 @@ class QuizHandler(Handler):
 
                 # получаем ответ пользователя и создаем его в БД
                 answer_id = callback.data.split('_')[1]
-                await self.db.create_answer(
+                answer = await self.db.create_answer(
                     answer_id=answer_id,
                     attempt_id=data['attempt_id'],
                 )
@@ -133,6 +134,11 @@ class QuizHandler(Handler):
                 try:
                     question = self.questions.pop()
                     await callback.message.edit_text(
+                        text=f'{question.title}\n<b>Ответ: {answer}</b>',
+                        inline_message_id=data.get('inline_msg'),
+                        reply_markup=None
+                    )
+                    await callback.message.answer(
                         question.title,
                         reply_markup=await self.kb.quiz_answers(question.id)
                     )
@@ -145,7 +151,7 @@ class QuizHandler(Handler):
 
                     # получаем финальное сообщение тестирования(о завершении)
                     quiz = await self.db.get_quiz(data['quiz_id'])
-                    await callback.message.edit_text(
+                    await callback.message.answer(
                         quiz.outro)
 
                     # получаем все ответы для текущей попытки
@@ -161,10 +167,8 @@ class QuizHandler(Handler):
                         )
 
                         # выводим подсчитанный ответ
-                        await callback.bot.edit_message_text(
-                            chat_id=data['chat_id'],
-                            message_id=data['quiz_description_msg'],
-                            text=result
+                        await callback.message.answer(
+                            result
                         )
 
                     else:

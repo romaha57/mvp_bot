@@ -121,7 +121,16 @@ class QuizService(BaseService, metaclass=Singleton):
                 attempt_id=attempt_id,
             )
             await session.execute(query)
+
+            query = select(QuizQuestionOptions.title).select_from(QuizQuestionOptions).\
+                join(QuizAnswers, QuizQuestionOptions.id == QuizAnswers.option_id).\
+                where(QuizAnswers.option_id == answer_id, attempt_id == attempt_id)
+
+            result = await session.execute(query)
+
             await session.commit()
+
+            return result.scalars().first()
 
     @classmethod
     async def get_last_attempt(cls, user_id: int, quiz_id: int) -> QuizAttempts:

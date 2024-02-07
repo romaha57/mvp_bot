@@ -467,165 +467,105 @@ class LessonHandler(Handler):
 
                 # в зависимости от callback или message меняется отправка сообщения
                 if isinstance(src, CallbackQuery):
-                    logger.debug(
-                        f"Пользователь {src.message.chat.id}, состояние: {data}, отлов: {await state.get_state()}")
+                    src = src.message
 
-                    # отправка доп. изображений к уроку
-                    images = await get_images_by_place('after_work', lesson)
-                    if images:
-                        for image in images:
-                            try:
-                                await src.message.answer_photo(
-                                    photo=image
-                                )
-                            # отлов ошибки при неправильном file_id
-                            except TelegramBadRequest:
-                                pass
+                logger.debug(
+                    f"Пользователь {src.from_user.id}, состояние: {data}, отлов: {await state.get_state()}")
 
-                    # выводим доп задание с кнопками 'пропустить' и 'выполнил'
-                    if additional_task:
-                        tg_id = src.message.chat.id
-                        # создаем запись прохождения доп задания в БД
-                        additional_task_history = await self.db.create_additional_task_history(
-                            tg_id=tg_id,
-                            additional_task_id=additional_task.id,
-                            lesson_history_id=data['lesson_history_id']
+                # отправка доп. изображений к уроку
+                images = await get_images_by_place('after_work', lesson)
+                if images:
+                    for image in images:
+                        try:
+                            await src.answer_photo(
+                                photo=image
+                            )
+                        # отлов ошибки при неправильном file_id
+                        except TelegramBadRequest:
+                            pass
+
+                if additional_task:
+                    tg_id = src.from_user.id
+                    # создаем запись прохождения доп задания в БД
+                    additional_task_history = await self.db.create_additional_task_history(
+                        tg_id=tg_id,
+                        additional_task_id=additional_task.id,
+                        lesson_history_id=data['lesson_history_id']
+                    )
+
+                    # сохраняем в состоянии id истории
+                    await state.update_data(additional_task_history_id=additional_task_history.id)
+
+                    # не выводим название доп задания для урока 2.3
+                    if lesson.id != 17:
+                        await src.answer(
+                            MESSAGES['ADDITIONAL_TASK'].format(
+                                additional_task.title
+                            )
                         )
+                        
+                    additional_msg = await src.answer(
+                        additional_task.description,
+                        reply_markup=await self.kb.additional_task_btn()
+                    )
 
-                        # сохраняем в состоянии id истории
-                        await state.update_data(additional_task_history_id=additional_task_history.id)
+                    await state.update_data(additional_msg=additional_msg.message_id)
 
-                        # не выводим название доп задания для урока 2.3
-                        if lesson.id != 17:
-                            await src.answer(
-                                MESSAGES['ADDITIONAL_TASK'].format(
-                                    additional_task.title
-                                )
-                            )
-                        additional_msg = await src.message.answer(
-                            additional_task.description,
-                            reply_markup=await self.kb.additional_task_btn()
-                        )
+                # выводим следующий урок
+                if next_lesson:
+                    msg1 = await src.answer(
+                        MESSAGES['NEXT_LESSON'],
+                        reply_markup=await self.kb.next_lesson_btn(next_lesson)
+                    )
+                    await state.set_state(LessonChooseState.lesson)
+                    await state.update_data(msg1=msg1.message_id)
 
-                        await state.update_data(additional_msg=additional_msg.message_id)
+                    menu_msg = await src.answer(
+                        MESSAGES['GO_TO_MENU'],
+                        reply_markup=await self.base_kb.menu_btn()
+                    )
 
-                    # выводим следующий урок
-                    if next_lesson:
-                        msg1 = await src.message.answer(
-                            MESSAGES['NEXT_LESSON'],
-                            reply_markup=await self.kb.next_lesson_btn(next_lesson)
-                        )
-                        await state.set_state(LessonChooseState.lesson)
-                        await state.update_data(msg1=msg1.message_id)
-
-                        menu_msg = await src.message.answer(
-                            MESSAGES['GO_TO_MENU'],
-                            reply_markup=await self.base_kb.menu_btn()
-                        )
-
-                        await state.update_data(menu_msg=menu_msg.message_id)
-                    else:
-
-                        # отмечаем курс как 'Пройден'
-                        course_history_id = await CourseService.get_course_history_id_by_lesson_history(
-                            data['lesson_history_id'])
-                        await CourseService.mark_course_done(course_history_id)
-
-                        course_id = data.get('course_id')
-                        course = await self.course_db.get_course_by_id(course_id)
-                        await src.message.answer(
-                            course.outro,
-                            reply_markup=await self.base_kb.menu_btn()
-                        )
-
-                        course = await CourseService.get_course_by_course_history_id(course_history_id)
-
-                        # выводим завершающее видео курса
-                        if course.outro_video:
-                            await src.message.answer_video(
-                                video=course.outro_video
-                            )
-
-                        if course.certificate_img and course.certificate_body:
-
-                            # собираем сертификат для текущего пользователя
-                            await src.message.answer(
-                                MESSAGES['CERTIFICATE']
-                            )
-
-                            # формируем сертификат
-                            build_certificate(
-                                user_id=src.message.chat.id,
-                                fullname=src.message.chat.full_name,
-                                course_name=course.title
-                            )
-
-                            # читаем файл и отправляем пользователю
-                            file_path = f'/app/static/certificate_{src.message.chat.id}.pdf'
-                            certificate = FSInputFile(file_path)
-                            await src.bot.send_document(
-                                chat_id=data['chat_id'],
-                                document=certificate
-                            )
-
-                            menu_msg = await src.message.answer(
-                                MESSAGES['GO_TO_MENU'],
-                                reply_markup=await self.base_kb.menu_btn()
-                            )
-
-                            await state.update_data(menu_msg=menu_msg.message_id)
-
+                    await state.update_data(menu_msg=menu_msg.message_id)
                 else:
+                    # отмечаем курс как 'Пройден'
+                    course_history_id = await CourseService.get_course_history_id_by_lesson_history(
+                        data['lesson_history_id'])
+                    await CourseService.mark_course_done(course_history_id)
 
-                    logger.debug(
-                        f"Пользователь {src.from_user.id}, состояние: {data}, отлов: {await state.get_state()}")
+                    course_id = data.get('course_id')
+                    course = await self.course_db.get_course_by_id(course_id)
+                    await src.answer(
+                        course.outro,
+                        reply_markup=await self.base_kb.menu_btn()
+                    )
 
-                    # отправка доп. изображений к уроку
-                    images = await get_images_by_place('after_work', lesson)
-                    if images:
-                        for image in images:
-                            try:
-                                await src.answer_photo(
-                                    photo=image
-                                )
-                            # отлов ошибки при неправильном file_id
-                            except TelegramBadRequest:
-                                pass
+                    course = await CourseService.get_course_by_course_history_id(course_history_id)
 
-                    if additional_task:
-                        tg_id = src.from_user.id
-                        # создаем запись прохождения доп задания в БД
-                        additional_task_history = await self.db.create_additional_task_history(
-                            tg_id=tg_id,
-                            additional_task_id=additional_task.id,
-                            lesson_history_id=data['lesson_history_id']
+                    # выводим завершающее видео курса
+                    if course.outro_video:
+                        await src.answer_video(
+                            video=course.outro_video
                         )
 
-                        # сохраняем в состоянии id истории
-                        await state.update_data(additional_task_history_id=additional_task_history.id)
-
-                        # не выводим название доп задания для урока 2.3
-                        if lesson.id != 17:
-                            await src.answer(
-                                MESSAGES['ADDITIONAL_TASK'].format(
-                                    additional_task.title
-                                )
-                            )
-                        additional_msg = await src.answer(
-                            additional_task.description,
-                            reply_markup=await self.kb.additional_task_btn()
+                    if course.certificate_img and course.certificate_body:
+                        # собираем сертификат для текущего пользователя
+                        await src.answer(
+                            MESSAGES['CERTIFICATE']
                         )
 
-                        await state.update_data(additional_msg=additional_msg.message_id)
-
-                    # выводим следующий урок
-                    if next_lesson:
-                        msg1 = await src.answer(
-                            MESSAGES['NEXT_LESSON'],
-                            reply_markup=await self.kb.next_lesson_btn(next_lesson)
+                        # формируем сертификат
+                        build_certificate(
+                            user_id=src.chat.id,
+                            fullname=src.from_user.full_name,
+                            course_name=course.title
                         )
-                        await state.set_state(LessonChooseState.lesson)
-                        await state.update_data(msg1=msg1.message_id)
+                        # читаем файл и отправляем пользователю
+                        file_path = f'/app/static/certificate_{src.chat.id}.pdf'
+                        certificate = FSInputFile(file_path)
+                        await src.bot.send_document(
+                            chat_id=data['chat_id'],
+                            document=certificate
+                        )
 
                         menu_msg = await src.answer(
                             MESSAGES['GO_TO_MENU'],
@@ -633,53 +573,6 @@ class LessonHandler(Handler):
                         )
 
                         await state.update_data(menu_msg=menu_msg.message_id)
-                    else:
-                        # отмечаем курс как 'Пройден'
-                        course_history_id = await CourseService.get_course_history_id_by_lesson_history(
-                            data['lesson_history_id'])
-                        await CourseService.mark_course_done(course_history_id)
-
-                        course_id = data.get('course_id')
-                        course = await self.course_db.get_course_by_id(course_id)
-                        await src.answer(
-                            course.outro,
-                            reply_markup=await self.base_kb.menu_btn()
-                        )
-
-                        course = await CourseService.get_course_by_course_history_id(course_history_id)
-
-                        # выводим завершающее видео курса
-                        if course.outro_video:
-                            await src.answer_video(
-                                video=course.outro_video
-                            )
-
-                        if course.certificate_img and course.certificate_body:
-                            # собираем сертификат для текущего пользователя
-                            await src.answer(
-                                MESSAGES['CERTIFICATE']
-                            )
-
-                            # формируем сертификат
-                            build_certificate(
-                                user_id=src.chat.id,
-                                fullname=src.from_user.full_name,
-                                course_name=course.title
-                            )
-                            # читаем файл и отправляем пользователю
-                            file_path = f'/app/static/certificate_{src.chat.id}.pdf'
-                            certificate = FSInputFile(file_path)
-                            await src.bot.send_document(
-                                chat_id=data['chat_id'],
-                                document=certificate
-                            )
-
-                            menu_msg = await src.answer(
-                                MESSAGES['GO_TO_MENU'],
-                                reply_markup=await self.base_kb.menu_btn()
-                            )
-
-                            await state.update_data(menu_msg=menu_msg.message_id)
 
             except Exception:
                 logger.warning(traceback.format_exc())

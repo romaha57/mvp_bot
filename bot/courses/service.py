@@ -160,13 +160,13 @@ class CourseService(BaseService, metaclass=Singleton):
             await session.commit()
 
     @classmethod
-    async def mark_user_show_course_description(cls, user: Users):
-        """Отмечаем флаг на false, чтобы не показывать видео курса"""
+    async def mark_user_show_course_description(cls, user: Users, flag: bool):
+        """Отмечаем флаг у значения для показа стартового видео курса"""
 
         async with async_session() as session:
             query = update(Users). \
                 where(Users.id == user.id). \
-                values(is_show_course_description=False)
+                values(is_show_course_description=flag)
 
             await session.execute(query)
             await session.commit()
