@@ -108,6 +108,7 @@ class QuizHandler(Handler):
                 )
                 await state.update_data(delete_message_id=msg.message_id)
                 await state.update_data(inline_msg=msg.message_thread_id)
+                await state.update_data(question=question)
                 await state.update_data(chat_id=msg.chat.id)
 
                 # состояния на отлов ответа на этот вопрос
@@ -132,17 +133,20 @@ class QuizHandler(Handler):
 
                 # берем вопросы из списка, пока они не закончатся
                 try:
-                    question = self.questions.pop()
+                    question = data.get('question')
                     await callback.message.edit_text(
                         text=f'{question.title}\n<b>Ответ: {answer}</b>',
                         inline_message_id=data.get('inline_msg'),
                         reply_markup=None
                     )
+
+                    question = self.questions.pop()
                     await callback.message.answer(
                         question.title,
                         reply_markup=await self.kb.quiz_answers(question.id)
                     )
                     await state.set_state(QuizState.answer)
+                    await state.update_data(question=question)
                 except IndexError:
                     # когда вопросов больше не будет, то удаляем состояние, но данные оставляем(нужен quiz_id)
                     await state.set_state(state=None)
