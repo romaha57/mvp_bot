@@ -26,8 +26,9 @@ class KnowledgeHandler(Handler):
         @self.router.message(F.text.startswith(BUTTONS['KNOWLEDGE_BASE']))
         async def knowledge_base_menu(message: Message, state: FSMContext):
             """Стартовое меню базы знаний"""
-
-            await message.answer('Раздел находится в разработке')
+            promocode = await self.db.get_promocode_by_tg_id(message.chat.id)
+            await message.answer('Раздел находится в разработке',
+                                 reply_markup=await self.base_kb.start_btn(promocode))
 
         #     try:
         #
