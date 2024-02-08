@@ -4,6 +4,7 @@ from bot.handlers.text_handler import TextHandler
 from bot.lessons.handler import LessonHandler
 from bot.quiz.handler import QuizHandler
 from bot.users.handler import UserHandler
+from bot.knowledge_base.handler import KnowledgeHandler
 
 
 class MainHandler:
@@ -18,6 +19,7 @@ class MainHandler:
         self.lesson_handler = LessonHandler(self.bot)
         self.user_handler = UserHandler(self.bot)
         self.text_handler = TextHandler(self.bot)
+        self.knowledge_handler = KnowledgeHandler(self.bot)
 
     def handle(self):
         """Регистрация хендлеров на отлавливание сообщений"""
@@ -28,3 +30,4 @@ class MainHandler:
         self.lesson_handler.handle()
         self.user_handler.handle()
         self.text_handler.handle()
+        self.knowledge_handler.handle()

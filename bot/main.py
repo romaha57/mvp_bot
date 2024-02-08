@@ -22,8 +22,9 @@ class MainBot:
 
     def __init__(self):
         self.bot = Bot(token=settings.bot_token, parse_mode=ParseMode.HTML)
-        storage = RedisStorage.from_url('redis://redis:6379/0')
-        self.dp = Dispatcher(storage=storage)
+        # storage = RedisStorage.from_url('redis://redis:6379/0')
+        # self.dp = Dispatcher(storage=storage)
+        self.dp = Dispatcher(storage=MemoryStorage())
         # self.dp.message.middleware(CheckPromocodeMiddleware())
         self.handler = MainHandler(self.bot)
 
@@ -35,6 +36,7 @@ class MainBot:
         self.dp.include_router(self.handler.lesson_handler.router)
         self.dp.include_router(self.handler.quiz_handler.router)
         self.dp.include_router(self.handler.user_handler.router)
+        self.dp.include_router(self.handler.knowledge_handler.router)
         self.dp.include_router(self.handler.text_handler.router)
         self.handler.handle()
         # logging.basicConfig(level=logging.INFO, stream=sys.stdout)

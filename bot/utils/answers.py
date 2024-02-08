@@ -191,3 +191,27 @@ async def show_lesson_info(message: Message, state: FSMContext, lesson: Lessons,
     )
     await state.update_data(lesson_history_id=actual_lesson_history.id)
     await state.update_data(chat_id=message.chat.id)
+
+
+def collect_query_for_knowledge_base(divides_ids: str, file_ids) -> tuple[str, str]:
+    """Собираем запрос для кнопки 'назад' в меню базы знаний """
+
+    divide_query = ''
+    file_query = ''
+
+
+    if divides_ids:
+        divides_ids = tuple([int(item) for item in divides_ids.split(',')])
+        if len(divides_ids) == 1:
+            divide_query = f" id = {divides_ids[0]} "
+        else:
+            divide_query = f" id IN {divides_ids} "
+
+    if file_ids:
+        file_ids = tuple([int(item) for item in file_ids.split(',')])
+        if len(file_ids) == 1:
+            file_query = f" id = {file_ids[0]} "
+        else:
+            file_query = f" id IN {file_ids} "
+
+    return divide_query, file_query

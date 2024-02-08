@@ -20,5 +20,7 @@ BUTTONS = {
     'PROMOCODES': emojize(':admission_tickets: Промокоды'),
     'SEE_PROMOCODES': emojize(':open_book: Все промокоды'),
     'GENERATE_PROMOCODE': emojize(':plus: Сгенерировать промокод'),
-    'GET_CERTIFICATE': emojize(':sparkle: Получить сертификат')
+    'GET_CERTIFICATE': emojize(':sparkle: Получить сертификат'),
+    'KNOWLEDGE_BASE': emojize(':floppy_disk: База знаний'),
+    'BACK_BASE': emojize(':left_arrow: Назад'),
 }

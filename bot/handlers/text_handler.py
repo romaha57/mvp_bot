@@ -3,7 +3,7 @@ import traceback
 from aiogram import Bot, F, Router
 from aiogram.filters import and_f, or_f
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message
+from aiogram.types import Message, CallbackQuery
 from loguru import logger
 
 from bot.handlers.base_handler import Handler
@@ -74,6 +74,42 @@ class TextHandler(Handler):
             except Exception:
                 logger.warning(traceback.format_exc())
 
+        @self.router.callback_query(F.data.startswith('menu'))
+        async def get_menu(callback: CallbackQuery, state: FSMContext):
+            """Отлов кнопки 'Меню' """
+
+            try:
+
+                # обнуляем отлов состояний
+                await state.set_state(state=None)
+
+                data = await state.get_data()
+                logger.debug(
+                    f"Пользователь {callback.message.chat.id}, состояние: {data}, отлов: {await state.get_state()}")
+                promocode = await self.db.get_promocode_by_tg_id(callback.message.chat.id)
+                if promocode:
+
+                    await delete_messages(
+                        src=callback.message,
+                        data=data,
+                        state=state
+                    )
+
+                    await callback.message.delete()
+                    menu_msg = await callback.message.answer(
+                        MESSAGES['MENU'],
+                        reply_markup=await self.kb.start_btn(promocode)
+                    )
+                    await state.update_data(menu_msg=menu_msg.message_id)
+                else:
+                    await callback.message.answer(
+                        MESSAGES['ERROR_PROMOCODE'],
+                        reply_markup=await self.kb.menu_btn()
+                    )
+
+            except Exception:
+                logger.warning(traceback.format_exc())
+
         @self.router.message(F.text)
         async def any_text(message: Message, state: FSMContext):
             """Отлавливаем любые текстовые сообщения"""
@@ -91,3 +127,5 @@ class TextHandler(Handler):
 
             except Exception:
                 logger.warning(traceback.format_exc())
+
+

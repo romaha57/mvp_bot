@@ -43,6 +43,10 @@ class BaseKeyboard:
             )
 
         builder.row(
+            KeyboardButton(text=await self._get_button('KNOWLEDGE_BASE'))
+        )
+
+        builder.add(
             KeyboardButton(text=await self._get_button('REFERAL')),
         )
         builder.add(
