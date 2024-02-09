@@ -1,5 +1,6 @@
 from typing import Union
 
+from loguru import logger
 from sqlalchemy import desc, insert, select, update
 from sqlalchemy.exc import MultipleResultsFound
 
@@ -338,15 +339,14 @@ class LessonService(BaseService, metaclass=Singleton):
             return res.scalars().first()
 
     @classmethod
-    async def create_additional_task_history(cls, tg_id: int, additional_task_id: int, lesson_history_id: int):
+    async def create_additional_task_history(cls, user_id: int, additional_task_id: int, lesson_history_id: int):
         """Создаем запись о начале прохождения доп задания к уроку (по умолчанию статус пропущен)"""
 
         status = await cls.get_lesson_additional_task_history_status_by_name('Пропущен')
-        user = await cls.get_user_by_tg_id(tg_id)
 
         async with async_session() as session:
             query = insert(LessonAdditionalTaskHistory).values(
-                user_id=user.id,
+                user_id=user_id,
                 additional_task_id=additional_task_id,
                 lesson_history_id=lesson_history_id,
                 status_id=status.id

@@ -485,10 +485,11 @@ class LessonHandler(Handler):
                             pass
 
                 if additional_task:
-                    tg_id = src.from_user.id
+                    user = await self.db.get_user_by_tg_id(src.chat.id)
+                    logger.warning(f"additional_task user_id: {user.id} - {user.username}")
                     # создаем запись прохождения доп задания в БД
                     additional_task_history = await self.db.create_additional_task_history(
-                        tg_id=tg_id,
+                        user_id=user.id,
                         additional_task_id=additional_task.id,
                         lesson_history_id=data['lesson_history_id']
                     )
