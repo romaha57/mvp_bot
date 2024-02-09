@@ -66,7 +66,6 @@ class LessonHandler(Handler):
                 course_history_id=actual_course_attempt.id
             )
 
-            # удаляем сообщения со списком уроков
             await delete_messages(
                 src=callback,
                 data=data,
