@@ -1,4 +1,5 @@
 import asyncio
+import pprint
 import sys
 import traceback
 
@@ -39,7 +40,12 @@ class MainBot:
         async def catch_error(event: ErrorEvent):
             try:
                 error_data: dict = event.model_dump()
-                chat_id = error_data.get('update', {}).get('message', {}).get('from_user', {}).get('id')
+                pprint.pprint(error_data)
+                if error_data.get('update', {}).get('message'):
+                    chat_id = error_data.get('update', {}).get('message', {}).get('from_user', {}).get('id')
+                else:
+                    chat_id_callback = error_data.get('update', {}).get('callback_query', {}).get('from_user', {}).get('id')
+                    chat_id = chat_id_callback
                 error = error_data.get('exception')
                 error_text = f'User: {chat_id}, err: {error}'
 

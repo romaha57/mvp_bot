@@ -10,6 +10,15 @@ services:
       - redis
     env_file:
       - .env
+    networks:
+      - realogica_network
   redis:
     image: redis:7
     container_name: redis
+    networks:
+      - realogica_network
+
+
+networks:
+  realogica_network:
+    driver: bridge

@@ -10,6 +10,7 @@ from bot.knowledge_base.keyboards import KnowledgeKeyboard
 from bot.knowledge_base.service import KnowledgeService
 from bot.settings.keyboards import BaseKeyboard
 from bot.utils.buttons import BUTTONS
+from bot.utils.delete_messages import delete_messages
 from bot.utils.messages import MESSAGES
 
 
@@ -26,6 +27,14 @@ class KnowledgeHandler(Handler):
         @self.router.message(F.text.startswith(BUTTONS['KNOWLEDGE_BASE']))
         async def knowledge_base_menu(message: Message, state: FSMContext):
             """Стартовое меню базы знаний"""
+
+            data = await state.get_data()
+
+            await delete_messages(
+                src=message,
+                data=data,
+                state=state
+            )
 
             root_divides = await self.db.get_root_divides()
 

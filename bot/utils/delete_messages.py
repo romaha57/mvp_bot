@@ -77,6 +77,13 @@ async def delete_messages(data: dict, state: FSMContext, src: Union[CallbackQuer
             )
 
             await state.update_data(additional_msg=None)
+
+        if data.get('base_msg'):
+            await src.delete_message(
+                chat_id=data.get('chat_id'),
+                message_id=data.get('base_msg')
+            )
+            await state.update_data(base_msg=None)
     else:
 
         if data.get('video_msg'):
@@ -153,3 +160,10 @@ async def delete_messages(data: dict, state: FSMContext, src: Union[CallbackQuer
             )
 
             await state.update_data(additional_msg=None)
+
+        if data.get('base_msg'):
+            await src.bot.delete_message(
+                chat_id=data.get('chat_id'),
+                message_id=data.get('base_msg')
+            )
+            await state.update_data(base_msg=None)
