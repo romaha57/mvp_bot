@@ -21,6 +21,7 @@ class Users(Base):
     state = Column(String)
     tags = Column(String)
     username = Column(String)
+    fullname = Column(String)
     is_show_course_description = Column(Boolean)
     updated_at = Column(DateTime, onupdate=func.now)
     created_at = Column(DateTime, server_default=func.now())

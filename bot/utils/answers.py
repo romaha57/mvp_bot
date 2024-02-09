@@ -6,12 +6,12 @@ from aiogram import Bot
 from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
+from loguru import logger
 
 from bot.courses.service import CourseService
 from bot.lessons.models import Lessons
 from bot.quiz.models import QuizAnswers
 from bot.users.models import Promocodes
-from loguru import logger
 from bot.utils.algorithms import func_sociability
 from bot.utils.constants import LINK
 from bot.utils.messages import MESSAGES
@@ -198,7 +198,6 @@ def collect_query_for_knowledge_base(divides_ids: str, file_ids) -> tuple[str, s
 
     divide_query = ''
     file_query = ''
-
 
     if divides_ids:
         divides_ids = tuple([int(item) for item in divides_ids.split(',')])

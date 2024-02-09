@@ -189,7 +189,6 @@ class UserService(BaseService, metaclass=Singleton):
 
             return res.scalars().first()
 
-
     @classmethod
     async def add_promocode_to_user(cls, tg_id: int, promocode_id: int):
         """Добавляем пользователю промокод"""
@@ -199,3 +198,23 @@ class UserService(BaseService, metaclass=Singleton):
 
             await session.execute(query)
             await session.commit()
+
+    @classmethod
+    async def save_fullname(cls, fullname: str, tg_id: int):
+        """Сохраняем ФИО для пользователя"""
+
+        async with async_session() as session:
+            query = update(Users).where(Users.external_id == tg_id).values(fullname=fullname)
+
+            await session.execute(query)
+            await session.commit()
+
+    @classmethod
+    async def get_fullname_by_tg_id(cls, tg_id: int):
+        """Получение fullname пользователя для сертификата по tg_id"""
+
+        async with async_session() as session:
+            query = select(Users.fullname).where(Users.external_id == tg_id)
+            res = await session.execute(query)
+
+            return res.scalars().first()

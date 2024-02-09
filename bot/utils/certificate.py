@@ -8,8 +8,9 @@ def build_certificate(user_id: int, fullname: str, course_name: str):
     image = Image.open('/app/static/template_certificate.png')
 
     # выбираем шрифт и добавляем текст
-    font = ImageFont.truetype("/app/static/roboto/Roboto-Bold.ttf", size=70)
+    font_fullname = ImageFont.truetype("/app/static/roboto/Roboto-Bold.ttf", size=50)
+    font_course = ImageFont.truetype("/app/static/roboto/Roboto-Bold.ttf", size=70)
     drawer = ImageDraw.Draw(image)
-    drawer.text((500, 650), fullname, font=font, fill=(184, 134, 11))
-    drawer.text((500, 810), course_name, font=font, fill=(184, 134, 11))
+    drawer.text((500, 660), fullname, font=font_fullname, fill=(184, 134, 11))
+    drawer.text((500, 810), course_name, font=font_course, fill=(184, 134, 11))
     image.save(f'/app/static/certificate_{user_id}.pdf')

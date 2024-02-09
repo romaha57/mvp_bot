@@ -1,6 +1,5 @@
 from typing import Union
 
-from loguru import logger
 from sqlalchemy import desc, insert, select, update
 from sqlalchemy.exc import MultipleResultsFound
 

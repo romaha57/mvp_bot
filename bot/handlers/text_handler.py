@@ -3,7 +3,7 @@ import traceback
 from aiogram import Bot, F, Router
 from aiogram.filters import and_f, or_f
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import CallbackQuery, Message
 from loguru import logger
 
 from bot.handlers.base_handler import Handler
@@ -75,7 +75,7 @@ class TextHandler(Handler):
                 logger.warning(traceback.format_exc())
 
         @self.router.callback_query(F.data.startswith('menu'))
-        async def get_menu(callback: CallbackQuery, state: FSMContext):
+        async def get_menus(callback: CallbackQuery, state: FSMContext):
             """Отлов кнопки 'Меню' """
 
             try:
@@ -127,5 +127,3 @@ class TextHandler(Handler):
 
             except Exception:
                 logger.warning(traceback.format_exc())
-
-

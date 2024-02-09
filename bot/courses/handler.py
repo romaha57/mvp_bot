@@ -2,7 +2,7 @@ import traceback
 
 from aiogram import Bot, F, Router
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, Message, FSInputFile
+from aiogram.types import CallbackQuery, FSInputFile, Message
 from loguru import logger
 
 from bot.courses.keyboards import CourseKeyboard
@@ -13,6 +13,7 @@ from bot.lessons.keyboards import LessonKeyboard
 from bot.lessons.service import LessonService
 from bot.lessons.states import LessonChooseState
 from bot.settings.keyboards import BaseKeyboard
+from bot.users.service import UserService
 from bot.utils.answers import show_lesson_info
 from bot.utils.buttons import BUTTONS
 from bot.utils.certificate import build_certificate
@@ -26,6 +27,7 @@ class CourseHandler(Handler):
         self.router = Router()
         self.db = CourseService()
         self.lesson_db = LessonService()
+        self.user_db = UserService()
         self.kb = CourseKeyboard()
         self.base_kb = BaseKeyboard()
         self.lesson_kb = LessonKeyboard()
@@ -261,7 +263,6 @@ class CourseHandler(Handler):
             """Отлов кнопки 'Получить сертификат' и его выдача"""
 
             try:
-
                 data = await state.get_data()
                 logger.debug(f"Пользователь {message.from_user.id}, состояние: {data}, отлов: {await state.get_state()}")
                 course_id = data.get('course_id')
@@ -271,10 +272,12 @@ class CourseHandler(Handler):
                     MESSAGES['CERTIFICATE']
                 )
 
+                fullname = await self.user_db.get_fullname_by_tg_id(message.from_user.id)
+
                 # формируем сертификат
                 build_certificate(
                     user_id=message.chat.id,
-                    fullname=message.from_user.full_name,
+                    fullname=fullname,
                     course_name=course.title
                 )
 
@@ -293,5 +296,7 @@ class CourseHandler(Handler):
                 )
 
                 await state.update_data(menu_msg=menu_msg.message_id)
+                await state.set_state(state=None)
+
             except Exception:
                 logger.warning(traceback.format_exc())

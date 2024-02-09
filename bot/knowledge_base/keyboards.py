@@ -1,9 +1,8 @@
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from bot.knowledge_base.service import KnowledgeService
 from bot.utils.buttons import BUTTONS
-from bot.utils.messages import MESSAGES
 
 
 class KnowledgeKeyboard:

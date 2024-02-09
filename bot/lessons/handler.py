@@ -13,7 +13,7 @@ from bot.courses.service import CourseService
 from bot.handlers.base_handler import Handler
 from bot.lessons.keyboards import LessonKeyboard
 from bot.lessons.service import LessonService
-from bot.lessons.states import LessonChooseState
+from bot.lessons.states import Certificate, LessonChooseState
 from bot.settings.keyboards import BaseKeyboard
 from bot.users.service import UserService
 from bot.utils.answers import (format_answers_text, get_images_by_place,
@@ -540,7 +540,9 @@ class LessonHandler(Handler):
                         reply_markup=await self.base_kb.menu_btn()
                     )
 
-                    course = await CourseService.get_course_by_course_history_id(course_history_id)
+                    await src.answer(
+                        MESSAGES['ADD_YOUR_FULLNAME']
+                    )
 
                     # выводим завершающее видео курса
                     if course.outro_video:
@@ -548,35 +550,52 @@ class LessonHandler(Handler):
                             video=course.outro_video
                         )
 
-                    if course.certificate_img and course.certificate_body:
-                        # собираем сертификат для текущего пользователя
-                        await src.answer(
-                            MESSAGES['CERTIFICATE']
-                        )
-
-                        # формируем сертификат
-                        build_certificate(
-                            user_id=src.chat.id,
-                            fullname=src.from_user.full_name,
-                            course_name=course.title
-                        )
-                        # читаем файл и отправляем пользователю
-                        file_path = f'/app/static/certificate_{src.chat.id}.pdf'
-                        certificate = FSInputFile(file_path)
-                        await src.bot.send_document(
-                            chat_id=data['chat_id'],
-                            document=certificate
-                        )
-
-                        menu_msg = await src.answer(
-                            MESSAGES['GO_TO_MENU'],
-                            reply_markup=await self.base_kb.menu_btn()
-                        )
-
-                        await state.update_data(menu_msg=menu_msg.message_id)
+                    await state.set_state(Certificate.fullname)
 
             except Exception:
                 logger.warning(traceback.format_exc())
+
+        @self.router.message(Certificate.fullname)
+        async def catch_fullname_for_certificate(message: Message, state: FSMContext):
+
+            data = await state.get_data()
+            course_id = data.get('course_id')
+            course = await self.course_db.get_course_by_id(course_id)
+
+            fio = message.text
+
+            if course.certificate_img:
+                # собираем сертификат для текущего пользователя
+                await message.answer(
+                    MESSAGES['CERTIFICATE']
+                )
+
+                # формируем сертификат
+                build_certificate(
+                    user_id=message.chat.id,
+                    fullname=fio,
+                    course_name=course.title
+                )
+                # читаем файл и отправляем пользователю
+                file_path = f'/app/static/certificate_{message.chat.id}.pdf'
+                certificate = FSInputFile(file_path)
+                await message.bot.send_document(
+                    chat_id=data['chat_id'],
+                    document=certificate
+                )
+
+                await self.user_db.save_fullname(
+                    fullname=fio,
+                    tg_id=message.from_user.id
+                )
+
+                menu_msg = await message.answer(
+                    MESSAGES['GO_TO_MENU'],
+                    reply_markup=await self.base_kb.menu_btn()
+                )
+
+                await state.update_data(menu_msg=menu_msg.message_id)
+                await state.set_state(state=None)
 
         async def start_text_task_after_lesson(message: Message, state: FSMContext):
             try:

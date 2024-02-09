@@ -14,3 +14,9 @@ class LessonChooseState(StatesGroup):
     video_answer = State()
     file_answer = State()
     circle_answer = State()
+
+
+class Certificate(StatesGroup):
+    """Состояние для отлова ФИО для сертификата"""
+
+    fullname = State()

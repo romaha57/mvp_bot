@@ -4,8 +4,6 @@ import traceback
 
 from aiogram import Bot, Dispatcher
 from aiogram.enums.parse_mode import ParseMode
-from aiogram.exceptions import TelegramNetworkError
-from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.storage.redis import RedisStorage
 from loguru import logger
 
@@ -22,9 +20,8 @@ class MainBot:
 
     def __init__(self):
         self.bot = Bot(token=settings.bot_token, parse_mode=ParseMode.HTML)
-        # storage = RedisStorage.from_url('redis://redis:6379/0')
-        # self.dp = Dispatcher(storage=storage)
-        self.dp = Dispatcher(storage=MemoryStorage())
+        storage = RedisStorage.from_url('redis://redis:6379/0')
+        self.dp = Dispatcher(storage=storage)
         # self.dp.message.middleware(CheckPromocodeMiddleware())
         self.handler = MainHandler(self.bot)
 

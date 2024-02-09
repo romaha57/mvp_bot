@@ -21,7 +21,7 @@ class KnowledgeService(BaseService, metaclass=Singleton):
             res = await session.execute(query)
             result = res.mappings().all()
 
-            return result   \
+            return result
 
     @classmethod
     async def get_divides_by_root(cls, root_divide_id: Union[int, str]):
@@ -32,12 +32,12 @@ class KnowledgeService(BaseService, metaclass=Singleton):
                 FROM $_knowledge_base_divides
                 WHERE parent_id = {root_divide_id} 
                 ORDER BY $_knowledge_base_divides.order_num
-            """)
+                """)
 
             res = await session.execute(query)
             result = res.mappings().all()
 
-            return result   \
+            return result
 
     @classmethod
     async def get_files_by_divide(cls, root_divide_id: Union[int, str]):

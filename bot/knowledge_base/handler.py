@@ -1,16 +1,12 @@
-import traceback
-
-from aiogram import Bot, Router, F
+from aiogram import Bot, F, Router
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, Message
-from loguru import logger
+from aiogram.types import Message
 
 from bot.handlers.base_handler import Handler
 from bot.knowledge_base.keyboards import KnowledgeKeyboard
 from bot.knowledge_base.service import KnowledgeService
 from bot.settings.keyboards import BaseKeyboard
 from bot.utils.buttons import BUTTONS
-from bot.utils.messages import MESSAGES
 
 
 class KnowledgeHandler(Handler):

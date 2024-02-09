@@ -4,13 +4,13 @@ from aiogram import Bot, Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
+from loguru import logger
 
 from bot.courses.service import CourseService
 from bot.handlers.base_handler import Handler
 from bot.settings.keyboards import BaseKeyboard
 from bot.settings.service import SettingsService
 from bot.users.service import UserService
-from loguru import logger
 
 
 class CommandHandler(Handler):
