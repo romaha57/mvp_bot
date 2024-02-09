@@ -54,7 +54,7 @@ class CommandHandler(Handler):
                         # сохраняем пользователя в БД
                         await self.user_db.get_or_create_user(
                             username=message.from_user.username,
-                            tg_id=message.from_user.id,
+                            tg_id=message.chat.id,
                             bot_id=promocode.bot_id,
                             first_name=message.from_user.first_name,
                             last_name=message.from_user.last_name

@@ -357,7 +357,7 @@ class LessonService(BaseService, metaclass=Singleton):
             # получаем созданную историю прохождения доп задания
             query = select(LessonAdditionalTaskHistory).\
                 filter_by(
-                    user_id=user.id, additional_task_id=additional_task_id, lesson_history_id=lesson_history_id
+                    user_id=user_id, additional_task_id=additional_task_id, lesson_history_id=lesson_history_id
             )
             additional_task_history = await session.execute(query)
 
