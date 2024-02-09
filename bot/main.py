@@ -4,12 +4,17 @@ import traceback
 
 from aiogram import Bot, Dispatcher
 from aiogram.enums.parse_mode import ParseMode
+from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.storage.redis import RedisStorage
+from aiogram.types import ErrorEvent
 from loguru import logger
 
 from bot.handlers.main_handler import MainHandler
+from bot.settings.keyboards import BaseKeyboard
 from bot.settings_bot import settings
+from bot.users.service import UserService
 from bot.utils.logger import debug_log_write, warning_log_write
+from bot.utils.messages import MESSAGES
 
 # для удобного импорта модулей
 sys.path.append("/Users/macbook/PycharmProjects/mvp_bot")
@@ -24,6 +29,37 @@ class MainBot:
         self.dp = Dispatcher(storage=storage)
         # self.dp.message.middleware(CheckPromocodeMiddleware())
         self.handler = MainHandler(self.bot)
+        self.kb = BaseKeyboard()
+        self.db = UserService()
+
+    async def catch_errors(self):
+        """Отлов всех ошибок в хендлерах и логгирование"""
+
+        @self.dp.errors()
+        async def catch_error(event: ErrorEvent):
+            try:
+                error_data: dict = event.model_dump()
+                chat_id = error_data.get('update', {}).get('message', {}).get('from_user', {}).get('id')
+                error = error_data.get('exception')
+                error_text = f'User: {chat_id}, err: {error}'
+
+                logger.warning(error_text)
+                logger.warning(traceback.format_exc())
+                promocode = await self.db.get_promocode_by_tg_id(chat_id)
+                if promocode:
+                    await self.bot.send_message(
+                        chat_id=chat_id,
+                        text=MESSAGES['ERROR_IN_HANDLER'],
+                        reply_markup=await self.kb.start_btn(promocode)
+                    )
+                else:
+                    await self.bot.send_message(
+                        chat_id=chat_id,
+                        text=MESSAGES['SOME_ERROR']
+                    )
+            except Exception as e:
+                logger.warning(e)
+                logger.warning(traceback.format_exc())
 
     async def start(self):
         """Подключение всех роутеров/старт отлова сообщений/логгирование"""
@@ -47,6 +83,7 @@ class MainBot:
     async def main(self):
         """Основная точка входа в бота и его запуск"""
 
+        await self.catch_errors()
         await self.start_logging()
         await self.start()
         try:
