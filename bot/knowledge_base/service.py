@@ -30,7 +30,8 @@ class KnowledgeService(BaseService, metaclass=Singleton):
             query = text(f"""
                 SELECT id, title, parent_id
                 FROM $_knowledge_base_divides
-                WHERE parent_id = {root_divide_id}
+                WHERE parent_id = {root_divide_id} 
+                ORDER BY $_knowledge_base_divides.order_num
             """)
 
             res = await session.execute(query)
@@ -46,7 +47,7 @@ class KnowledgeService(BaseService, metaclass=Singleton):
                 SELECT $_knowledge_base.id, $_knowledge_base.title, $_knowledge_base.type_id, $_knowledge_base_divides.parent_id,  $_knowledge_base.document
                 FROM $_knowledge_base
                 JOIN $_knowledge_base_divides ON $_knowledge_base_divides.id = $_knowledge_base.divide_id
-                WHERE $_knowledge_base.divide_id = {root_divide_id}
+                WHERE $_knowledge_base.divide_id = {root_divide_id} AND $_knowledge_base.available = 1
                 ORDER BY $_knowledge_base.order_num
             """)
 
@@ -68,8 +69,7 @@ class KnowledgeService(BaseService, metaclass=Singleton):
             res = await session.execute(query)
             result = res.mappings().first()
 
-            return result\
-
+            return result
 
     @classmethod
     async def get_divides_by_id_list(cls, query: str):
@@ -95,7 +95,6 @@ class KnowledgeService(BaseService, metaclass=Singleton):
                 FROM $_knowledge_base
                 WHERE {query}
             """)
-
 
             res = await session.execute(query)
             result = res.mappings().all()
