@@ -137,7 +137,7 @@ class QuizHandler(Handler):
                     reply_markup=await self.kb.quiz_answers(question.id)
                 )
                 await state.set_state(QuizState.answer)
-                await state.update_data(question=question)
+                await state.update_data(question_title=question.title)
             except IndexError:
                 # когда вопросов больше не будет, то удаляем состояние, но данные оставляем(нужен quiz_id)
                 await state.set_state(state=None)
