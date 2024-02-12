@@ -103,7 +103,7 @@ class QuizHandler(Handler):
             )
             await state.update_data(delete_message_id=msg.message_id)
             await state.update_data(inline_msg=msg.message_thread_id)
-            await state.update_data(question=question)
+            await state.update_data(question_title=question.title)
             await state.update_data(chat_id=msg.chat.id)
 
             # состояния на отлов ответа на этот вопрос
@@ -124,9 +124,9 @@ class QuizHandler(Handler):
 
             # берем вопросы из списка, пока они не закончатся
             try:
-                question = data.get('question')
+                question_title = data.get('question_title')
                 await callback.message.edit_text(
-                    text=f'{question.title}\n<b>Ответ: {answer}</b>',
+                    text=f'{question_title}\n<b>Ответ: {answer}</b>',
                     inline_message_id=data.get('inline_msg'),
                     reply_markup=None
                 )
