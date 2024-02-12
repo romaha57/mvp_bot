@@ -40,7 +40,6 @@ class MainBot:
         async def catch_error(event: ErrorEvent):
             try:
                 error_data: dict = event.model_dump()
-                pprint.pprint(error_data)
                 if error_data.get('update', {}).get('message'):
                     chat_id = error_data.get('update', {}).get('message', {}).get('from_user', {}).get('id')
                 else:

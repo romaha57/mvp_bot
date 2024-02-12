@@ -52,7 +52,6 @@ class TextHandler(Handler):
                     state=state
                 )
 
-                await message.delete()
                 menu_msg = await message.answer(
                     MESSAGES['MENU'],
                     reply_markup=await self.kb.start_btn(promocode)
@@ -83,7 +82,6 @@ class TextHandler(Handler):
                     state=state
                 )
 
-                await callback.message.delete()
                 menu_msg = await callback.message.answer(
                     MESSAGES['MENU'],
                     reply_markup=await self.kb.start_btn(promocode)
