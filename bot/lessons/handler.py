@@ -506,17 +506,22 @@ class LessonHandler(Handler):
                     reply_markup=await self.base_kb.menu_btn()
                 )
 
-                await src.answer(
-                    MESSAGES['ADD_YOUR_FULLNAME']
-                )
-
                 # выводим завершающее видео курса
                 if course.outro_video:
                     await src.answer_video(
                         video=course.outro_video
                     )
 
-                await state.set_state(Certificate.fullname)
+                if course.certificate_img:
+                    await src.answer(
+                        MESSAGES['ADD_YOUR_FULLNAME']
+                    )
+                    await state.set_state(Certificate.fullname)
+
+                else:
+                    await src.answer(
+                        MESSAGES['ALL_LESSONS_DONE'],
+                        reply_markup=await self.base_kb.menu_btn())
 
         @self.router.message(Certificate.fullname)
         async def catch_fullname_for_certificate(message: Message, state: FSMContext):
@@ -542,6 +547,7 @@ class LessonHandler(Handler):
                 # читаем файл и отправляем пользователю
                 file_path = f'/app/static/certificate_{message.chat.id}.pdf'
                 certificate = FSInputFile(file_path)
+                logger.debug(f'Пользователь: {message.chat.id} get certificate {certificate} on path: {file_path}')
                 await message.bot.send_document(
                     chat_id=data['chat_id'],
                     document=certificate

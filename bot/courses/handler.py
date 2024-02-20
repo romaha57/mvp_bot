@@ -123,12 +123,21 @@ class CourseHandler(Handler):
                         await state.set_state(LessonChooseState.lesson)
                         await state.update_data(delete_message_id=msg.message_id)
 
-                        menu_msg = await message.answer(
-                            MESSAGES['GO_TO_MENU'],
-                            reply_markup=await self.base_kb.menu_btn_with_certificate()
-                        )
+                        if course.certificate_img:
+                            menu_msg = await message.answer(
+                                MESSAGES['GO_TO_MENU'],
+                                reply_markup=await self.base_kb.menu_btn_with_certificate()
+                            )
 
-                        await state.update_data(menu_msg=menu_msg.message_id)
+                            await state.update_data(menu_msg=menu_msg.message_id)
+
+                        else:
+                            menu_msg = await message.answer(
+                                MESSAGES['GO_TO_MENU'],
+                                reply_markup=await self.base_kb.menu_btn()
+                            )
+
+                            await state.update_data(menu_msg=menu_msg.message_id)
 
                     else:
                         # создаем запись истории прохождения урока
