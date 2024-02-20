@@ -43,15 +43,15 @@ class LessonHandler(Handler):
 
             data = await state.get_data()
             await state.update_data(chat_id=callback.message.chat.id)
-            logger.debug(f"Пользователь {callback.message.chat.id}, состояние: {data}, отлов: {await state.get_state()}")
             self.result_count = 0
 
             # список для сохранения ответов пользователя
             await state.update_data(users_answers=[])
 
-            lesson_name = callback.data.split('_')[1]
-            lesson = await self.db.get_lesson_by_name(lesson_name)
+            lesson_id = callback.data.split('_')[1]
+            lesson = await self.db.get_lesson_by_id(lesson_id)
             user = await self.db.get_user_by_tg_id(callback.message.chat.id)
+            logger.debug(f'Пользователь: {callback.message.chat.id} выбрал lesson: id-{lesson.id}/{lesson.title}')
 
             # получаем актуальную для текущего пользователя попытку прохождения курса
             actual_course_attempt = await self.course_db.get_actual_course_attempt(
@@ -104,12 +104,9 @@ class LessonHandler(Handler):
             await state.set_state(LessonChooseState.start_task)
             await state.update_data(lesson_id=lesson.id)
 
-
         @self.router.callback_query(F.data.startswith('back'))
         async def back_to_lesson_list(callback: CallbackQuery, state: FSMContext):
             data = await state.get_data()
-
-            logger.debug(f"Пользователь {callback.message.chat.id}, состояние: {data}, отлов: {await state.get_state()}")
 
             # удаляем сообщения
             await delete_messages(
@@ -141,10 +138,7 @@ class LessonHandler(Handler):
         @self.router.callback_query(F.data.startswith('start_task'))
         async def start_task_after_lesson(callback: CallbackQuery, state: FSMContext):
 
-
             data = await state.get_data()
-
-            logger.debug(f"Пользователь {callback.message.chat.id}, состояние: {data}, отлов: {await state.get_state()}")
 
             # удаляем предыдущие сообщения с кнопками
             await delete_messages(
@@ -259,11 +253,9 @@ class LessonHandler(Handler):
                 reply_markup=await self.kb.test_answers_btn(count_questions, selected=data['selected'])
             )
 
-
         @self.router.callback_query(F.data.startswith('check_answer'))
         async def check_answer_on_test_lesson(callback: CallbackQuery, state: FSMContext):
             data = await state.get_data()
-            logger.debug(f"Пользователь {callback.message.chat.id}, состояние: {data}, отлов: {await state.get_state()}")
 
             if data.get('delete_test_message') and data['selected']:
                 await callback.bot.delete_message(
@@ -579,7 +571,6 @@ class LessonHandler(Handler):
             await message.answer(lesson_work_description)
             await state.set_state(LessonChooseState.text_answer)
 
-
         @self.router.message(LessonChooseState.text_answer)
         async def get_text_answer(message: Message, state: FSMContext):
 
@@ -659,7 +650,6 @@ class LessonHandler(Handler):
 
             await state.update_data(menu_msg=menu_msg.message_id)
 
-
         async def start_video_task_after_lesson(message: Message, state: FSMContext):
 
             data = await state.get_data()
@@ -671,7 +661,6 @@ class LessonHandler(Handler):
             # получаем текст вопроса и выводим его, и затем отлавливаем ответ пользователя
             await message.answer(lesson_work_description)
             await state.set_state(LessonChooseState.video_answer)
-
 
         @self.router.message(LessonChooseState.video_answer)
         async def get_video_answer(message: Message, state: FSMContext):
@@ -723,8 +712,6 @@ class LessonHandler(Handler):
             await message.answer(lesson_work_description)
             await state.set_state(LessonChooseState.file_answer)
 
-
-
         @self.router.message(LessonChooseState.file_answer)
         async def get_file_answer(message: Message, state: FSMContext):
 
@@ -773,7 +760,6 @@ class LessonHandler(Handler):
             # получаем текст вопроса и выводим его, и затем отлавливаем ответ пользователя
             await message.answer(lesson_work_description)
             await state.set_state(LessonChooseState.circle_answer)
-
 
         @self.router.message(LessonChooseState.circle_answer)
         async def get_circle_answer(message: Message, state: FSMContext):

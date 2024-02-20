@@ -23,7 +23,7 @@ class LessonService(BaseService, metaclass=Singleton):
         """Получение всех уроков для данного курса"""
 
         async with async_session() as session:
-            query = select(Lessons.title, LessonHistory.status_id, LessonHistory.user_id, Lessons.order_num).\
+            query = select(Lessons.id, Lessons.title, LessonHistory.status_id, LessonHistory.user_id, Lessons.order_num).\
                 join(LessonHistory, LessonHistory.lesson_id == Lessons.id, isouter=True).\
                 join(Users, Users.id == LessonHistory.user_id, isouter=True). \
                 where(Lessons.course_id == course_id, LessonHistory.user_id == user_id).\
@@ -37,7 +37,7 @@ class LessonService(BaseService, metaclass=Singleton):
         """Получение первого урока"""
 
         async with async_session() as session:
-            query = select(Lessons.title).where(Lessons.course_id == course_id).order_by('order_num').limit(1)
+            query = select(Lessons.id, Lessons.title).where(Lessons.course_id == course_id).order_by('order_num').limit(1)
 
             result = await session.execute(query)
             return result.scalars().first()

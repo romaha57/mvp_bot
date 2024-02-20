@@ -35,7 +35,6 @@ class QuizHandler(Handler):
             """Отслеживание кнопки 'Тестирование'"""
 
             data = await state.get_data()
-            logger.debug(f"Пользователь {message.from_user.id}, состояние: {data}, отлов: {await state.get_state()}")
 
             # удаляем сообщения
             await delete_messages(
@@ -56,7 +55,6 @@ class QuizHandler(Handler):
             """Обработка начала тестирования"""
 
             data = await state.get_data()
-            logger.debug(f"Пользователь {message.from_user.id}, состояние: {data}, отлов: {await state.get_state()}")
             user = await self.db.get_user_by_tg_id(message.from_user.id)
 
             # удаляем сообщения
@@ -113,7 +111,6 @@ class QuizHandler(Handler):
         async def get_quiz_answer(callback: CallbackQuery, state: FSMContext):
 
             data = await state.get_data()
-            logger.debug(f"Пользователь {callback.message.chat.id}, состояние: {data}, отлов: {await state.get_state()}")
 
             # получаем ответ пользователя и создаем его в БД
             answer_id = callback.data.split('_')[1]
@@ -178,7 +175,6 @@ class QuizHandler(Handler):
             """Получение результатов квиза"""
 
             data = await state.get_data()
-            logger.debug(f"Пользователь {message.from_user.id}, состояние: {data}, отлов: {await state.get_state()}")
 
             # удаляем сообщения
             await delete_messages(
@@ -225,7 +221,6 @@ class QuizHandler(Handler):
         async def get_other_result_quiz(message: Message, state: FSMContext):
 
             data = await state.get_data()
-            logger.debug(f"Пользователь {message.from_user.id}, состояние: {data}, отлов: {await state.get_state()}")
 
             # удаляем сообщения
             await delete_messages(

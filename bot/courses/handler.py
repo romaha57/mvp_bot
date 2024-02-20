@@ -41,7 +41,6 @@ class CourseHandler(Handler):
 
             data = await state.get_data()
             await state.update_data(chat_id=message.chat.id)
-            logger.debug(f"Пользователь {message.from_user.id}, состояние: {data}, отлов: {await state.get_state()}")
 
             # получаем id бота текущего юзера и id курса для текущего пользователя и его промокода
             user_data = await self.db.get_bot_id_and_promocode_course_id_by_user(
@@ -54,7 +53,6 @@ class CourseHandler(Handler):
                 bot_id=user_data['bot_id'],
                 promocode_course_id=user_data['course_id']
             )
-            logger.debug(f'Пользователь: {message.from_user.id} доступны курсы: {all_courses}')
 
             # ---------------------Логика для перехода сразу к списку уроков, если курс всего 1-----------------
             if len(all_courses) == 1:
@@ -184,8 +182,6 @@ class CourseHandler(Handler):
             """Отлавливаем выбранный пользователем курс"""
 
             data = await state.get_data()
-            logger.debug(f"Пользователь {callback.message.chat.id}, состояние: {data}, отлов: {await state.get_state()}")
-
             user = await self.db.get_user_by_tg_id(callback.message.chat.id)
             if not course:
                 course = await self.db.get_course_by_name(callback.data)
@@ -254,7 +250,6 @@ class CourseHandler(Handler):
             """Отлов кнопки 'Получить сертификат' и его выдача"""
 
             data = await state.get_data()
-            logger.debug(f"Пользователь {message.from_user.id}, состояние: {data}, отлов: {await state.get_state()}")
             course_id = data.get('course_id')
             course = await self.db.get_course_by_id(course_id)
 

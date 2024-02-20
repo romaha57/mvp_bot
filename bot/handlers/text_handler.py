@@ -42,7 +42,6 @@ class TextHandler(Handler):
             await state.set_state(state=None)
 
             data = await state.get_data()
-            logger.debug(f"Пользователь {message.from_user.id}, состояние: {data}, отлов: {await state.get_state()}")
             promocode = await self.db.get_promocode_by_tg_id(message.from_user.id)
             if promocode:
 
@@ -98,8 +97,6 @@ class TextHandler(Handler):
             """Отлавливаем любые текстовые сообщения"""
 
             data = await state.get_data()
-
-            logger.debug(f"Пользователь {message.from_user.id}, состояние: {data}, отлов: {await state.get_state()}")
 
             promocode = await self.db.get_promocode_by_tg_id(message.from_user.id)
             await message.answer(

@@ -34,7 +34,7 @@ class CommandHandler(Handler):
 
             # получаем промокод из сообщения пользователя
             promocode_in_msg = message.text.split()[1:]
-            logger.debug(f"Пользователь {message.from_user.id} ввел промокод {promocode_in_msg}")
+            logger.debug(f"Пользователь {message.chat.id} ввел промокод {promocode_in_msg}")
             if promocode_in_msg:
                 # проверяем наличие промокода в БД
                 promocode = await self.db.check_promocode(promocode_in_msg[0])

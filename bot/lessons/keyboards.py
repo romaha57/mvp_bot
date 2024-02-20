@@ -58,8 +58,8 @@ class LessonKeyboard:
             # получаем первый урок, чтобы не отображать весь список уроков
             first_lesson = await self.db.get_first_lesson(course_id)
             builder.button(
-                text=first_lesson,
-                callback_data=f'lesson_{first_lesson[:20]}'
+                text=first_lesson.get('title'),
+                callback_data=f'lesson_{first_lesson.get("id")}'
             )
 
             builder.adjust(1)
@@ -74,17 +74,17 @@ class LessonKeyboard:
             if lesson['status_id'] == 4:
                 builder.button(
                     text=lesson['title'] + '✅',
-                    callback_data=f'lesson_{lesson["title"][:20]}'
+                    callback_data=f'lesson_{lesson["id"]}'
                 )
             elif lesson['status_id'] == 3:
                 builder.button(
                     text=lesson['title'] + '❗',
-                    callback_data=f'lesson_{lesson["title"][:20]}'
+                    callback_data=f'lesson_{lesson["id"]}'
                 )
             elif lesson['status_id'] in (1, 2):
                 builder.button(
                     text=lesson['title'] + '👀 ',
-                    callback_data=f'lesson_{lesson["title"][:20]}'
+                    callback_data=f'lesson_{lesson["id"]}'
                 )
 
         builder.adjust(1)
@@ -153,7 +153,7 @@ class LessonKeyboard:
         builder = InlineKeyboardBuilder()
         builder.button(
             text=lesson.title,
-            callback_data=f'lesson_{lesson.title[:20]}'
+            callback_data=f'lesson_{lesson.id}'
 
         )
 
@@ -186,7 +186,7 @@ class LessonKeyboard:
         builder = InlineKeyboardBuilder()
         builder.button(
             text=BUTTONS['AGAIN'],
-            callback_data=f'lesson_{lesson.title[:20]}'
+            callback_data=f'lesson_{lesson.id}'
         )
         builder.adjust(1)
 
