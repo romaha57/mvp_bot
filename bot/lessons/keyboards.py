@@ -58,7 +58,7 @@ class LessonKeyboard:
         if not lessons_from_db:
             # получаем первый урок, чтобы не отображать весь список уроков
             first_lesson = await self.db.get_first_lesson(course_id)
-            logger.debug(f'Выбран в клавиутере урок: {first_lesson}')
+            logger.debug(f'Выбран в клавиатуре урок: {first_lesson}')
             builder.button(
                 text=first_lesson.get('title'),
                 callback_data=f'lesson_{first_lesson.get("id")}'

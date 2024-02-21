@@ -40,7 +40,7 @@ class LessonService(BaseService, metaclass=Singleton):
             query = select(Lessons.id, Lessons.title).where(Lessons.course_id == course_id).order_by('order_num').limit(1)
 
             result = await session.execute(query)
-            return result.scalars().first()
+            return result.mappings().first()
 
     @classmethod
     async def get_lesson_by_name(cls, name: str) -> Union[Lessons, None]:
