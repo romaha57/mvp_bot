@@ -1,5 +1,6 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
+from loguru import logger
 
 from bot.lessons.models import Lessons
 from bot.lessons.service import LessonService
@@ -57,6 +58,7 @@ class LessonKeyboard:
         if not lessons_from_db:
             # получаем первый урок, чтобы не отображать весь список уроков
             first_lesson = await self.db.get_first_lesson(course_id)
+            logger.debug(f'Выбран в клавиутере урок: {first_lesson}')
             builder.button(
                 text=first_lesson.get('title'),
                 callback_data=f'lesson_{first_lesson.get("id")}'
@@ -84,6 +86,11 @@ class LessonKeyboard:
             elif lesson['status_id'] in (1, 2):
                 builder.button(
                     text=lesson['title'] + '👀 ',
+                    callback_data=f'lesson_{lesson["id"]}'
+                )
+            else:
+                builder.button(
+                    text=lesson['title'],
                     callback_data=f'lesson_{lesson["id"]}'
                 )
 

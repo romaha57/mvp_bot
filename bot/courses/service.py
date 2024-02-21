@@ -24,6 +24,7 @@ class CourseService(BaseService, metaclass=Singleton):
     @classmethod
     async def get_course_by_promo_and_bot(cls, promocode_course_id: int, bot_id: int):
         """Получение курсов доступныз для самого бота и для промокода"""
+        
         async with async_session() as session:
             query = select(Course.title).\
                 join(CourseBots, Course.id == CourseBots.course_id).\

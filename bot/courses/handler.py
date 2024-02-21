@@ -53,10 +53,12 @@ class CourseHandler(Handler):
                 bot_id=user_data['bot_id'],
                 promocode_course_id=user_data['course_id']
             )
+            print(f'{all_courses=}')
 
             # ---------------------Логика для перехода сразу к списку уроков, если курс всего 1-----------------
             if len(all_courses) == 1:
                 course = await self.db.get_course_by_name(all_courses[0])
+                print(course)
                 logger.debug(f"Пользователь {message.from_user.id} перешел на курс: {course}")
 
                 await state.update_data(course_id=course.id)
