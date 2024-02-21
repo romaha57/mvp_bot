@@ -57,17 +57,17 @@ class CourseHandler(Handler):
 
             # ---------------------Логика для перехода сразу к списку уроков, если курс всего 1-----------------
             if len(all_courses) == 1:
-                course = await self.db.get_course_by_name(all_courses[0])
+                course = await self.db.get_course_by_name(all_courses[0].get('title'))
                 logger.debug(f"Пользователь {message.from_user.id} перешел на курс: {course}")
 
                 await state.update_data(course_id=course.id)
                 # создаем запись в истории прохождения курса со статусом 'Открыт'
-                await self.db.create_history(
+                course_history = await self.db.create_history(
                     course_id=course.id,
                     tg_id=message.chat.id
                 )
 
-                if user.is_show_course_description:
+                if course_history.is_show_description:
                     # выводим приветственное видео курса, если оно есть
                     if course.intro_video:
                         await message.answer_video(
@@ -95,7 +95,7 @@ class CourseHandler(Handler):
                     await state.update_data(menu_msg=menu_msg.message_id)
 
                     # убираем флаг у юзера, чтобы ему больше не показывалось видео курса
-                    await self.db.mark_user_show_course_description(user, False)
+                    await self.db.mark_show_course_description(course_history, False)
 
                 else:
 
@@ -116,7 +116,7 @@ class CourseHandler(Handler):
                     if lesson == 'all_lesson_done':
 
                         msg = await message.answer(
-                            course.intro,
+                            course.outro,
                             reply_markup=await self.lesson_kb.lessons_btn(course.id, user.id)
                         )
 
@@ -168,9 +168,6 @@ class CourseHandler(Handler):
             # -------------------------Логика если курсов больше 1----------------------------------
 
             else:
-                # устанавливаем отлов состояния на название урока
-                await state.set_state(LessonChooseState.lesson)
-
                 msg1 = await message.answer(
                     MESSAGES['CHOOSE_COURSE'],
                     reply_markup=await self.kb.courses_btn(all_courses)
@@ -194,7 +191,8 @@ class CourseHandler(Handler):
             data = await state.get_data()
             user = await self.db.get_user_by_tg_id(callback.message.chat.id)
             if not course:
-                course = await self.db.get_course_by_name(callback.data)
+                course_id = int(callback.data.split('_')[-1])
+                course = await self.db.get_course_by_id(course_id)
             else:
                 course = course
 
@@ -210,12 +208,12 @@ class CourseHandler(Handler):
                 # await state.clear()
 
                 # создаем запись в истории прохождения курса со статусом 'Открыт'
-                await self.db.create_history(
+                course_history = await self.db.create_history(
                     course_id=course.id,
                     tg_id=callback.message.chat.id
                 )
 
-                if user.is_show_course_description:
+                if course_history.is_show_description:
                     # выводим приветственное видео курса, если оно есть
                     if course.intro_video:
                         await callback.message.answer_video(
@@ -230,6 +228,9 @@ class CourseHandler(Handler):
                     )
                     await state.update_data(chat_id=callback.message.chat.id)
                     await state.update_data(delete_message_id=msg.message_id)
+
+                    # убираем флаг у юзера, чтобы ему больше не показывалось видео курса
+                    await self.db.mark_show_course_description(course_history, False)
                 else:
                     msg = await callback.message.answer(
                         'Уроки курса:',

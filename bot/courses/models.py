@@ -1,5 +1,5 @@
 from sqlalchemy import (Column, DateTime, ForeignKey, Integer, String, Text,
-                        func)
+                        func, Boolean)
 from sqlalchemy.orm import relationship
 
 from bot.db_connect import Base
@@ -65,6 +65,7 @@ class CourseHistory(Base):
     course_id = Column(Integer, ForeignKey('$_courses.id'))
     status_id = Column(Integer, ForeignKey('$_course_history_statuses.id'))
     user_id = Column(Integer, ForeignKey('$_users.id'))
+    is_show_description = Column(Boolean)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, onupdate=func.now())
 

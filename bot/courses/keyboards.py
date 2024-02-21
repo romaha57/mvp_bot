@@ -13,14 +13,14 @@ class CourseKeyboard:
         self.db = CourseService()
         self.lesson_db = LessonService()
 
-    async def courses_btn(self, courses: list[str]) -> InlineKeyboardMarkup:
+    async def courses_btn(self, courses: list[dict]) -> InlineKeyboardMarkup:
         """Кнопки со списком доступных курсов"""
 
         builder = InlineKeyboardBuilder()
         for course in courses:
             builder.button(
-                text=course,
-                callback_data=course
+                text=course.get('title'),
+                callback_data=f"course_{course.get('id')}"
             )
 
         builder.adjust(1)

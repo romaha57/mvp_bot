@@ -26,12 +26,12 @@ class CourseService(BaseService, metaclass=Singleton):
         """Получение курсов доступныз для самого бота и для промокода"""
         
         async with async_session() as session:
-            query = select(Course.title).\
+            query = select(Course.id, Course.title).\
                 join(CourseBots, Course.id == CourseBots.course_id).\
                 where(or_(Course.id == promocode_course_id, CourseBots.id == bot_id))
             result = await session.execute(query)
 
-            return result.scalars().all()
+            return result.mappings().all()
 
     @classmethod
     async def get_course_by_name(cls, course_name: str) -> Union[Course, None]:
@@ -83,10 +83,20 @@ class CourseService(BaseService, metaclass=Singleton):
                 query = insert(CourseHistory).values(
                     course_id=course_id,
                     user_id=user.id,
-                    status_id=status.id
+                    status_id=status.id,
+                    is_show_description=True
                 )
                 await session.execute(query)
                 await session.commit()
+
+                get_history = select(CourseHistory).filter_by(
+                    course_id=course_id,
+                    user_id=user.id
+                )
+                res = await session.execute(get_history)
+                history = res.scalars().first()
+
+            return history
 
     @classmethod
     async def get_course_history_status(cls, status_name: str) -> CourseHistoryStatuses:
@@ -161,13 +171,13 @@ class CourseService(BaseService, metaclass=Singleton):
             await session.commit()
 
     @classmethod
-    async def mark_user_show_course_description(cls, user: Users, flag: bool):
+    async def mark_show_course_description(cls, course_history: CourseHistory, flag: bool):
         """Отмечаем флаг у значения для показа стартового видео курса"""
 
         async with async_session() as session:
-            query = update(Users). \
-                where(Users.id == user.id). \
-                values(is_show_course_description=flag)
+            query = update(CourseHistory). \
+                where(CourseHistory.id == course_history.id). \
+                values(is_show_description=flag)
 
             await session.execute(query)
             await session.commit()

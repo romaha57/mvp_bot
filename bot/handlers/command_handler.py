@@ -62,8 +62,6 @@ class CommandHandler(Handler):
 
                     user = await self.db.get_user_by_tg_id(message.from_user.id)
 
-                    # добавляем флаг у юзера, чтобы ему показывать стартовое видео курса
-                    await self.course_db.mark_user_show_course_description(user, True)
                 else:
                     msg = await self.db.get_msg_by_key('bad_promocode')
                     kb = await self.keyboard.help_btn()
