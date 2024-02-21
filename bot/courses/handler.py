@@ -58,7 +58,6 @@ class CourseHandler(Handler):
             # ---------------------Логика для перехода сразу к списку уроков, если курс всего 1-----------------
             if len(all_courses) == 1:
                 course = await self.db.get_course_by_name(all_courses[0])
-                print(course)
                 logger.debug(f"Пользователь {message.from_user.id} перешел на курс: {course}")
 
                 await state.update_data(course_id=course.id)
@@ -69,9 +68,6 @@ class CourseHandler(Handler):
                 )
 
                 if user.is_show_course_description:
-                    # убираем флаг у юзера, чтобы ему больше не показывалось видео курса
-                    await self.db.mark_user_show_course_description(user, False)
-
                     # выводим приветственное видео курса, если оно есть
                     if course.intro_video:
                         await message.answer_video(
@@ -97,6 +93,9 @@ class CourseHandler(Handler):
                     )
 
                     await state.update_data(menu_msg=menu_msg.message_id)
+
+                    # убираем флаг у юзера, чтобы ему больше не показывалось видео курса
+                    await self.db.mark_user_show_course_description(user, False)
 
                 else:
 
