@@ -15,6 +15,7 @@ class Course(Base):
     intro = Column(Text, nullable=False)
     outro = Column(Text, nullable=False)
     title = Column(String)
+    is_public = Column(Boolean)
     order_num = Column(Integer, nullable=False)
     group_id = Column(String)
     certificate_body = Column(Text)
@@ -30,7 +31,8 @@ class Course(Base):
     course_history = relationship('CourseHistory', back_populates='course')
 
     lesson = relationship('Lessons', back_populates='course')
-    promocode = relationship('Promocodes', back_populates='course')
+
+    promocodes_courses = relationship('PromocodeCourses', back_populates='course')
 
     def __repr__(self):
         return f'{self.id} - {self.title}'

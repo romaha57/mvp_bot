@@ -16,7 +16,17 @@ from bot.users.models import BonusRewards, BonusRewardsTypes, Users
 
 
 class LessonService(BaseService, metaclass=Singleton):
-    model = None
+
+    @classmethod
+    async def get_all_lesson(cls, course_id: str, limit: int = None):
+        async with async_session() as session:
+            query = select(Lessons.id, Lessons.title, LessonHistory.status_id, LessonHistory.user_id, Lessons.order_num). \
+                    join(LessonHistory, LessonHistory.lesson_id == Lessons.id, isouter=True). \
+                    where(Lessons.course_id == course_id). \
+                    order_by('order_num').limit(limit)
+
+            result = await session.execute(query)
+            return result.mappings().all()
 
     @classmethod
     async def get_lessons(cls, course_id: str, user_id: int) -> list[dict]:
@@ -128,20 +138,21 @@ class LessonService(BaseService, metaclass=Singleton):
             return result.scalars().first()
 
     @classmethod
-    async def get_actual_test_lesson_history(cls, user_id: int, lesson_id: int) -> TestLessonHistory:
+    async def get_actual_test_lesson_history(cls, user_id: int, lesson_id: int) -> int:
         """Получаем актуальную попытку прохождения теста после урока"""
 
         async with async_session() as session:
-            query = select(TestLessonHistory).\
+            query = select(TestLessonHistory.id).\
                 filter_by(user_id=user_id, lesson_id=lesson_id).\
-                order_by(desc('id'))
+                order_by(desc(TestLessonHistory.id)).limit(1)
 
             result = await session.execute(query)
 
             return result.scalars().first()
 
     @classmethod
-    async def create_test_history(cls, user_id: int, lesson_id: int, lesson_history_id: int):
+    async def create_test_history(cls, user_id: int, lesson_id: int, lesson_history_id: int,
+                                  question_id: int, answers: str):
         """Создание истории прохождения тестирования после урока"""
 
         status = await cls.get_test_lesson_history_status('В процессе')
@@ -151,7 +162,9 @@ class LessonService(BaseService, metaclass=Singleton):
                 lesson_id=lesson_id,
                 user_id=user_id,
                 status_id=status.id,
-                lesson_history_id=lesson_history_id
+                lesson_history_id=lesson_history_id,
+                question_id=question_id,
+                answers=answers
             )
             await session.execute(query)
             await session.commit()
@@ -164,6 +177,19 @@ class LessonService(BaseService, metaclass=Singleton):
         async with async_session() as session:
             query = update(LessonHistory).\
                 where(LessonHistory.id == lesson_history_id).\
+                values(status_id=status.id)
+
+            await session.execute(query)
+            await session.commit()\
+
+    @classmethod
+    async def mark_test_lesson_history_on_status_done(cls, test_lesson_history_id: int):
+        """Отмечаем статус прохождеия урока на 'ТЕСТ' """
+
+        status = await cls.get_test_lesson_history_status('Пройден')
+        async with async_session() as session:
+            query = update(TestLessonHistory).\
+                where(TestLessonHistory.id == test_lesson_history_id).\
                 values(status_id=status.id)
 
             await session.execute(query)
@@ -459,3 +485,26 @@ class LessonService(BaseService, metaclass=Singleton):
                 lesson = await cls.get_lesson_by_order_num(course_id, 1)
 
             return lesson
+
+    @classmethod
+    async def get_lesson_by_last_lesson_history(cls, tg_id: int):
+        async with async_session() as session:
+            query = select(Lessons.id). \
+                join(LessonHistory, LessonHistory.lesson_id == Lessons.id). \
+                join(Users, LessonHistory.user_id == Users.id). \
+                where(Users.external_id == tg_id).order_by(desc(LessonHistory.id)).limit(1)
+
+            result = await session.execute(query)
+
+            return result.scalars().first()
+
+    @classmethod
+    async def get_additional_task_history(cls, tg_id: int, additional_task_id):
+        async with async_session() as session:
+            query = select(LessonAdditionalTaskHistory.id).\
+                join(Users, LessonAdditionalTaskHistory.user_id == Users.id).\
+                where(Users.external_id == tg_id, LessonAdditionalTaskHistory.additional_task_id == additional_task_id)
+
+            result = await session.execute(query)
+
+            return result.scalars().first()

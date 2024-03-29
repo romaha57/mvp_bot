@@ -7,31 +7,52 @@ from bot.courses.models import (Course, CourseBots, CourseHistory,
 from bot.db_connect import async_session
 from bot.lessons.models import LessonHistory
 from bot.services.base_service import BaseService, Singleton
-from bot.users.models import Users
+from bot.users.models import Users, PromocodeQuizes, PromocodeCourses
 
 
 class CourseService(BaseService, metaclass=Singleton):
-    model = None
 
     @classmethod
     async def get_all_courses(cls):
         async with async_session() as session:
-            query = select(Course.title)
-            res = await session.execute(query)
-
-            return res.scalars().all()
-
-    @classmethod
-    async def get_course_by_promo_and_bot(cls, promocode_course_id: int, bot_id: int):
-        """Получение курсов доступныз для самого бота и для промокода"""
-        
-        async with async_session() as session:
-            query = select(Course.id, Course.title).\
-                join(CourseBots, Course.id == CourseBots.course_id).\
-                where(or_(Course.id == promocode_course_id, CourseBots.id == bot_id))
+            query = select(Course.id, Course.title).where(Course.is_public == True)
             result = await session.execute(query)
 
             return result.mappings().all()
+
+    @classmethod
+    async def get_courses_by_bot(cls, tg_id: int):
+        async with async_session() as session:
+            query = select(Course.id, Course.title).\
+                join(CourseBots, Course.id == CourseBots.course_id).\
+                join(Users, Users.bot_id == CourseBots.bot_id).\
+                where(Users.external_id == tg_id)
+            result = await session.execute(query)
+
+            return result.mappings().all()
+
+    @classmethod
+    async def get_courses_by_promo(cls, tg_id: int):
+        async with async_session() as session:
+            query = select(Course.id, Course.title).\
+                join(PromocodeCourses, PromocodeCourses.course_id== Course.id).\
+                join(Users, Users.promocode_id == PromocodeCourses.promocode_id).\
+                where(Users.external_id == tg_id)
+            result = await session.execute(query)
+
+            return result.mappings().all()
+
+    @classmethod
+    async def get_course_by_last_course_history(cls, tg_id: int):
+        async with async_session() as session:
+            query = select(Course.id).\
+                join(CourseHistory, CourseHistory.course_id == Course.id).\
+                join(Users, CourseHistory.user_id == Users.id).\
+                where(Users.external_id == tg_id).order_by(desc(CourseHistory.id)).limit(1)
+
+            result = await session.execute(query)
+
+            return result.scalars().first()
 
     @classmethod
     async def get_course_by_name(cls, course_name: str) -> Union[Course, None]:
@@ -44,7 +65,7 @@ class CourseService(BaseService, metaclass=Singleton):
             return result.scalars().one_or_none()
 
     @classmethod
-    async def get_course_by_id(cls, course_id: int) -> Union[Course, None]:
+    async def get_course_by_id(cls, course_id: str) -> Union[Course, None]:
         """Получаем курс по его id"""
 
         async with async_session() as session:
@@ -64,10 +85,9 @@ class CourseService(BaseService, metaclass=Singleton):
             return result.scalars().one_or_none()
 
     @classmethod
-    async def create_history(cls, course_id: int, tg_id: int):
+    async def get_or_create_history(cls, course_id: int, user: Users):
         """Создание истории прохождения курса"""
 
-        user = await cls.get_user_by_tg_id(tg_id)
         status = await cls.get_course_history_status('Открыт')
         async with async_session() as session:
             get_history = select(CourseHistory).filter_by(
@@ -77,7 +97,6 @@ class CourseService(BaseService, metaclass=Singleton):
             res = await session.execute(get_history)
             history = res.scalars().first()
 
-            # создаем новую историю прохождения курса, если у данного пользователя еще нет
             if not history:
 
                 query = insert(CourseHistory).values(

@@ -1,10 +1,10 @@
 from asyncio import IncompleteReadError
 
-from sqlalchemy import select
+from sqlalchemy import select, update, text, insert
 
 from bot.db_connect import async_session
 from bot.settings.model import Settings
-from bot.users.models import Promocodes, UserAccount, Users
+from bot.users.models import Promocodes, UserAccount, Users, AnketaAnswers
 
 
 class Singleton(type):
@@ -71,20 +71,16 @@ class BaseService(metaclass=Singleton):
 
     @classmethod
     async def get_bot_id_and_promocode_course_id_by_user(cls, tg_id: int):
-        """Получение id бота и курс к данному промокоду для дальнейнего получения всех курсов"""
+        """Получение id бота для дальнейнего получения всех курсов"""
 
         async with async_session() as session:
-            query = select(Users.bot_id, Promocodes.course_id).\
-                select_from(Users).\
-                join(Promocodes, Users.promocode_id == Promocodes.id). \
-                where(Users.external_id == tg_id)
-
+            query = select(Users.bot_id).where(Users.external_id == tg_id)
             result = await session.execute(query)
 
             return result.mappings().first()
 
     @classmethod
-    async def get_promocode_by_tg_id(cls, tg_id: int):
+    async def get_promocode_by_tg_id(cls, tg_id: int) -> Promocodes:
         """Получаем промокод по telegram_id"""
 
         async with async_session() as session:
@@ -95,3 +91,40 @@ class BaseService(metaclass=Singleton):
             result = await session.execute(query)
 
             return result.scalars().first()
+
+    @classmethod
+    async def add_promocode_to_user(cls, tg_id: int, promocode_id: int):
+        """Добавляем пользователю промокод"""
+
+        async with async_session() as session:
+            query = update(Users).where(Users.external_id == tg_id).values(promocode_id=promocode_id)
+            await session.execute(query)
+            await session.commit()
+
+    @classmethod
+    async def get_promocode_courses_and_quizes(cls, promocode_id: int) -> dict:
+        """Получаем все доступные курсы и квизы для промокода"""
+
+        async with async_session() as session:
+            query = text(f"""
+                  SELECT $_promocodes.type_id promocode_type, group_concat(DISTINCT $_promocodes_courses.course_id) courses, group_concat(DISTINCT $_promocodes_quizes.quiz_id) quizes
+                  FROM $_promocodes
+                  LEFT JOIN $_promocodes_courses ON $_promocodes_courses.promocode_id = $_promocodes.id
+                  LEFT JOIN $_promocodes_quizes ON $_promocodes_quizes.promocode_id = $_promocodes.id
+                  WHERE $_promocodes.id = {promocode_id}
+              """)
+
+            res = await session.execute(query)
+            return res.mappings().first()
+
+    @classmethod
+    async def save_user_anketa_answer(cls, question_id: int, answer: str, account_id: int):
+
+        async with async_session() as session:
+            query = insert(AnketaAnswers).values(
+                question_id=question_id,
+                account_id=account_id,
+                answer=answer
+            )
+            await session.execute(query)
+            await session.commit()

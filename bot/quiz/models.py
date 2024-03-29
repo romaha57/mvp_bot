@@ -25,7 +25,7 @@ class Quizes(Base):
     quiz_questions = relationship('QuizQuestions', back_populates='quiz')
     quiz_bots = relationship('QuizBots', back_populates='quiz')
     quiz_attempts = relationship('QuizAttempts', back_populates='quiz')
-    promocode = relationship('Promocodes', back_populates='quiz')
+    promocodes_quizes = relationship('PromocodeQuizes', back_populates='quiz')
 
     def __str__(self):
         return f'{self.name}'

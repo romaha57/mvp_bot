@@ -5,3 +5,4 @@ class QuizState(StatesGroup):
     """Состояние для отлова ответов на тестирование"""
 
     answer = State()
+    quiz = State()

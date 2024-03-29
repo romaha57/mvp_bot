@@ -1,11 +1,20 @@
+import hashlib
 import traceback
+import uuid
 
+import segno
 from aiogram import Bot, F, Router
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, Message
+from aiogram.types import CallbackQuery, Message, FSInputFile
 from loguru import logger
 
+from bot.courses.keyboards import CourseKeyboard
+from bot.courses.service import CourseService
+from bot.courses.states import CourseChooseState
 from bot.handlers.base_handler import Handler
+from bot.quiz.keyboads import QuizKeyboard
+from bot.quiz.service import QuizService
+from bot.quiz.states import QuizState
 from bot.settings.keyboards import BaseKeyboard
 from bot.users.keyboards import UserKeyboard
 from bot.users.service import UserService
@@ -23,21 +32,63 @@ class UserHandler(Handler):
         super().__init__(bot)
         self.router = Router()
         self.db = UserService()
+        self.quiz_db = QuizService()
+        self.course_db = CourseService()
         self.kb = UserKeyboard()
         self.base_kb = BaseKeyboard()
+        self.quiz_kb = QuizKeyboard()
+        self.course_kb = CourseKeyboard()
 
     def handle(self):
         @self.router.message(F.text == BUTTONS['REFERAL'])
-        async def start_referal(message: Message):
+        async def start_referal(message: Message, state: FSMContext):
+
+            await state.update_data(chat_id=message.chat.id)
+            data = await state.get_data()
+
+            account = await self.db.get_account_by_tg_id(message.chat.id)
+            account_id = str(account.id).encode()
+            referal_code = hashlib.md5(account_id).hexdigest()[:7]
+            referal_link = f't.me/TestWorkRuBot?start={referal_code}'
+
+            qr_path = f'/app/static/qr/qr_{referal_code}.png'
+            qr_code = segno.make(referal_link, micro=False)
+            qr_code.save(qr_path, scale=5)
+            qrcode = FSInputFile(qr_path)
+            logger.debug(f"Пользователь {message.from_user.id}, {qr_path} === {qrcode}")
+
+            count_users = await self.db.get_connected_users(account.id)
+            promocode = await self.db.get_promocode_by_tg_id(message.chat.id)
+            courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode.id)
+
+            await message.bot.send_document(
+                chat_id=data.get('chat_id'),
+                document=qrcode
+            )
 
             await message.answer(
-                MESSAGES['START_REFERAL'],
-                reply_markup=await self.base_kb.menu_btn()
+                MESSAGES['START_REFERAL'].format(
+                    referal_link,
+                    count_users
+                ),
+                reply_markup=await self.base_kb.start_btn(courses_and_quizes)
+            )
+            await self.db.create_promocode(
+                name=f'{account.first_name} {account.last_name}/ {account.email}',
+                code=referal_code,
+                account_id=account.id
             )
 
         @self.router.message(F.text == BUTTONS['BALANCE'])
-        async def get_balance(message: Message):
+        async def get_balance(message: Message, state: FSMContext):
 
+            await state.update_data(chat_id=message.chat.id)
+            data = await state.get_data()
+            await delete_messages(
+                src=message,
+                data=data,
+                state=state
+            )
             # user_account = await self.db.get_account_by_tg_id(message.from_user.id)
             #
             # # получаем баланс текущего пользователя
@@ -45,151 +96,55 @@ class UserHandler(Handler):
             #     account_id=user_account.id
             # )
 
+            promocode = await self.db.get_promocode_by_tg_id(message.chat.id)
+            courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode.id)
             await message.answer(
                 MESSAGES['BALANCE'],
-                reply_markup=await self.base_kb.menu_btn()
+                reply_markup=await self.base_kb.start_btn(courses_and_quizes)
             )
 
-        @self.router.message(F.text == BUTTONS['PROMOCODES'])
-        async def manager_panel(message: Message, state: FSMContext):
+        @self.router.message(F.text == BUTTONS['OWNER_QUIZ'])
+        async def get_owner_quiz(message: Message, state: FSMContext):
+
+            await state.update_data(chat_id=message.chat.id)
+            data = await state.get_data()
+            await delete_messages(
+                src=message,
+                data=data,
+                state=state
+            )
+
+            promocode = await self.db.get_promocode_by_tg_id(message.chat.id)
+            await message.answer(
+                MESSAGES['QUIZ_SELECTION'],
+                reply_markup=await self.quiz_kb.quiz_menu_btn(promocode)
+            )
+
+        @self.router.message(F.text == BUTTONS['OWNER_EDUCATION'])
+        async def start_test_education(message: Message, state: FSMContext):
+
+            await state.update_data(chat_id=message.chat.id)
+            data = await state.get_data()
+            await delete_messages(
+                src=message,
+                data=data,
+                state=state
+            )
+
+            courses_by_bot = await self.course_db.get_courses_by_bot(message.chat.id)
+            courses_by_db = await self.course_db.get_all_courses()
+            all_courses = list(set(courses_by_bot + courses_by_db))
+            all_courses.sort(key=lambda elem: elem.get('id'))
+
+            msg = await message.answer(
+                MESSAGES['CHOOSE_COURSE'],
+                reply_markup=await self.course_kb.courses_btn(all_courses)
+            )
+
+            await state.update_data(msg=msg.message_id)
+            await state.set_state(CourseChooseState.course)
 
             await message.answer(
-                MESSAGES['MANAGER_PANEL'],
-                reply_markup=await self.kb.manager_btn()
-            )
-
-        @self.router.message(F.text == BUTTONS['GENERATE_PROMOCODE'])
-        async def start_generate_promocodes(message: Message, state: FSMContext):
-
-            msg1 = await message.answer(
-                'Выберите роль',
-                reply_markup=await self.kb.choose_role_btn()
-            )
-            await state.set_state(GeneratePromocodeState.role)
-            await state.update_data(msg1=msg1.message_id)
-
-            menu_msg = await message.answer(
                 MESSAGES['GO_TO_MENU'],
                 reply_markup=await self.base_kb.menu_btn()
             )
-            await state.update_data(menu_msg=menu_msg.message_id)
-
-        @self.router.callback_query(GeneratePromocodeState.role, F.data.startswith('role'))
-        async def get_role_promocode(callback: CallbackQuery, state: FSMContext):
-            """ Отлавливаем роль для промокода"""
-
-            data = await state.get_data()
-            role = callback.data.split('_')[1]
-
-            # удаляем предыдущие кнопки
-            await delete_messages(
-                data=data,
-                state=state,
-                src=callback
-            )
-
-            # сохраняем название роли
-            await state.update_data(promocode_role=role)
-
-            msg1 = await callback.message.answer(
-                'Выберите курс',
-                reply_markup=await self.kb.choose_course_btn()
-            )
-            await state.update_data(msg1=msg1.message_id)
-            await state.set_state(GeneratePromocodeState.course)
-
-            menu_msg = await callback.message.answer(
-                MESSAGES['GO_TO_MENU'],
-                reply_markup=await self.base_kb.menu_btn()
-            )
-            await state.update_data(menu_msg=menu_msg.message_id)
-
-        @self.router.callback_query(GeneratePromocodeState.course, F.data.startswith('course'))
-        async def get_course_promocode(callback: CallbackQuery, state: FSMContext):
-            data = await state.get_data()
-            course = callback.data.split('_')[1]
-            # удаляем предыдущие кнопки
-            await delete_messages(
-                data=data,
-                state=state,
-                src=callback
-            )
-
-            # сохраняем название курса
-            await state.update_data(promocode_course=course)
-
-            msg1 = await callback.message.answer(
-                'Выберите квиз',
-                reply_markup=await self.kb.choose_quiz_btn()
-            )
-            await state.update_data(msg1=msg1.message_id)
-            await state.set_state(GeneratePromocodeState.quiz)
-
-            menu_msg = await callback.message.answer(
-                MESSAGES['GO_TO_MENU'],
-                reply_markup=await self.base_kb.menu_btn()
-            )
-            await state.update_data(menu_msg=menu_msg.message_id)
-
-        @self.router.callback_query(GeneratePromocodeState.quiz, F.data.startswith('quiz'))
-        async def get_quiz_promocode(callback: CallbackQuery, state: FSMContext):
-            data = await state.get_data()
-            quiz = callback.data.split('_')[1]
-
-            # удаляем предыдущие кнопки
-            await delete_messages(
-                data=data,
-                state=state,
-                src=callback
-            )
-
-            # сохраняем название курса
-            await state.update_data(promocode_quiz=quiz)
-            # обновляем значение data, чтобы было значение promocode_quiz
-            data = await state.get_data()
-
-            # генерируем последовательность для промокода
-            code = await generate_promocode()
-            # получаем account пользователя
-            account = await UserService.get_account_by_tg_id(callback.message.chat.id)
-
-            # создаем промокод
-            await self.db.create_promocode(
-                course_name=data['promocode_course'],
-                quiz_name=data['promocode_quiz'],
-                role=data['promocode_role'],
-                code=code,
-                account_id=account.id
-            )
-
-            msg1 = await callback.message.answer(
-                MESSAGES['CREATED_PROMOCODE'].format(
-                    LINK + code
-                )
-            )
-            await state.update_data(msg1=msg1.message_id)
-            await state.set_state(state=None)
-
-            menu_msg = await callback.message.answer(
-                MESSAGES['GO_TO_MENU'],
-                reply_markup=await self.base_kb.menu_btn()
-            )
-            await state.update_data(menu_msg=menu_msg.message_id)
-
-        @self.router.message(F.text == BUTTONS['SEE_PROMOCODES'])
-        async def see_generated_promocodes(message: Message, state: FSMContext):
-            account = await self.db.get_account_by_tg_id(message.from_user.id)
-            promocodes = await self.db.get_created_promocodes_by_manager(
-                account_id=account.id
-            )
-            answer = await format_created_promocodes_text(promocodes)
-
-            await message.answer(
-                answer
-            )
-
-            menu_msg = await message.answer(
-                MESSAGES['GO_TO_MENU'],
-                reply_markup=await self.base_kb.menu_btn()
-            )
-            await state.update_data(menu_msg=menu_msg.message_id)

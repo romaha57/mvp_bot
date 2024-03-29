@@ -1,4 +1,5 @@
 from sqlalchemy import func, insert, select, update
+from sqlalchemy.sql.functions import count
 
 from bot.courses.service import CourseService
 from bot.db_connect import async_session
@@ -7,7 +8,7 @@ from bot.lessons.service import LessonService
 from bot.quiz.service import QuizService
 from bot.services.base_service import BaseService, Singleton
 from bot.users.models import (BonusRewards, Promocodes, PromocodeTypes,
-                              RatingLesson, UserAccount, Users)
+                              RatingLesson, UserAccount, Users, Partners, AnketaQuestions, AnketaAnswers)
 
 
 class UserService(BaseService, metaclass=Singleton):
@@ -23,7 +24,16 @@ class UserService(BaseService, metaclass=Singleton):
             return result.scalars().first()
 
     @classmethod
-    async def get_promocode_by_tg_id(cls, tg_id: int):
+    async def get_connected_users(cls, sponsor_id: str):
+
+        async with async_session() as session:
+            query = select(count(Partners.id)).where(Partners.sponsor_id == sponsor_id, Partners.user_id != sponsor_id)
+            result = await session.execute(query)
+
+            return result.scalars().first()
+
+    @classmethod
+    async def get_promocode_by_tg_id(cls, tg_id: int) -> Promocodes:
         """Получаем промокод по tg_id"""
 
         async with async_session() as session:
@@ -135,25 +145,29 @@ class UserService(BaseService, metaclass=Singleton):
             return res.scalars().one_or_none()
 
     @classmethod
-    async def create_promocode(cls, course_name: str, quiz_name: str, role: str, code: str, account_id: int):
+    async def get_promocode_by_code(cls, code: str):
+        async with async_session() as session:
+            query = select(Promocodes).where(Promocodes.code == code)
+            res = await session.execute(query)
+
+            return res.scalars().first()
+
+    @classmethod
+    async def create_promocode(cls, name: str, code: str, account_id: int):
         """Создаем промокод"""
 
-        course_id = await CourseService.get_course_id_by_name(course_name)
-
-        quiz_id = await QuizService.get_quiz_id_by_name(quiz_name)
-        role_id = await UserService.get_promocode_role_id_by_name(role)
-
-        async with async_session() as session:
-            query = insert(Promocodes).values(
-                bot_id=1,
-                course_id=course_id,
-                quiz_id=quiz_id,
-                type_id=role_id,
-                code=code,
-                account_id=account_id
-            )
-            await session.execute(query)
-            await session.commit()
+        promocode = await cls.get_promocode_by_code(code)
+        if not promocode:
+            async with async_session() as session:
+                query = insert(Promocodes).values(
+                    bot_id=1,
+                    name=name,
+                    code=code,
+                    is_test=True,
+                    account_id=account_id
+                )
+                await session.execute(query)
+                await session.commit()
 
     @classmethod
     async def get_created_promocodes_by_manager(cls, account_id: int):
@@ -190,16 +204,6 @@ class UserService(BaseService, metaclass=Singleton):
             return res.scalars().first()
 
     @classmethod
-    async def add_promocode_to_user(cls, tg_id: int, promocode_id: int):
-        """Добавляем пользователю промокод"""
-
-        async with async_session() as session:
-            query = update(Users).where(Users.external_id == tg_id).values(promocode_id=promocode_id)
-
-            await session.execute(query)
-            await session.commit()
-
-    @classmethod
     async def save_fullname(cls, fullname: str, tg_id: int):
         """Сохраняем ФИО для пользователя"""
 
@@ -218,3 +222,24 @@ class UserService(BaseService, metaclass=Singleton):
             res = await session.execute(query)
 
             return res.scalars().first()
+
+    @classmethod
+    async def get_unanswered_questions(cls, account_id: int):
+
+        async with async_session() as session:
+            all_anketa_questions_query = select(AnketaQuestions.id, AnketaQuestions.title, AnketaQuestions.order_num)
+
+            res = await session.execute(all_anketa_questions_query)
+            all_anketa_question = res.mappings().all()
+
+            answered_questions_query = select(AnketaQuestions.id, AnketaQuestions.title, AnketaQuestions.order_num).\
+                join(AnketaAnswers, AnketaAnswers.question_id == AnketaQuestions.id). \
+                where(AnketaAnswers.account_id == account_id)
+
+            res = await session.execute(answered_questions_query)
+            answered_questions = res.mappings().all()
+
+            unanswered_questions = list(set(all_anketa_question).difference(set(answered_questions)))
+            unanswered_questions.sort(key=lambda elem: elem.get('order_num'))
+
+            return unanswered_questions

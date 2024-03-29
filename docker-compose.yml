@@ -6,6 +6,7 @@ services:
       context: .
     container_name: aiogram_bot
     command: sh -c "python3 -m bot.main"
+    restart: always
     depends_on:
       - redis
     env_file:

@@ -1,5 +1,7 @@
-from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
-from aiogram.utils.keyboard import ReplyKeyboardBuilder
+from typing import Any, Union
+
+from aiogram.types import KeyboardButton, ReplyKeyboardMarkup, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardBuilder
 
 from bot.settings.service import SettingsService
 from bot.users.models import Promocodes
@@ -16,31 +18,33 @@ class BaseKeyboard:
 
         return BUTTONS.get(name)
 
-    async def start_btn(self, promocode: Promocodes) -> ReplyKeyboardMarkup:
+    async def start_btn(self, data: dict) -> ReplyKeyboardMarkup:
         """Стартовое меню бота"""
 
         builder = ReplyKeyboardBuilder()
 
-        if promocode.quiz_id and promocode.course_id:
+        if data.get('promocode_type') == 3:
             builder.row(
-                KeyboardButton(text=await self._get_button('QUIZ')),
-                KeyboardButton(text=await self._get_button('EDUCATION')),
+                KeyboardButton(text=await self._get_button('OWNER_QUIZ')),
+                KeyboardButton(text=await self._get_button('OWNER_EDUCATION')),
             )
+        else:
 
-        if promocode.quiz_id and not promocode.course_id:
-            builder.row(
-                KeyboardButton(text=await self._get_button('QUIZ')),
-            )
-        elif promocode.course_id and not promocode.quiz_id:
-            builder.row(
-                KeyboardButton(text=await self._get_button('EDUCATION')),
-            )
+            if data.get('courses') and data.get('quizes'):
+                builder.row(
+                    KeyboardButton(text=await self._get_button('QUIZ')),
+                    KeyboardButton(text=await self._get_button('EDUCATION')),
+                )
 
-        # если зашел менеджер
-        elif promocode.type_id == 2:
-            builder.row(
-                KeyboardButton(text=await self._get_button('PROMOCODES')),
-            )
+            if data.get('quizes') and not data.get('courses'):
+                builder.row(
+                    KeyboardButton(text=await self._get_button('QUIZ')),
+                )
+
+            elif data.get('courses') and not data.get('quizes'):
+                builder.row(
+                    KeyboardButton(text=await self._get_button('EDUCATION')),
+                )
 
         builder.row(
             KeyboardButton(text=await self._get_button('KNOWLEDGE_BASE'))
@@ -55,7 +59,6 @@ class BaseKeyboard:
 
         return builder.as_markup(
             resize_keyboard=True,
-            input_field_placeholder=MESSAGES['KB_PLACEHOLDER'],
             one_time_keyboard=True
         )
 
@@ -66,38 +69,53 @@ class BaseKeyboard:
         builder.button(
            text=BUTTONS['HELP']
         )
+        return builder.as_markup(
+            resize_keyboard=True,
+            one_time_keyboard=True
+        )
+
+    async def menu_btn(self, certificate: Union[Any, None] = False) -> ReplyKeyboardMarkup:
+        """Кнопка на главное меню"""
+
+        builder = ReplyKeyboardBuilder()
+        builder.row(
+            KeyboardButton(text=await self._get_button('MENU')),
+        )
+
+        if certificate:
+            builder.row(
+                KeyboardButton(text=await self._get_button('GET_CERTIFICATE')),
+            )
+
+        return builder.as_markup(
+            resize_keyboard=True,
+            one_time_keyboard=True
+        )
+
+    async def anketa_answer_btn(self, question_id: int) -> InlineKeyboardMarkup:
+        builder = InlineKeyboardBuilder()
         builder.button(
-            text=BUTTONS['MENU']
+            text='Ответить',
+            callback_data=f'anketa_{question_id}'
         )
+
         return builder.as_markup(
             resize_keyboard=True,
-            input_field_placeholder=MESSAGES['KB_PLACEHOLDER'],
             one_time_keyboard=True
         )
 
-    async def menu_btn(self) -> ReplyKeyboardMarkup:
-        """Кнопка на главное меню"""
-
+    async def test_promo_menu(self) -> ReplyKeyboardMarkup:
         builder = ReplyKeyboardBuilder()
-        builder.row(
-            KeyboardButton(text=await self._get_button('MENU')),
+
+        builder.add(
+            KeyboardButton(text=BUTTONS['QUIZ']),
+            KeyboardButton(text=BUTTONS['TEST_EDUCATION'])
+
         )
-        return builder.as_markup(
-            resize_keyboard=True,
-            input_field_placeholder=MESSAGES['KB_PLACEHOLDER'],
-            one_time_keyboard=True
+        builder.row(
+            KeyboardButton(text=BUTTONS['KNOWLEDGE_BASE'])
         )
 
-    async def menu_btn_with_certificate(self) -> ReplyKeyboardMarkup:
-        """Кнопка на главное меню"""
-
-        builder = ReplyKeyboardBuilder()
-        builder.row(
-            KeyboardButton(text=await self._get_button('MENU')),
-        )
-        builder.row(
-            KeyboardButton(text=await self._get_button('GET_CERTIFICATE')),
-        )
         return builder.as_markup(
             resize_keyboard=True,
             one_time_keyboard=True

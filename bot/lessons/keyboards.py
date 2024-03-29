@@ -4,6 +4,7 @@ from loguru import logger
 
 from bot.lessons.models import Lessons
 from bot.lessons.service import LessonService
+from bot.users.models import Promocodes
 from bot.utils.buttons import BUTTONS
 from bot.utils.messages import MESSAGES
 
@@ -49,16 +50,23 @@ class LessonKeyboard:
             one_time_keyboard=True
         )
 
-    async def lessons_btn(self, course_id: str, user_id: int) -> InlineKeyboardMarkup:
+    async def lessons_btn(self, course_id: str, user_id: int, promocode: Promocodes) -> InlineKeyboardMarkup:
         """Кнопки со списком уроков"""
 
         builder = InlineKeyboardBuilder()
         lessons_from_db = await self.db.get_lessons(course_id, user_id)
+        if promocode.is_test:
+            lessons_from_db = await self.db.get_all_lesson(course_id, promocode.lesson_cnt)
+            lessons_from_db = list(set(lessons_from_db))
+            lessons_from_db.sort(key=lambda elem: elem.get('order_num'))
+
+        if course_id == 4:
+            lessons_from_db = await self.db.get_all_lesson(course_id)
+            lessons_from_db.sort(key=lambda elem: elem.get('order_num'))
 
         if not lessons_from_db:
             # получаем первый урок, чтобы не отображать весь список уроков
             first_lesson = await self.db.get_first_lesson(course_id)
-            logger.debug(f'Выбран в клавиатуре урок: {first_lesson}')
             builder.button(
                 text=first_lesson.get('title'),
                 callback_data=f'lesson_{first_lesson.get("id")}'
@@ -72,6 +80,7 @@ class LessonKeyboard:
                 one_time_keyboard=True
             )
 
+        logger.debug(f'Пользователь {user_id} получил список уроков: {lessons_from_db}')
         for lesson in lessons_from_db:
             if lesson['status_id'] == 4:
                 builder.button(

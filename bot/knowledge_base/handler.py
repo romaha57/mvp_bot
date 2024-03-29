@@ -28,6 +28,7 @@ class KnowledgeHandler(Handler):
         async def knowledge_base_menu(message: Message, state: FSMContext):
             """Стартовое меню базы знаний"""
 
+            await state.update_data(chat_id=message.chat.id)
             data = await state.get_data()
 
             await delete_messages(
@@ -45,11 +46,11 @@ class KnowledgeHandler(Handler):
             await state.update_data(base_msg=msg.message_id)
             await state.update_data(chat_id=message.chat.id)
 
-
         @self.router.callback_query(F.data.startswith('divide'))
         async def get_nested_divide(callback: CallbackQuery, state: FSMContext):
             """Получение вложенной папки"""
 
+            await state.update_data(chat_id=callback.message.chat.id)
             data = await state.get_data()
 
             root_divide_id = callback.data.split('_')[-1]
@@ -68,7 +69,7 @@ class KnowledgeHandler(Handler):
         async def get_knowledge_base_file(callback: CallbackQuery, state: FSMContext):
             """Получение файла базы знаний"""
 
-
+            await state.update_data(chat_id=callback.message.chat.id)
             file_id = callback.data.split('_')[-1]
 
             file = await self.db.get_file_by_id(file_id)
@@ -88,11 +89,11 @@ class KnowledgeHandler(Handler):
                     caption=file_text
                 )
 
-
         @self.router.callback_query(F.data.startswith('baseback'))
         async def back_button(callback: CallbackQuery, state: FSMContext):
             """Отлов кнопки нахад в меню базы знаний"""
 
+            await state.update_data(chat_id=callback.message.chat.id)
             data = await state.get_data()
             parent_id = callback.data.split('_')[-1]
             parent_id = int(parent_id) - 1

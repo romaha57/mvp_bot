@@ -2,9 +2,9 @@ from sqlalchemy import desc, insert, select, update
 
 from bot.db_connect import async_session
 from bot.quiz.models import (QuizAnswers, QuizAttempts, QuizAttemptStatuses,
-                             Quizes, QuizQuestionOptions, QuizQuestions)
+                             Quizes, QuizQuestionOptions, QuizQuestions, QuizBots)
 from bot.services.base_service import BaseService, Singleton
-from bot.users.models import Promocodes
+from bot.users.models import Promocodes, PromocodeQuizes, Users
 
 
 class QuizService(BaseService, metaclass=Singleton):
@@ -15,13 +15,13 @@ class QuizService(BaseService, metaclass=Singleton):
         """Получение всех квизов из БД"""
 
         async with async_session() as session:
-            query = select(Quizes.name)
+            query = select(Quizes.id, Quizes.name, Quizes.description)
             result = await session.execute(query)
 
-            return result.scalars().all()
+            return result.mappings().all()
 
     @classmethod
-    async def get_quiz_questions(cls, quiz_id: int) -> list[QuizQuestions]:
+    async def get_quiz_questions(cls, quiz_id: str) -> list[QuizQuestions]:
         """"Поучение всех вопросов определённого тестирования"""
 
         async with async_session() as session:
@@ -31,17 +31,28 @@ class QuizService(BaseService, metaclass=Singleton):
             return result.scalars().all()
 
     @classmethod
-    async def get_quiz_by_promocode(cls, promocode_id: int) -> Quizes:
+    async def get_quizes_by_promocode(cls, tg_id: int):
         """Получение тестирования по его id промокода"""
 
         async with async_session() as session:
-            query = select(Quizes).\
-                join(Promocodes, Promocodes.quiz_id == Quizes.id).\
-                where(Promocodes.id == promocode_id)
-
+            query = select(Quizes.id, Quizes.name, Quizes.description). \
+                join(PromocodeQuizes, PromocodeQuizes.quiz_id == Quizes.id). \
+                join(Users, Users.promocode_id == PromocodeQuizes.promocode_id). \
+                where(Users.external_id == tg_id)
             result = await session.execute(query)
 
-            return result.scalars().first()
+            return result.mappings().all()
+
+    @classmethod
+    async def get_quizes_by_bot(cls, tg_id: int):
+        async with async_session() as session:
+            query = select(Quizes.id, Quizes.name, Quizes.description). \
+                join(QuizBots, Quizes.id == QuizBots.quiz_id). \
+                join(Users, Users.bot_id == QuizBots.bot_id). \
+                where(Users.external_id == tg_id)
+            result = await session.execute(query)
+
+            return result.mappings().all()
 
     @classmethod
     async def get_quiz(cls, quiz_id: int) -> Quizes:
@@ -74,10 +85,9 @@ class QuizService(BaseService, metaclass=Singleton):
             return result.scalars().one()
 
     @classmethod
-    async def create_attempt(cls, quiz_id: int, tg_id: int) -> None:
+    async def create_attempt(cls, quiz_id: str, user: Users) -> None:
         """Создание попытки прохождения теста"""
 
-        user = await cls.get_user_by_tg_id(tg_id)
         status = await cls.get_attempt_status('В процессе')
 
         async with async_session() as session:
@@ -133,23 +143,23 @@ class QuizService(BaseService, metaclass=Singleton):
             return result.scalars().first()
 
     @classmethod
-    async def get_last_attempt(cls, user_id: int, quiz_id: int) -> QuizAttempts:
+    async def get_last_attempt(cls, tg_id: int, quiz_id: int) -> QuizAttempts:
         """Получение последней актуальной попытки прохождения квиза"""
 
         async with async_session() as session:
             query = select(QuizAttempts).\
-                filter_by(user_id=user_id, quiz_id=quiz_id).\
-                order_by(desc('id'))
+                join(Users, Users.id == QuizAttempts.user_id).\
+                where(Users.external_id == tg_id, QuizAttempts.quiz_id == quiz_id).\
+                order_by(desc(QuizAttempts.id)).limit(1)
 
             result = await session.execute(query)
 
             return result.scalars().first()
 
     @classmethod
-    async def get_quiz_attempts(cls, tg_id: int) -> list[QuizAttempts]:
+    async def get_quiz_attempts(cls, user: Users) -> list[QuizAttempts]:
         """Получение всех попыток прохождения квиза для данного пользователя"""
 
-        user = await cls.get_user_by_tg_id(tg_id)
         status_complete = await cls.get_attempt_status('Завершен')
         async with async_session() as session:
             query = select(QuizAttempts).\

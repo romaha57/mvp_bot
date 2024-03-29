@@ -10,7 +10,7 @@ BUTTONS = {
     'RESULTS_QUIZ': emojize(':open_book: Посмотреть свои ответы'),
     'BACK': emojize(':reverse_button: К списку уроков'),
     'START_TASK': emojize(':check_mark_button: Выполнить задание'),
-    'CLOSE_LESSON': emojize(':cross_mark: Закрыть урок'),
+    'CLOSE_LESSON': emojize(':play_button: Следующий урок'),
     'NEXT': emojize(':play_button: Следующая'),
     'PREVIOUS': emojize(':reverse_button: Предыдущая'),
     'AGAIN': emojize(':repeat_button: Пройти урок заново'),
@@ -23,4 +23,8 @@ BUTTONS = {
     'GET_CERTIFICATE': emojize(':sparkle: Получить сертификат'),
     'KNOWLEDGE_BASE': emojize(':floppy_disk: База знаний'),
     'BACK_BASE': emojize(':left_arrow: Назад'),
+    'TEST_EDUCATION': emojize(':open_book: Обучение'),
+    'TEST_QUIZ': emojize(':bookmark_tabs: Начать тестирование'),
+    'OWNER_QUIZ': emojize(':books: Все тестирования'),
+    'OWNER_EDUCATION': emojize(':graduation_cap: Все курсы'),
 }

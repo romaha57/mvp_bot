@@ -4,8 +4,11 @@ from PIL import Image, ImageDraw, ImageFont
 def build_certificate(user_id: int, fullname: str, course_name: str):
     """Добавляем текст на сертификат"""
 
-    # открываем шаблон
-    image = Image.open('/app/static/template_certificate.png')
+    if course_name == 'СУП: Секреты Успешных Продаж':
+        image = Image.open('/app/static/sales_certificate.png')
+
+    else:
+        image = Image.open('/app/static/recruter_certificate.png')
 
     # выбираем шрифт и добавляем текст
     font_fullname = ImageFont.truetype("/app/static/roboto/Roboto-Bold.ttf", size=50)

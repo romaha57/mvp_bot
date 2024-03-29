@@ -7,3 +7,9 @@ class GeneratePromocodeState(StatesGroup):
     role = State()
     course = State()
     quiz = State()
+
+
+class Anketa(StatesGroup):
+    """Состояния для получение ответов пользователя на анкету"""
+
+    answer = State()

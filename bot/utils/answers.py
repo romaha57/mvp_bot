@@ -1,6 +1,7 @@
 import json
 import random
 import string
+from typing import Union
 
 from aiogram import Bot
 from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
@@ -8,10 +9,13 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 from loguru import logger
 
+from bot.courses.models import Course, CourseHistory
 from bot.courses.service import CourseService
 from bot.lessons.models import Lessons
 from bot.quiz.models import QuizAnswers
-from bot.users.models import Promocodes
+from bot.test_promocode.utils import is_valid_test_promo
+from bot.users.models import Promocodes, Users
+from bot.users.service import UserService
 from bot.utils.algorithms import func_sociability
 from bot.utils.constants import LINK
 from bot.utils.messages import MESSAGES
@@ -34,6 +38,19 @@ async def get_file_id_by_content_type(message: Message):
         return message.voice.file_id
     elif message.video_note:
         return message.video_note.file_id
+
+
+async def send_image(lesson: Lessons, message: Message):
+    images = await get_images_by_place('before_work', lesson)
+    if images:
+        for image in images:
+            try:
+                await message.answer_photo(
+                    photo=image
+                )
+            # отлов ошибки при неправильном file_id
+            except TelegramBadRequest:
+                pass
 
 
 async def format_quiz_results(answers: list[QuizAnswers.details]) -> str:
@@ -144,14 +161,14 @@ async def show_lesson_info(message: Message, state: FSMContext, lesson: Lessons,
             if lesson.buttons_rates:
                 self.emoji_list = json.loads(lesson.buttons_rates)
 
-            video_msg = await message.answer_video(
+            msg = await message.answer_video(
                 lesson.video,
                 caption=video_text,
                 reply_markup=await self.kb.lesson_menu_btn(lesson, self.emoji_list)
             )
             self.emoji_list = None
             # сохраняем id message, чтобы потом удалить
-            await state.update_data(video_msg=video_msg.message_id)
+            await state.update_data(msg_edit=msg.message_id)
 
         # отлов ошибки при неправильном file_id
         except TelegramBadRequest:
@@ -160,37 +177,34 @@ async def show_lesson_info(message: Message, state: FSMContext, lesson: Lessons,
                 reply_markup=await self.kb.lesson_menu_btn(lesson)
             )
 
-        # Отправка доп. изображений к уроку
-        images = await get_images_by_place('after_video', lesson)
-        if images:
-            for image in images:
-                try:
-                    await message.answer_photo(
-                        photo=image
-                    )
-                # отлов ошибки при неправильном file_id
-                except TelegramBadRequest:
-                    pass
+        await send_image(lesson, message)
 
     else:
         if lesson.buttons_rates:
             self.emoji_list = json.loads(lesson.buttons_rates)
 
-        lesson_msg1 = await message.answer(
+        msg = await message.answer(
             video_text,
             reply_markup=await self.kb.lesson_menu_btn(lesson, self.emoji_list)
         )
         self.emoji_list = None
-        # сохраняем message_id, чтобы потом их удалить
-        await state.update_data(lesson_msg1=lesson_msg1.message_id)
+        await state.update_data(msg_edit=msg.message_id)
 
-    # получаем актуальную попытку прохождения урока
-    actual_lesson_history = await self.db.get_actual_lesson_history(
-        user_id=user_id,
-        lesson_id=lesson.id
+
+async def show_course_intro_first_time(course: Course, message: Message, state: FSMContext,
+                                 self: 'CourseHandler', course_history: CourseHistory, user_id: int, promocode: Promocodes):
+    if course.intro_video:
+        await message.answer_video(
+            video=course.intro_video
+        )
+
+    await message.answer(course.title)
+    msg = await message.answer(
+        course.intro,
+        reply_markup=await self.lesson_kb.lessons_btn(course.id, user_id, promocode)
     )
-    await state.update_data(lesson_history_id=actual_lesson_history.id)
-    await state.update_data(chat_id=message.chat.id)
+    await state.update_data(msg=msg.message_id)
+    await self.db.mark_show_course_description(course_history, False)
 
 
 def collect_query_for_knowledge_base(divides_ids: str, file_ids) -> tuple[str, str]:
@@ -214,3 +228,37 @@ def collect_query_for_knowledge_base(divides_ids: str, file_ids) -> tuple[str, s
             file_query = f" id IN {file_ids} "
 
     return divide_query, file_query
+
+
+async def check_user_anket(message: Message, user: Users):
+    """Проверка на неотвеченные вопросы на анкеты пользователя"""
+
+    account = await UserService.get_account_by_tg_id(message.chat.id)
+    account_id = account.id
+    questions = await UserService.get_unanswered_questions(account_id)
+    if questions:
+        return questions
+
+
+async def show_main_menu(promocode: Promocodes, user: Users, message: Message, state: FSMContext, self: Union['TextHandler', 'MainBot']):
+    if promocode.is_test:
+        if is_valid_test_promo(user):
+            await message.answer(
+                MESSAGES['TEST_PROMO_MENU'],
+                reply_markup=await self.test_promo_kb.test_promo_menu()
+            )
+
+        else:
+            await message.answer(
+                MESSAGES['END_TEST_PERIOD'],
+                reply_markup=await self.test_promo_kb.test_promo_menu()
+            )
+            await state.set_state(state=None)
+
+    else:
+        courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode.id)
+        await message.answer(
+            MESSAGES['ANY_TEXT'],
+            reply_markup=await self.kb.start_btn(courses_and_quizes)
+        )
+

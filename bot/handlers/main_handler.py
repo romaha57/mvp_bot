@@ -5,6 +5,7 @@ from bot.knowledge_base.handler import KnowledgeHandler
 from bot.lessons.handler import LessonHandler
 from bot.quiz.handler import QuizHandler
 from bot.users.handler import UserHandler
+from bot.test_promocode.handler import TestPromoHandler
 
 
 class MainHandler:
@@ -18,6 +19,7 @@ class MainHandler:
         self.course_handler = CourseHandler(self.bot)
         self.lesson_handler = LessonHandler(self.bot)
         self.user_handler = UserHandler(self.bot)
+        self.test_promo_handler = TestPromoHandler(self.bot)
         self.text_handler = TextHandler(self.bot)
         self.knowledge_handler = KnowledgeHandler(self.bot)
 
@@ -29,5 +31,6 @@ class MainHandler:
         self.course_handler.handle()
         self.lesson_handler.handle()
         self.user_handler.handle()
-        self.text_handler.handle()
+        self.test_promo_handler.handle()
         self.knowledge_handler.handle()
+        self.text_handler.handle()

@@ -3,6 +3,7 @@ from aiogram.types import (InlineKeyboardMarkup, KeyboardButton,
 from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
 
 from bot.quiz.service import QuizService
+from bot.users.models import Promocodes
 from bot.utils.buttons import BUTTONS
 from bot.utils.messages import MESSAGES
 
@@ -10,6 +11,21 @@ from bot.utils.messages import MESSAGES
 class QuizKeyboard:
     def __init__(self):
         self.db = QuizService()
+
+    async def quizes_list_btn(self, quizes: list[dict]) -> InlineKeyboardMarkup:
+        builder = InlineKeyboardBuilder()
+
+        for quiz in quizes:
+            builder.button(
+                text=quiz.get('name'),
+                callback_data=f'quiz_{quiz.get("id")}'
+            )
+        builder.adjust(1)
+
+        return builder.as_markup(
+            resize_keyboard=True,
+            one_time_keyboard=True
+        )
 
     async def quiz_answers(self, question_id: int) -> InlineKeyboardMarkup:
         """Кнопки с вариантами ответа на тестирование(quiz)"""
@@ -68,13 +84,18 @@ class QuizKeyboard:
             one_time_keyboard=True
         )
 
-    async def quiz_menu_btn(self) -> ReplyKeyboardMarkup:
+    async def quiz_menu_btn(self, promocode: Promocodes) -> ReplyKeyboardMarkup:
         """Кнопки управления тестированием """
 
         builder = ReplyKeyboardBuilder()
 
+        if promocode.is_test:
+            quiz_btn = KeyboardButton(text=BUTTONS['TEST_QUIZ'])
+        else:
+            quiz_btn = KeyboardButton(text=BUTTONS['START_QUIZ'])
+
         builder.row(
-            KeyboardButton(text=BUTTONS['START_QUIZ']),
+            quiz_btn,
             KeyboardButton(text=BUTTONS['RESULTS_QUIZ'])
         )
         builder.row(

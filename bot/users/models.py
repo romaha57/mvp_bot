@@ -15,6 +15,8 @@ class Users(Base):
     account_id = Column(Integer, ForeignKey('$_user_accounts.id'))
     bot_id = Column(Integer, ForeignKey('$_bots.id'))
     promocode_id = Column(Integer, ForeignKey('$_promocodes.id'))
+    start_test_promo = Column(DateTime)
+    end_test_promo = Column(DateTime)
     external_id = Column(String)
     last_action = Column(DateTime)
     locked = Column(Text)
@@ -58,6 +60,7 @@ class UserAccount(Base):
     bonus_reward = relationship('BonusRewards', back_populates='account')
     promocode = relationship('Promocodes', back_populates='account')
 
+
     def __str__(self):
         return f'{self.first_name} - {self.last_name} - {self.phone}'
 
@@ -70,23 +73,26 @@ class Promocodes(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     bot_id = Column(Integer, ForeignKey('$_bots.id'))
-    course_id = Column(Integer, ForeignKey('$_courses.id'))
-    quiz_id = Column(Integer, ForeignKey('$_quizes.id'))
     type_id = Column(Integer, ForeignKey('$_promocode_types.id'))
     account_id = Column(Integer, ForeignKey('$_user_accounts.id'))
-
+    name = Column(String)
     code = Column(String, nullable=False)
     actual = Column(Integer, default=1)
     count_start = Column(Integer)
+    is_test = Column(Boolean, default=False)
+    lesson_cnt = Column(Integer)
+    duration = Column(Integer)
+    start_at = Column(DateTime)
+    end_at = Column(DateTime)
     updated_at = Column(DateTime, onupdate=func.now)
     created_at = Column(DateTime, server_default=func.now())
 
     bot = relationship('Bots', back_populates='promocode')
-    course = relationship('Course', back_populates='promocode')
-    quiz = relationship('Quizes', back_populates='promocode')
     user = relationship('Users', back_populates='promocode')
     account = relationship('UserAccount', back_populates='promocode')
     type = relationship('PromocodeTypes', back_populates='promocode')
+    promocodes_courses = relationship('PromocodeCourses', back_populates='promocode')
+    promocodes_quizes = relationship('PromocodeQuizes', back_populates='promocode')
 
     def __str__(self):
         return f'{self.code}'
@@ -163,3 +169,89 @@ class RatingLesson(Base):
 
     def __str__(self):
         return f'{self.rating}'
+
+
+class PromocodeCourses(Base):
+    __tablename__ = '$_promocodes_courses'
+    __tableargs__ = {
+        'comment': 'Курсы привязанные к промокоду'
+    }
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    promocode_id = Column(Integer, ForeignKey('$_promocodes.id'))
+    course_id = Column(Integer, ForeignKey('$_courses.id'))
+
+    promocode = relationship('Promocodes', back_populates='promocodes_courses')
+    course = relationship('Course', back_populates='promocodes_courses')
+
+    def __str__(self):
+        return f'promocode_id:{self.promocode_id} - course_id:{self.course_id}'
+
+
+class PromocodeQuizes(Base):
+    __tablename__ = '$_promocodes_quizes'
+    __tableargs__ = {
+        'comment': 'Квизы привязанные к промокоду'
+    }
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    promocode_id = Column(Integer, ForeignKey('$_promocodes.id'))
+    quiz_id = Column(Integer, ForeignKey('$_quizes.id'))
+
+    promocode = relationship('Promocodes', back_populates='promocodes_quizes')
+    quiz = relationship('Quizes', back_populates='promocodes_quizes')
+
+    def __str__(self):
+        return f'promocode_id:{self.promocode_id} - quiz_id:{self.quiz_id}'
+
+
+class Partners(Base):
+    __tablename__ = '$_partners'
+    __table_args__ = {
+        'comment': 'Реферальная программа'
+    }
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey('$_user_accounts.id'))
+    sponsor_id = Column(Integer, ForeignKey('$_user_accounts.id'))
+
+    updated_at = Column(DateTime, onupdate=func.now)
+    created_at = Column(DateTime, server_default=func.now())
+
+    def __str__(self):
+        return f'user_id:{self.user_id} - sponsor_id:{self.sponsor_id}'
+
+
+class AnketaQuestions(Base):
+    __tablename__ = '$_anketa_questions'
+    __table_args__ = {
+        'comment': 'Вопросы для анкет пользователей'
+    }
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    title = Column(Text)
+    order_num = Column(Integer)
+
+    updated_at = Column(DateTime, onupdate=func.now)
+    created_at = Column(DateTime, server_default=func.now())
+
+    def __str__(self):
+        return f'{self.title} - {self.order_num}'
+
+
+class AnketaAnswers(Base):
+    __tablename__ = '$_anketa_answers'
+    __table_args__ = {
+        'comment': 'Ответы для анкет пользователей'
+    }
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    question_id = Column(Integer, ForeignKey('$_anketa_questions.id'))
+    account_id = Column(Integer, ForeignKey('$_user_accounts.id'))
+    answer = Column(Text)
+
+    updated_at = Column(DateTime, onupdate=func.now)
+    created_at = Column(DateTime, server_default=func.now())
+
+    def __str__(self):
+        return f'{self.title} - {self.order_num}'
