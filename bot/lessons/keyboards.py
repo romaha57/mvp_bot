@@ -54,14 +54,16 @@ class LessonKeyboard:
         """Кнопки со списком уроков"""
 
         builder = InlineKeyboardBuilder()
-        lessons_from_db = await self.db.get_lessons(course_id, user_id)
+        lessons_from_db = await self.db.get_all_lesson(course_id, user_id)
+        lessons_from_db = list(set(lessons_from_db))
+        lessons_from_db.sort(key=lambda elem: elem.get('order_num'))
         if promocode.is_test:
-            lessons_from_db = await self.db.get_all_lesson(course_id, promocode.lesson_cnt)
+            lessons_from_db = await self.db.get_all_lesson(course_id, user_id, promocode.lesson_cnt)
             lessons_from_db = list(set(lessons_from_db))
             lessons_from_db.sort(key=lambda elem: elem.get('order_num'))
 
         if course_id == 4:
-            lessons_from_db = await self.db.get_all_lesson(course_id)
+            lessons_from_db = await self.db.get_all_lesson(course_id, user_id)
             lessons_from_db.sort(key=lambda elem: elem.get('order_num'))
 
         if not lessons_from_db:

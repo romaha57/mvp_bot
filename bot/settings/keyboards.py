@@ -25,21 +25,21 @@ class BaseKeyboard:
 
         if data.get('promocode_type') == 3:
             builder.row(
-                KeyboardButton(text=await self._get_button('OWNER_QUIZ')),
+                # KeyboardButton(text=await self._get_button('OWNER_QUIZ')),
                 KeyboardButton(text=await self._get_button('OWNER_EDUCATION')),
             )
         else:
 
             if data.get('courses') and data.get('quizes'):
                 builder.row(
-                    KeyboardButton(text=await self._get_button('QUIZ')),
+                    # KeyboardButton(text=await self._get_button('QUIZ')),
                     KeyboardButton(text=await self._get_button('EDUCATION')),
                 )
 
-            if data.get('quizes') and not data.get('courses'):
-                builder.row(
-                    KeyboardButton(text=await self._get_button('QUIZ')),
-                )
+            # if data.get('quizes') and not data.get('courses'):
+            #     builder.row(
+            #         KeyboardButton(text=await self._get_button('QUIZ')),
+            #     )
 
             elif data.get('courses') and not data.get('quizes'):
                 builder.row(
@@ -108,7 +108,7 @@ class BaseKeyboard:
         builder = ReplyKeyboardBuilder()
 
         builder.add(
-            KeyboardButton(text=BUTTONS['QUIZ']),
+            # KeyboardButton(text=BUTTONS['QUIZ']),
             KeyboardButton(text=BUTTONS['TEST_EDUCATION'])
 
         )

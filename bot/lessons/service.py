@@ -18,11 +18,12 @@ from bot.users.models import BonusRewards, BonusRewardsTypes, Users
 class LessonService(BaseService, metaclass=Singleton):
 
     @classmethod
-    async def get_all_lesson(cls, course_id: str, limit: int = None):
+    async def get_all_lesson(cls, course_id: str, user_id, limit: int = None):
         async with async_session() as session:
             query = select(Lessons.id, Lessons.title, LessonHistory.status_id, LessonHistory.user_id, Lessons.order_num). \
-                    join(LessonHistory, LessonHistory.lesson_id == Lessons.id, isouter=True). \
-                    where(Lessons.course_id == course_id). \
+                    join(LessonHistory, LessonHistory.lesson_id == Lessons.id, isouter=True).\
+                    join(Users, LessonHistory.user_id == Users.id).\
+                    where(Lessons.course_id == course_id,  LessonHistory.user_id == user_id). \
                     order_by('order_num').limit(limit)
 
             result = await session.execute(query)

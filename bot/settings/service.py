@@ -2,6 +2,7 @@ import datetime
 
 from sqlalchemy import select, update, text, insert
 
+from bot.courses.models import Course
 from bot.db_connect import async_session
 from bot.services.base_service import BaseService
 from bot.settings.model import Settings
@@ -54,4 +55,15 @@ class SettingsService(BaseService):
 
             await session.execute(query)
             await session.commit()
+
+    @classmethod
+    async def get_courses_by_promo(cls, promocode_id: int):
+        async with async_session() as session:
+            query = select(Course.title). \
+                join(PromocodeCourses, PromocodeCourses.course_id == Course.id). \
+                join(Promocodes, Promocodes.id == PromocodeCourses.promocode_id). \
+                where(Promocodes.id == promocode_id)
+            result = await session.execute(query)
+
+            return result.mappings().all()
 

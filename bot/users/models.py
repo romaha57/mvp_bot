@@ -254,4 +254,20 @@ class AnketaAnswers(Base):
     created_at = Column(DateTime, server_default=func.now())
 
     def __str__(self):
-        return f'{self.title} - {self.order_num}'
+        return f'{self.question_id} - {self.account_id}'
+
+
+class Reports(Base):
+    __tablename__ = '$_reports'
+    __table_args__ = {
+        'comment': 'Ошибки пользователей'
+    }
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    tg_id = Column(String)
+    text = Column(Text)
+
+    created_at = Column(DateTime, server_default=func.now())
+
+    def __str__(self):
+        return f'{self.tg_id} - {self.text}'

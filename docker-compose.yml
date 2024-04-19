@@ -22,9 +22,9 @@ services:
       - realogica_network
 
 
-networks:
-  realogica_network:
-    driver: bridge
+#networks:
+#  realogica_network:
+#    driver: bridge
 
 volumes:
     redis_data:

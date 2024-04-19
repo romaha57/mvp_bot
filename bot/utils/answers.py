@@ -161,11 +161,16 @@ async def show_lesson_info(message: Message, state: FSMContext, lesson: Lessons,
             if lesson.buttons_rates:
                 self.emoji_list = json.loads(lesson.buttons_rates)
 
-            msg = await message.answer_video(
-                lesson.video,
-                caption=video_text,
-                reply_markup=await self.kb.lesson_menu_btn(lesson, self.emoji_list)
-            )
+            try:
+                msg = await message.answer_video(
+                    lesson.video,
+                    caption=video_text,
+                    reply_markup=await self.kb.lesson_menu_btn(lesson, self.emoji_list)
+                )
+            except TelegramBadRequest:
+                await message.answer(
+                    MESSAGES['VIDEO_ERROR']
+                )
             self.emoji_list = None
             # сохраняем id message, чтобы потом удалить
             await state.update_data(msg_edit=msg.message_id)
@@ -194,9 +199,14 @@ async def show_lesson_info(message: Message, state: FSMContext, lesson: Lessons,
 async def show_course_intro_first_time(course: Course, message: Message, state: FSMContext,
                                  self: 'CourseHandler', course_history: CourseHistory, user_id: int, promocode: Promocodes):
     if course.intro_video:
-        await message.answer_video(
-            video=course.intro_video
-        )
+        try:
+            await message.answer_video(
+                video=course.intro_video
+            )
+        except TelegramBadRequest:
+            await message.answer(
+                MESSAGES['VIDEO_ERROR']
+            )
 
     await message.answer(course.title)
     msg = await message.answer(

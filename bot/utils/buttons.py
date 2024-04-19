@@ -2,7 +2,7 @@ from emoji import emojize
 
 BUTTONS = {
     'REFERAL': emojize(':man_technologist: Реферальная программа'),
-    'EDUCATION': emojize(':graduation_cap: Обучение'),
+    'EDUCATION': emojize(':graduation_cap: Начать обучение'),
     'QUIZ': emojize(':books: Тестирование'),
     'HELP': emojize(':open_mailbox_with_raised_flag: Написать в поддержку'),
     'MENU': emojize(':left_arrow: В главное меню'),
@@ -23,7 +23,7 @@ BUTTONS = {
     'GET_CERTIFICATE': emojize(':sparkle: Получить сертификат'),
     'KNOWLEDGE_BASE': emojize(':floppy_disk: База знаний'),
     'BACK_BASE': emojize(':left_arrow: Назад'),
-    'TEST_EDUCATION': emojize(':open_book: Обучение'),
+    'TEST_EDUCATION': emojize(':open_book: Начать обучение'),
     'TEST_QUIZ': emojize(':bookmark_tabs: Начать тестирование'),
     'OWNER_QUIZ': emojize(':books: Все тестирования'),
     'OWNER_EDUCATION': emojize(':graduation_cap: Все курсы'),

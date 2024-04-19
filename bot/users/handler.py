@@ -18,7 +18,7 @@ from bot.quiz.states import QuizState
 from bot.settings.keyboards import BaseKeyboard
 from bot.users.keyboards import UserKeyboard
 from bot.users.service import UserService
-from bot.users.states import GeneratePromocodeState
+from bot.users.states import GeneratePromocodeState, UserReport
 from bot.utils.answers import (format_created_promocodes_text,
                                generate_promocode)
 from bot.utils.buttons import BUTTONS

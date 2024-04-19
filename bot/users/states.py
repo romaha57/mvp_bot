@@ -13,3 +13,9 @@ class Anketa(StatesGroup):
     """Состояния для получение ответов пользователя на анкету"""
 
     answer = State()
+
+
+class UserReport(StatesGroup):
+    """Состояния для отчетов об ошибках в боте"""
+
+    text = State()

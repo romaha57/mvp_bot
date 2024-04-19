@@ -34,10 +34,6 @@ class CommandHandler(Handler):
         async def start(message: Message, state: FSMContext):
             """Отлов команды /start"""
 
-            start_msg = await self.db.get_msg_by_key('intro')
-
-            await message.answer(start_msg)
-
             await state.update_data(chat_id=message.chat.id)
 
             promocode_in_msg = message.text.split()[1:]
@@ -46,7 +42,14 @@ class CommandHandler(Handler):
                 promocode = await self.db.check_promocode(promocode_in_msg[0])
 
                 if promocode and promocode.actual:
-                    msg = await self.db.get_msg_by_key('have_promocode')
+                    courses_by_promo = await self.db.get_courses_by_promo(promocode.id)
+                    courses_titles = '\n'.join([f" - {course.get('title')}" for course in courses_by_promo])
+
+                    await message.answer(
+                        MESSAGES['START_PROMOCODE'].format(
+                            courses_titles
+                        )
+                    )
                     logger.debug(f"Пользователь {message.from_user.id} активировал промокод {promocode.code}")
 
                     # увеличиваем счетчик активированных пользователей на этом промокоде
@@ -109,7 +112,7 @@ class CommandHandler(Handler):
                                 promocode_id=promocode.id
                             )
                             await message.answer(
-                                msg,
+                                MESSAGES['MENU'],
                                 reply_markup=await self.kb.start_btn(courses_and_quizes))
 
                 else:

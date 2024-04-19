@@ -8,7 +8,7 @@ from bot.lessons.service import LessonService
 from bot.quiz.service import QuizService
 from bot.services.base_service import BaseService, Singleton
 from bot.users.models import (BonusRewards, Promocodes, PromocodeTypes,
-                              RatingLesson, UserAccount, Users, Partners, AnketaQuestions, AnketaAnswers)
+                              RatingLesson, UserAccount, Users, Partners, AnketaQuestions, AnketaAnswers, Reports)
 
 
 class UserService(BaseService, metaclass=Singleton):
@@ -243,3 +243,15 @@ class UserService(BaseService, metaclass=Singleton):
             unanswered_questions.sort(key=lambda elem: elem.get('order_num'))
 
             return unanswered_questions
+
+    @classmethod
+    async def save_user_report(cls, tg_id: int, text: str):
+
+        async with async_session() as session:
+            query = insert(Reports).values(
+                tg_id=tg_id,
+                text=text
+            )
+
+            await session.execute(query)
+            await session.commit()

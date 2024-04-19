@@ -10,7 +10,7 @@ class TestPromoKeyboard:
         builder = ReplyKeyboardBuilder()
 
         builder.add(
-            KeyboardButton(text=BUTTONS['QUIZ']),
+            # KeyboardButton(text=BUTTONS['QUIZ']),
             KeyboardButton(text=BUTTONS['TEST_EDUCATION'])
 
         )

@@ -20,6 +20,7 @@ from bot.test_promocode.utils import is_valid_test_promo
 from bot.users.service import UserService
 from bot.utils.answers import (format_answers_text, get_images_by_place,
                                send_user_answers_to_group, show_lesson_info, send_image)
+from bot.utils.buttons import BUTTONS
 from bot.utils.certificate import build_certificate
 from bot.utils.delete_messages import delete_messages
 from bot.utils.messages import MESSAGES
@@ -96,6 +97,7 @@ class LessonHandler(Handler):
             await state.set_state(LessonChooseState.start_task)
 
             await state.update_data(lesson=lesson)
+            await state.update_data(lesson_id=lesson.id)
 
         @self.router.callback_query(F.data.startswith('back'))
         async def back_to_lesson_list(callback: CallbackQuery, state: FSMContext):
@@ -283,7 +285,6 @@ class LessonHandler(Handler):
                     for correct_answer_index in correct_answers:
                         answer += f'\n{letter_list[correct_answer_index]}. ' + \
                                   question['questions'][correct_answer_index - 1]['title']
-
                     await callback.message.answer(
                         MESSAGES['INCORRECT_ANSWER'].format(
                             answer
@@ -441,7 +442,7 @@ class LessonHandler(Handler):
             additional_task = await self.db.get_additional_task_by_lesson(lesson)
 
             logger.debug(
-                f"Пользователь {src.from_user.id}, в close_lesson")
+                f"Пользователь {src.chat.id}, в close_lesson")
 
             await send_image(
                 lesson=lesson,
@@ -499,10 +500,14 @@ class LessonHandler(Handler):
                     reply_markup=await self.base_kb.menu_btn()
                 )
 
-                # выводим завершающее видео курса
-                if course.outro_video:
-                    await src.answer_video(
-                        video=course.outro_video
+                try:
+                    if course.outro_video:
+                        await src.answer_video(
+                            video=course.outro_video
+                        )
+                except TelegramBadRequest:
+                    await src.answer(
+                        MESSAGES['VIDEO_ERROR']
                     )
 
                 if course.certificate_img:
@@ -527,38 +532,44 @@ class LessonHandler(Handler):
 
             fio = message.text
 
-            if course.certificate_img:
-                # собираем сертификат для текущего пользователя
+            if fio != BUTTONS['MENU']:
+                if course.certificate_img:
+                    # собираем сертификат для текущего пользователя
+                    await message.answer(
+                        MESSAGES['CERTIFICATE']
+                    )
+
+                    # формируем сертификат
+                    build_certificate(
+                        user_id=message.chat.id,
+                        fullname=fio,
+                        course_name=course.title
+                    )
+                    # читаем файл и отправляем пользователю
+                    file_path = f'/app/static/certificate_{message.chat.id}.pdf'
+                    certificate = FSInputFile(file_path)
+                    logger.debug(f'Пользователь: {message.chat.id} get certificate {certificate} on path: {file_path}')
+                    await message.bot.send_document(
+                        chat_id=data['chat_id'],
+                        document=certificate
+                    )
+
+                    await self.user_db.save_fullname(
+                        fullname=fio,
+                        tg_id=message.from_user.id
+                    )
+
+                    await message.answer(
+                        MESSAGES['GO_TO_MENU'],
+                        reply_markup=await self.base_kb.menu_btn()
+                    )
+
+                    await state.set_state(state=None)
+
+            else:
                 await message.answer(
-                    MESSAGES['CERTIFICATE']
+                    MESSAGES['INCORRECT_FULLNAME']
                 )
-
-                # формируем сертификат
-                build_certificate(
-                    user_id=message.chat.id,
-                    fullname=fio,
-                    course_name=course.title
-                )
-                # читаем файл и отправляем пользователю
-                file_path = f'/app/static/certificate_{message.chat.id}.pdf'
-                certificate = FSInputFile(file_path)
-                logger.debug(f'Пользователь: {message.chat.id} get certificate {certificate} on path: {file_path}')
-                await message.bot.send_document(
-                    chat_id=data['chat_id'],
-                    document=certificate
-                )
-
-                await self.user_db.save_fullname(
-                    fullname=fio,
-                    tg_id=message.from_user.id
-                )
-
-                await message.answer(
-                    MESSAGES['GO_TO_MENU'],
-                    reply_markup=await self.base_kb.menu_btn()
-                )
-
-                await state.set_state(state=None)
 
         async def start_text_task_after_lesson(message: Message, state: FSMContext):
 
@@ -586,9 +597,8 @@ class LessonHandler(Handler):
                 lesson_id=lesson.id
             )
 
-            await state.set_state(state=None)
-
             if message.content_type == ContentType.TEXT:
+                await state.set_state(state=None)
                 await self.db.save_user_answer(
                     answer=message.text,
                     lesson_history_id=lesson_history.id
@@ -633,9 +643,8 @@ class LessonHandler(Handler):
                 lesson_id=lesson.id
             )
 
-            await state.set_state(state=None)
-
             if message.content_type == ContentType.PHOTO:
+                await state.set_state(state=None)
                 answer = message.photo[-1].file_id
                 await self.db.save_user_answer(
                     answer=answer,
@@ -681,9 +690,8 @@ class LessonHandler(Handler):
                 lesson_id=lesson.id
             )
 
-            await state.set_state(state=None)
-
             if message.content_type == ContentType.VIDEO:
+                await state.set_state(state=None)
                 answer = message.video.file_id
                 await self.db.save_user_answer(
                     answer=answer,
@@ -729,9 +737,8 @@ class LessonHandler(Handler):
                 lesson_id=lesson.id
             )
 
-            await state.set_state(state=None)
-
             if message.content_type == ContentType.DOCUMENT:
+                await state.set_state(state=None)
                 answer = message.document.file_id
                 await self.db.save_user_answer(
                     answer=answer,
@@ -777,9 +784,9 @@ class LessonHandler(Handler):
                 lesson_id=lesson.id
             )
 
-            await state.set_state(state=None)
-
             if message.content_type == ContentType.VIDEO_NOTE:
+                await state.set_state(state=None)
+
                 answer = message.video_note.file_id
                 await self.db.save_user_answer(
                     answer=answer,

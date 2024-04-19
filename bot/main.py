@@ -17,6 +17,7 @@ from bot.settings.keyboards import BaseKeyboard
 from bot.settings_bot import settings
 from bot.test_promocode.utils import is_valid_test_promo
 from bot.users.service import UserService
+from bot.users.states import UserReport
 from bot.utils.delete_messages import delete_messages
 from bot.utils.logger import debug_log_write, warning_log_write
 from bot.utils.messages import MESSAGES

@@ -40,8 +40,6 @@ class QuizHandler(Handler):
             await state.update_data(chat_id=message.chat.id)
             data = await state.get_data()
 
-            await state.update_data(chat_id=message.chat.id)
-
             # удаляем сообщения
             await delete_messages(
                 src=message,
