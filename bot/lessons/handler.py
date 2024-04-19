@@ -241,12 +241,6 @@ class LessonHandler(Handler):
             await state.update_data(chat_id=callback.message.chat.id)
             data = await state.get_data()
 
-            await delete_messages(
-                data=data,
-                state=state,
-                src=callback.message
-            )
-
             lesson = data.get('lesson')
             user = await self.db.get_user_by_tg_id(callback.message.chat.id)
             lesson_history = await self.db.get_actual_lesson_history(
@@ -255,6 +249,11 @@ class LessonHandler(Handler):
             )
 
             if data['selected']:
+                await delete_messages(
+                    data=data,
+                    state=state,
+                    src=callback.message
+                )
                 # получаем все выбранные пользователям ответы и сортируем по возрастанию цифр
                 data['selected'].sort()
                 users_answers = data.get('users_answers')
