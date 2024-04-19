@@ -15,6 +15,7 @@ services:
       - "host.docker.internal:host-gateway"
     networks:
       - realogica_network
+    network_mode: host
 
   redis:
     image: redis:7
