@@ -11,6 +11,8 @@ services:
       - redis
     env_file:
       - .env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 #    networks:
 #      - realogica_network
   redis:
@@ -20,6 +22,7 @@ services:
       - redis_data:/data
 #    networks:
 #      - realogica_network
+
 
 
 #networks:
