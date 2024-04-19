@@ -11,15 +11,15 @@ services:
       - redis
     env_file:
       - .env
-    networks:
-      - realogica_network
+#    networks:
+#      - realogica_network
   redis:
     image: redis:7
     container_name: redis
     volumes:
       - redis_data:/data
-    networks:
-      - realogica_network
+#    networks:
+#      - realogica_network
 
 
 #networks:
