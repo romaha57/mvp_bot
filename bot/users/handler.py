@@ -134,7 +134,7 @@ class UserHandler(Handler):
             courses_by_bot = await self.course_db.get_courses_by_bot(message.chat.id)
             courses_by_db = await self.course_db.get_all_courses()
             all_courses = list(set(courses_by_bot + courses_by_db))
-            all_courses.sort(key=lambda elem: elem.get('id'))
+            all_courses.sort(key=lambda elem: elem.get('order_num'))
 
             msg = await message.answer(
                 MESSAGES['CHOOSE_COURSE'],

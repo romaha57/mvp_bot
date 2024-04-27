@@ -40,16 +40,24 @@ class CommandHandler(Handler):
             logger.debug(f"Пользователь {message.chat.id} ввел промокод {promocode_in_msg}")
             if promocode_in_msg:
                 promocode = await self.db.check_promocode(promocode_in_msg[0])
-
                 if promocode and promocode.actual:
                     courses_by_promo = await self.db.get_courses_by_promo(promocode.id)
-                    courses_titles = '\n'.join([f" - {course.get('title')}" for course in courses_by_promo])
-
-                    await message.answer(
-                        MESSAGES['START_PROMOCODE'].format(
-                            courses_titles
+                    
+                    if courses_by_promo:
+                        courses_titles = '\n'.join([f" - {course.get('title')}" for course in courses_by_promo])
+                        await message.answer(
+                            MESSAGES['START_PROMOCODE'].format(
+                                courses_titles
+                            )
                         )
-                    )
+                    elif promocode.is_test:
+                        await message.answer(
+                            MESSAGES['GO_TO_TEST_PROMOCODE']
+                        )
+                    else:
+                        await message.answer(
+                            MESSAGES['START_PROMOCODE_OWNER']
+                        )
                     logger.debug(f"Пользователь {message.from_user.id} активировал промокод {promocode.code}")
 
                     # увеличиваем счетчик активированных пользователей на этом промокоде

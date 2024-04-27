@@ -155,32 +155,25 @@ async def show_lesson_info(message: Message, state: FSMContext, lesson: Lessons,
     await state.update_data(users_answers=[])
 
     if lesson.video:
+
+        if lesson.buttons_rates:
+            self.emoji_list = json.loads(lesson.buttons_rates)
+
         try:
-            # список смайликов для оценки курса
+            msg = await message.answer_video(
+                lesson.video,
+                caption=video_text,
+                reply_markup=await self.kb.lesson_menu_btn(lesson, self.emoji_list)
+            )
 
-            if lesson.buttons_rates:
-                self.emoji_list = json.loads(lesson.buttons_rates)
-
-            try:
-                msg = await message.answer_video(
-                    lesson.video,
-                    caption=video_text,
-                    reply_markup=await self.kb.lesson_menu_btn(lesson, self.emoji_list)
-                )
-            except TelegramBadRequest:
-                await message.answer(
-                    MESSAGES['VIDEO_ERROR']
-                )
-            self.emoji_list = None
-            # сохраняем id message, чтобы потом удалить
-            await state.update_data(msg_edit=msg.message_id)
-
-        # отлов ошибки при неправильном file_id
         except TelegramBadRequest:
-            await message.answer(
+            msg = await message.answer(
                 MESSAGES['VIDEO_ERROR'],
                 reply_markup=await self.kb.lesson_menu_btn(lesson)
             )
+            self.emoji_list = None
+
+        await state.update_data(msg_edit=msg.message_id)
 
         await send_image(lesson, message)
 

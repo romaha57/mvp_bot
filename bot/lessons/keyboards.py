@@ -62,8 +62,13 @@ class LessonKeyboard:
             lessons_from_db = list(set(lessons_from_db))
             lessons_from_db.sort(key=lambda elem: elem.get('order_num'))
 
-        if course_id == 4:
-            lessons_from_db = await self.db.get_all_lesson(course_id, user_id)
+        if int(course_id) == 4:
+            lessons_from_db = await self.db.get_all_lesson_for_soul()
+            lessons_from_db.sort(key=lambda elem: elem.get('order_num'))
+
+        if promocode.type_id == 3:
+            lessons_from_db = await self.db.get_all_lesson_by_owner(course_id)
+            lessons_from_db = list(set(lessons_from_db))
             lessons_from_db.sort(key=lambda elem: elem.get('order_num'))
 
         if not lessons_from_db:

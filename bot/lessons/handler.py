@@ -494,6 +494,7 @@ class LessonHandler(Handler):
 
                 course_id = lesson.course_id
                 course = await self.course_db.get_course_by_id(course_id)
+                await state.update_data(course_id=course_id)
                 await src.answer(
                     course.outro,
                     reply_markup=await self.base_kb.menu_btn()
@@ -525,8 +526,13 @@ class LessonHandler(Handler):
 
             await state.update_data(chat_id=message.chat.id)
             data = await state.get_data()
+            await delete_messages(
+                src=message,
+                data=data,
+                state=state
+            )
 
-            course_id = await self.course_db.get_course_by_last_course_history(message.chat.id)
+            course_id = data.get('course_id')
             course = await self.course_db.get_course_by_id(course_id)
 
             fio = message.text

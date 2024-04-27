@@ -1,6 +1,6 @@
 from typing import Union
 
-from sqlalchemy import desc, insert, select, update
+from sqlalchemy import desc, insert, select, update, func, text
 from sqlalchemy.exc import MultipleResultsFound
 
 from bot.courses.models import Course
@@ -20,11 +20,35 @@ class LessonService(BaseService, metaclass=Singleton):
     @classmethod
     async def get_all_lesson(cls, course_id: str, user_id, limit: int = None):
         async with async_session() as session:
-            query = select(Lessons.id, Lessons.title, LessonHistory.status_id, LessonHistory.user_id, Lessons.order_num). \
+            query = select(Lessons.id, Lessons.title, func.max(LessonHistory.status_id).label('status_id'), func.max(LessonHistory.user_id).label('user_id'), func.max(Lessons.order_num).label('order_num')). \
                     join(LessonHistory, LessonHistory.lesson_id == Lessons.id, isouter=True).\
-                    join(Users, LessonHistory.user_id == Users.id).\
-                    where(Lessons.course_id == course_id,  LessonHistory.user_id == user_id). \
+                    join(Users, LessonHistory.user_id == Users.id, isouter=True).\
+                    where(Lessons.course_id == course_id,  LessonHistory.user_id == user_id).group_by(Lessons.id, Lessons.title). \
                     order_by('order_num').limit(limit)
+
+            result = await session.execute(query)
+            return result.mappings().all()
+
+    @classmethod
+    async def get_all_lesson_for_soul(cls):
+        async with async_session() as session:
+            query = text("""
+                SELECT $_lessons.id, $_lessons.title, 9 as status_id, 9 as user_id, $_lessons.order_num
+                FROM $_lessons
+                WHERE course_id = 4
+            """)
+
+            result = await session.execute(query)
+            return result.mappings().all()
+
+    @classmethod
+    async def get_all_lesson_by_owner(cls, course_id: str):
+        async with async_session() as session:
+            query = text(f"""
+                       SELECT $_lessons.id, $_lessons.title, 9 as status_id, 9 as user_id, $_lessons.order_num
+                       FROM $_lessons
+                       WHERE course_id = {course_id}
+                   """)
 
             result = await session.execute(query)
             return result.mappings().all()

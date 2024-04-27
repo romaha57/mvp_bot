@@ -1,3 +1,4 @@
+import pprint
 import traceback
 
 from aiogram import Bot, F, Router
@@ -45,6 +46,7 @@ class CourseHandler(Handler):
             courses_by_bot = await self.db.get_courses_by_bot(message.chat.id)
             courses_by_promo = await self.db.get_courses_by_promo(message.chat.id)
             all_courses = list(set(courses_by_bot + courses_by_promo))
+            all_courses.sort(key=lambda elem: elem.get('order_num'))
 
             user = await self.db.get_user_by_tg_id(message.chat.id)
 
@@ -52,7 +54,7 @@ class CourseHandler(Handler):
             if len(all_courses) == 1:
                 course = await self.db.get_course_by_name(all_courses[0].get('title'))
                 logger.debug(f"Пользователь {message.from_user.id} перешел на курс: {course}")
-
+                await state.update_data(course_id=course.id)
                 course_history = await self.db.get_or_create_history(
                     user=user,
                     course_id=course.id,
@@ -92,7 +94,7 @@ class CourseHandler(Handler):
 
                         # устанавливаем отлов состояния на название урока
                         await state.set_state(LessonChooseState.lesson)
-                        await state.update_data(delete_message_id=msg.message_id)
+                        await state.update_data(msg=msg.message_id)
 
                         menu_msg = await message.answer(
                             MESSAGES['GO_TO_MENU'],
@@ -146,6 +148,7 @@ class CourseHandler(Handler):
             data = await state.get_data()
             user = await self.db.get_user_by_tg_id(callback.message.chat.id)
             course_id = callback.data.split('_')[-1]
+            await state.update_data(course_id=course_id)
             course = await self.db.get_course_by_id(course_id)
             promocode = await self.db.get_promocode_by_tg_id(callback.message.chat.id)
 
@@ -209,7 +212,13 @@ class CourseHandler(Handler):
 
             await state.update_data(chat_id=message.chat.id)
             data = await state.get_data()
-            course_id = await self.db.get_course_by_last_course_history(message.chat.id)
+            await delete_messages(
+                src=message,
+                data=data,
+                state=state
+            )
+
+            course_id = data.get('course_id')
             course = await self.db.get_course_by_id(course_id)
 
             await message.answer(
