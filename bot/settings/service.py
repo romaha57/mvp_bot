@@ -17,7 +17,6 @@ class SettingsService(BaseService):
         async with async_session() as session:
             query = select(Promocodes).filter_by(code=promocode)
             result = await session.execute(query)
-
             return result.scalars().one_or_none()
 
     @classmethod
