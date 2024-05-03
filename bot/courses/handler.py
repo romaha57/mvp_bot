@@ -84,6 +84,7 @@ class CourseHandler(Handler):
                         course_id=course.id
                     )
                     await state.update_data(lesson=lesson)
+                    await state.update_data(lesson_id=lesson.id)
 
                     if lesson == 'all_lesson_done':
 
