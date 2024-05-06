@@ -28,10 +28,9 @@ async def delete_messages(data: dict, state: FSMContext, src: Union[Message, Bot
         await state.update_data(msg=None)
 
     if data.get('msg1'):
-        await src.edit_message_reply_markup(
+        await src.delete_message(
             chat_id=data.get('chat_id'),
             message_id=data.get('msg1'),
-            reply_markup=None
         )
         await state.update_data(msg1=None)
 
