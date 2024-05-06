@@ -23,7 +23,7 @@ class BaseKeyboard:
 
         builder = ReplyKeyboardBuilder()
 
-        if data.get('promocode_type') == 3:
+        if isinstance(data, Promocodes):
             builder.row(
                 # KeyboardButton(text=await self._get_button('OWNER_QUIZ')),
                 KeyboardButton(text=await self._get_button('OWNER_EDUCATION')),
