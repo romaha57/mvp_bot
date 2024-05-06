@@ -113,7 +113,7 @@ class CommandHandler(Handler):
                                 MESSAGES['GO_TO_TEST_PROMOCODE'],
                                 reply_markup=await self.test_promo_kb.test_promo_menu())
 
-                        elif promocode.type == 3:
+                        elif promocode.type_id == 3:
                             await message.answer(
                                 MESSAGES['MENU'],
                                 reply_markup=await self.kb.start_btn(promocode))
