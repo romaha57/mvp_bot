@@ -11,6 +11,7 @@ from bot.courses.service import CourseService
 from bot.courses.states import CourseChooseState
 from bot.handlers.base_handler import Handler
 from bot.lessons.keyboards import LessonKeyboard
+from bot.lessons.models import Lessons
 from bot.lessons.service import LessonService
 from bot.lessons.states import LessonChooseState
 from bot.settings.keyboards import BaseKeyboard
@@ -84,7 +85,8 @@ class CourseHandler(Handler):
                         course_id=course.id
                     )
                     await state.update_data(lesson=lesson)
-                    await state.update_data(lesson_id=lesson.id)
+                    if isinstance(lesson, Lessons):
+                        await state.update_data(lesson_id=lesson.id)
 
                     if lesson == 'all_lesson_done':
 
