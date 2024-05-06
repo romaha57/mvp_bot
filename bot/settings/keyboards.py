@@ -18,7 +18,7 @@ class BaseKeyboard:
 
         return BUTTONS.get(name)
 
-    async def start_btn(self, data: dict) -> ReplyKeyboardMarkup:
+    async def start_btn(self, data: Union[dict, Promocodes]) -> ReplyKeyboardMarkup:
         """Стартовое меню бота"""
 
         builder = ReplyKeyboardBuilder()
