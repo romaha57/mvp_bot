@@ -87,7 +87,7 @@ class LessonKeyboard:
                 one_time_keyboard=True
             )
 
-        logger.debug(f'Пользователь {user_id} получил список уроков: {lessons_from_db}')
+        logger.debug(f'Пользователь {user_id} получил список уроков: {[(i.get("id"), i.get("title")) for i in lessons_from_db]}')
         for lesson in lessons_from_db:
             if lesson['status_id'] == 4:
                 builder.button(

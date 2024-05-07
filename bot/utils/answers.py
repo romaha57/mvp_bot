@@ -258,8 +258,14 @@ async def show_main_menu(promocode: Promocodes, user: Users, message: Message, s
             )
             await state.set_state(state=None)
 
+    elif promocode.type_id == 3:
+        await message.answer(
+            MESSAGES['MENU'],
+            reply_markup=await self.kb.start_btn(promocode))
+
     else:
         courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode.id)
+        print(courses_and_quizes)
         await message.answer(
             MESSAGES['ANY_TEXT'],
             reply_markup=await self.kb.start_btn(courses_and_quizes)

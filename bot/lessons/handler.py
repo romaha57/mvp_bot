@@ -291,11 +291,9 @@ class LessonHandler(Handler):
                         reply_markup=await self.kb.next_question_btn(self.test_questions)
                     )
 
-                letter_list = ['1', 'А', 'Б', 'В', 'Г', 'Д', 'Е', 'Ж', 'З', 'И']
                 # создаем истории прохождения теста на урок
                 questions = json.loads(lesson.questions)
-                user_answer = ','.join([letter_list[answer] for answer in selected])
-
+                user_answer = str([i - 1 for i in selected])
                 await self.db.create_test_history(
                     user_id=user.id,
                     lesson_id=lesson.id,
