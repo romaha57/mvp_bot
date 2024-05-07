@@ -1,3 +1,4 @@
+import pprint
 import traceback
 
 from aiogram import Bot, F, Router
@@ -35,7 +36,13 @@ class TextHandler(Handler):
         async def any_media(message: Message):
             """При отправке медиа файла пользователю возвращается тип документа и его file_id"""
 
-            file_id = await get_file_id_by_content_type(message)
+            file_id, file_type_id, label = await get_file_id_by_content_type(message)
+            await self.db.save_file_id(
+                label=label,
+                file_id=file_id,
+                attachment_type=file_type_id
+
+            )
             await message.answer(
                 f'{message.content_type} - <b>{file_id}</b>'
             )

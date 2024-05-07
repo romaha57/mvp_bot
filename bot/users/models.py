@@ -271,3 +271,40 @@ class Reports(Base):
 
     def __str__(self):
         return f'{self.tg_id} - {self.text}'
+
+
+class AttachmentsTypes(Base):
+    __tablename__ = '$_attachment_types'
+    __table_args__ = {
+        'comment': 'Файл загрузки контента'
+    }
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String)
+
+    updated_at = Column(DateTime, onupdate=func.now)
+    created_at = Column(DateTime, server_default=func.now())
+
+    def __str__(self):
+        return f'{self.name}'
+
+
+class Attachments(Base):
+    __tablename__ = '$_attachments'
+    __table_args__ = {
+        'comment': 'Файл загрузки контента'
+    }
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    bot_id = Column(Integer, ForeignKey('$_bots.id'))
+    file_id = Column(String)
+    filename = Column(String)
+    type_id = Column(Integer, ForeignKey('$_attachment_types.id'))
+    extension = Column(String)
+    label = Column(String)
+
+    updated_at = Column(DateTime, onupdate=func.now)
+    created_at = Column(DateTime, server_default=func.now())
+
+    def __str__(self):
+        return f'{self.file_id}'

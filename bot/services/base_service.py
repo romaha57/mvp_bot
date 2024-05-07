@@ -4,7 +4,7 @@ from sqlalchemy import select, update, text, insert
 
 from bot.db_connect import async_session
 from bot.settings.model import Settings
-from bot.users.models import Promocodes, UserAccount, Users, AnketaAnswers
+from bot.users.models import Promocodes, UserAccount, Users, AnketaAnswers, Attachments
 
 
 class Singleton(type):
@@ -32,6 +32,20 @@ class BaseService(metaclass=Singleton):
             result = await session.execute(query)
 
             return str(result.scalar())
+
+    @classmethod
+    async def save_file_id(cls, label: str, file_id: str, attachment_type: int):
+        """ Сохраняем медиа файл в БД для контента урока"""
+
+        async with async_session() as session:
+            query = insert(Attachments).values(
+                bot_id=1,
+                file_id=file_id,
+                label=label,
+                type_id=attachment_type,
+            )
+            await session.execute(query)
+            await session.commit()
 
     @classmethod
     async def get_user_by_tg_id(cls, tg_id: int) -> Users:
