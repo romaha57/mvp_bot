@@ -18,6 +18,15 @@ from bot.users.models import BonusRewards, BonusRewardsTypes, Users
 class LessonService(BaseService, metaclass=Singleton):
 
     @classmethod
+    async def get_lessons_without_history(cls, course_id: str):
+        async with async_session() as session:
+            query = select(Lessons.id, Lessons.title, Lessons.order_num). \
+                where(Lessons.course_id == course_id)
+
+            result = await session.execute(query)
+            return result.mappings().all()
+
+    @classmethod
     async def get_all_lesson(cls, course_id: str, user_id, limit: int = None):
         async with async_session() as session:
             query = select(Lessons.id, Lessons.title, func.max(LessonHistory.status_id).label('status_id'), func.max(LessonHistory.user_id).label('user_id'), func.max(Lessons.order_num).label('order_num')). \

@@ -26,7 +26,7 @@ class CourseService(BaseService, metaclass=Singleton):
             query = select(Course.id, Course.title, Course.order_num).\
                 join(CourseBots, Course.id == CourseBots.course_id).\
                 join(Users, Users.bot_id == CourseBots.bot_id).\
-                where(Users.external_id == tg_id)
+                where(Users.external_id == tg_id, Course.is_public == True)
             result = await session.execute(query)
 
             return result.mappings().all()
@@ -37,7 +37,7 @@ class CourseService(BaseService, metaclass=Singleton):
             query = select(Course.id, Course.title, Course.order_num).\
                 join(PromocodeCourses, PromocodeCourses.course_id== Course.id).\
                 join(Users, Users.promocode_id == PromocodeCourses.promocode_id).\
-                where(Users.external_id == tg_id)
+                where(Users.external_id == tg_id, Course.is_public == True)
             result = await session.execute(query)
 
             return result.mappings().all()

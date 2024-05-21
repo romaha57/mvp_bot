@@ -17,6 +17,7 @@ from bot.quiz.models import QuizAnswers
 from bot.test_promocode.utils import is_valid_test_promo
 from bot.users.models import Promocodes, Users
 from bot.users.service import UserService
+from bot.users.states import Politics
 from bot.utils.algorithms import func_sociability
 from bot.utils.constants import LINK
 from bot.utils.messages import MESSAGES
@@ -41,8 +42,8 @@ async def get_file_id_by_content_type(message: Message):
         return message.video_note.file_id, 6, message.caption
 
 
-async def send_image(lesson: Lessons, message: Message):
-    images = await get_images_by_place('before_work', lesson)
+async def send_image(lesson: Lessons, message: Message, place: str):
+    images = await get_images_by_place(place, lesson)
     if images:
         for image in images:
             try:
@@ -155,6 +156,8 @@ async def show_lesson_info(message: Message, state: FSMContext, lesson: Lessons,
     video_text = f'<b>{lesson.title}</b>\n\n{lesson.description}'
     await state.update_data(users_answers=[])
 
+    await send_image(lesson, message, 'before_video')
+
     if lesson.video:
 
         if lesson.buttons_rates:
@@ -176,8 +179,6 @@ async def show_lesson_info(message: Message, state: FSMContext, lesson: Lessons,
 
         await state.update_data(msg_edit=msg.message_id)
 
-        await send_image(lesson, message)
-
     else:
         if lesson.buttons_rates:
             self.emoji_list = json.loads(lesson.buttons_rates)
@@ -188,6 +189,8 @@ async def show_lesson_info(message: Message, state: FSMContext, lesson: Lessons,
         )
         self.emoji_list = None
         await state.update_data(msg_edit=msg.message_id)
+
+    await send_image(lesson, message, 'after_video')
 
 
 async def show_course_intro_first_time(course: Course, message: Message, state: FSMContext,
@@ -245,30 +248,73 @@ async def check_user_anket(message: Message, user: Users):
 
 
 async def show_main_menu(promocode: Promocodes, user: Users, message: Message, state: FSMContext, self: Union['TextHandler', 'MainBot']):
-    if promocode.is_test:
-        if is_valid_test_promo(user):
+
+    if user.accept_politics:
+
+        if promocode.is_test:
+            if is_valid_test_promo(user):
+                await message.answer(
+                    MESSAGES['TEST_PROMO_MENU'],
+                    reply_markup=await self.test_promo_kb.test_promo_menu()
+                )
+
+            else:
+                await message.answer(
+                    MESSAGES['END_TEST_PERIOD'],
+                    reply_markup=await self.test_promo_kb.test_promo_menu()
+                )
+                await state.set_state(state=None)
+
+        elif promocode.type_id == 3:
             await message.answer(
-                MESSAGES['TEST_PROMO_MENU'],
-                reply_markup=await self.test_promo_kb.test_promo_menu()
-            )
+                MESSAGES['MENU'],
+                reply_markup=await self.kb.start_btn(promocode))
 
         else:
+            courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode.id)
             await message.answer(
-                MESSAGES['END_TEST_PERIOD'],
-                reply_markup=await self.test_promo_kb.test_promo_menu()
+                MESSAGES['ANY_TEXT'],
+                reply_markup=await self.kb.start_btn(courses_and_quizes)
             )
-            await state.set_state(state=None)
-
-    elif promocode.type_id == 3:
-        await message.answer(
-            MESSAGES['MENU'],
-            reply_markup=await self.kb.start_btn(promocode))
 
     else:
-        courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode.id)
-        print(courses_and_quizes)
-        await message.answer(
-            MESSAGES['ANY_TEXT'],
-            reply_markup=await self.kb.start_btn(courses_and_quizes)
+        msg = await message.answer(
+            MESSAGES['ACCEPT_POLITICS'],
+            reply_markup=await self.kb.politics_btn()
+        )
+        await state.set_state(Politics.accept)
+        await state.update_data(msg=msg.message_id)
+
+
+async def check_new_added_lessons(lessons_by_user: list[dict], lessons_by_course: list[dict], user_id: int) -> list[dict]:
+    lessons_by_user_list = [
+        (
+            lesson.get('id'),
+            lesson.get('title'),
+            lesson.get('order_num')
         )
 
+        for lesson in lessons_by_user
+    ]
+    lessons_by_course_list = [
+        (
+            lesson.get('id'),
+            lesson.get('title'),
+            lesson.get('order_num')
+        )
+        for lesson in lessons_by_course]
+
+    new_lessons = set(lessons_by_course_list) - set(lessons_by_user_list)
+
+    for new_l in new_lessons:
+        lessons_by_user.append(
+            {
+                'id': new_l[0],
+                'title': new_l[1],
+                'order_num': new_l[2],
+                'user_id': user_id,
+                'status_id': 0
+            }
+        )
+
+    return lessons_by_user

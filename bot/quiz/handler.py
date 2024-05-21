@@ -1,3 +1,4 @@
+import datetime
 import traceback
 
 from aiogram import Bot, F, Router
@@ -47,11 +48,18 @@ class QuizHandler(Handler):
                 state=state
             )
             promocode = await self.db.get_promocode_by_tg_id(message.chat.id)
+            if promocode.end_at <= datetime.datetime.now():
+                courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode.id)
+                await message.answer(
+                    MESSAGES['YOUR_PROMOCODE_IS_EXPIRED'],
+                    reply_markup=await self.base_kb.start_btn(courses_and_quizes)
+                )
+            else:
 
-            await message.answer(
-                MESSAGES['QUIZ_SELECTION'],
-                reply_markup=await self.kb.quiz_menu_btn(promocode)
-            )
+                await message.answer(
+                    MESSAGES['QUIZ_SELECTION'],
+                    reply_markup=await self.kb.quiz_menu_btn(promocode)
+                )
 
         @self.router.message(F.text == BUTTONS['START_QUIZ'])
         async def start_quiz(message: Message, state: FSMContext):
@@ -70,55 +78,63 @@ class QuizHandler(Handler):
             promocode = await self.db.get_promocode_by_tg_id(message.chat.id)
             user = await self.db.get_user_by_tg_id(message.chat.id)
 
-            if promocode.type_id == 3:
-                quizes_by_bot = await self.db.get_quizes_by_bot(message.chat.id)
-
-                quizes_by_db = await self.db.get_all_quizes()
-                all_quizes = list(set(quizes_by_bot + quizes_by_db))
-                all_quizes.sort(key=lambda elem: elem.get('id'))
+            if promocode.end_at <= datetime.datetime.now():
+                courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode.id)
+                await message.answer(
+                    MESSAGES['YOUR_PROMOCODE_IS_EXPIRED'],
+                    reply_markup=await self.base_kb.start_btn(courses_and_quizes)
+                )
             else:
 
-                quizes_by_promo = await self.db.get_quizes_by_promocode(message.chat.id)
-                quizes_by_bot = await self.db.get_quizes_by_bot(message.chat.id)
-                all_quizes = list(set(quizes_by_promo + quizes_by_bot))
+                if promocode.type_id == 3:
+                    quizes_by_bot = await self.db.get_quizes_by_bot(message.chat.id)
 
-            await message.answer(
-                MESSAGES['GO_TO_MENU'],
-                reply_markup=await self.base_kb.menu_btn()
-            )
+                    quizes_by_db = await self.db.get_all_quizes()
+                    all_quizes = list(set(quizes_by_bot + quizes_by_db))
+                    all_quizes.sort(key=lambda elem: elem.get('id'))
+                else:
 
-            if len(all_quizes) > 1:
-                msg = await message.answer(
-                    MESSAGES['CHOOSE_QUIZ'],
-                    reply_markup=await self.kb.quizes_list_btn(all_quizes)
-                )
-                await state.set_state(QuizState.quiz)
-                await state.update_data(msg=msg.message_id)
-            else:
-                quiz = all_quizes[0]
-                await message.answer(quiz.get('name'))
-                if quiz.description:
-                    await message.answer(quiz.description)
+                    quizes_by_promo = await self.db.get_quizes_by_promocode(message.chat.id)
+                    quizes_by_bot = await self.db.get_quizes_by_bot(message.chat.id)
+                    all_quizes = list(set(quizes_by_promo + quizes_by_bot))
 
-                # запись в БД о начале тестирования данным пользователем
-                await self.db.create_attempt(
-                    quiz_id=quiz.get('id'),
-                    user=user
-
+                await message.answer(
+                    MESSAGES['GO_TO_MENU'],
+                    reply_markup=await self.base_kb.menu_btn()
                 )
 
-                await state.set_state(QuizState.answer)
+                if len(all_quizes) > 1:
+                    msg = await message.answer(
+                        MESSAGES['CHOOSE_QUIZ'],
+                        reply_markup=await self.kb.quizes_list_btn(all_quizes)
+                    )
+                    await state.set_state(QuizState.quiz)
+                    await state.update_data(msg=msg.message_id)
+                else:
+                    quiz = all_quizes[0]
+                    await message.answer(quiz.get('name'))
+                    if quiz.description:
+                        await message.answer(quiz.description)
 
-                self.questions = await self.db.get_quiz_questions(quiz.get('id'))
-                question = self.questions.pop()
-                msg = await message.answer(
-                    question.title,
-                    reply_markup=await self.kb.quiz_answers(question.id)
-                )
+                    # запись в БД о начале тестирования данным пользователем
+                    await self.db.create_attempt(
+                        quiz_id=quiz.get('id'),
+                        user=user
 
-                await state.update_data(quiz_id=quiz.get('id'))
-                await state.update_data(question_title=question.title)
-                await state.update_data(inline_msg=msg.message_thread_id)
+                    )
+
+                    await state.set_state(QuizState.answer)
+
+                    self.questions = await self.db.get_quiz_questions(quiz.get('id'))
+                    question = self.questions.pop()
+                    msg = await message.answer(
+                        question.title,
+                        reply_markup=await self.kb.quiz_answers(question.id)
+                    )
+
+                    await state.update_data(quiz_id=quiz.get('id'))
+                    await state.update_data(question_title=question.title)
+                    await state.update_data(inline_msg=msg.message_thread_id)
 
         @self.router.callback_query(QuizState.quiz, F.data.startswith('quiz'))
         async def get_quiz(callback: CallbackQuery, state: FSMContext):
@@ -133,33 +149,40 @@ class QuizHandler(Handler):
 
             user = await self.db.get_user_by_tg_id(callback.message.chat.id)
             promocode = await self.db.get_promocode_by_tg_id(callback.message.chat.id)
-            if promocode.is_test and not is_valid_test_promo(user):
+            if promocode.end_at <= datetime.datetime.now():
+                courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode.id)
                 await callback.message.answer(
-                    MESSAGES['END_TEST_PERIOD'],
-                    reply_markup=await self.test_promo_kb.test_promo_menu()
+                    MESSAGES['YOUR_PROMOCODE_IS_EXPIRED'],
+                    reply_markup=await self.base_kb.start_btn(courses_and_quizes)
                 )
             else:
-                quiz_id = callback.data.split('_')[-1]
-                user = await self.db.get_user_by_tg_id(callback.message.chat.id)
-                await self.db.create_attempt(
-                    quiz_id=quiz_id,
-                    user=user
+                if promocode.is_test and not is_valid_test_promo(user):
+                    await callback.message.answer(
+                        MESSAGES['END_TEST_PERIOD'],
+                        reply_markup=await self.test_promo_kb.test_promo_menu()
+                    )
+                else:
+                    quiz_id = callback.data.split('_')[-1]
+                    user = await self.db.get_user_by_tg_id(callback.message.chat.id)
+                    await self.db.create_attempt(
+                        quiz_id=quiz_id,
+                        user=user
 
-                )
+                    )
 
-                await state.set_state(QuizState.answer)
+                    await state.set_state(QuizState.answer)
 
-                self.questions = await self.db.get_quiz_questions(quiz_id)
-                question = self.questions.pop()
-                msg = await callback.message.answer(
-                    question.title,
-                    reply_markup=await self.kb.quiz_answers(question.id)
-                )
+                    self.questions = await self.db.get_quiz_questions(quiz_id)
+                    question = self.questions.pop()
+                    msg = await callback.message.answer(
+                        question.title,
+                        reply_markup=await self.kb.quiz_answers(question.id)
+                    )
 
-                await state.update_data(quiz_id=quiz_id)
-                await state.update_data(question_title=question.title)
-                await state.update_data(inline_msg=msg.message_thread_id)
-                await state.update_data(msg=msg.message_id)
+                    await state.update_data(quiz_id=quiz_id)
+                    await state.update_data(question_title=question.title)
+                    await state.update_data(inline_msg=msg.message_thread_id)
+                    await state.update_data(msg=msg.message_id)
 
         @self.router.callback_query(F.data.startswith('answer'), QuizState.answer)
         async def get_quiz_answer(callback: CallbackQuery, state: FSMContext):

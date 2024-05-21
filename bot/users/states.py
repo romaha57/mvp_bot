@@ -19,3 +19,9 @@ class UserReport(StatesGroup):
     """Состояния для отчетов об ошибках в боте"""
 
     text = State()
+
+
+class Politics(StatesGroup):
+    """Состояния для подтверждения политики"""
+
+    accept = State()

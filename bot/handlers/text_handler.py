@@ -1,3 +1,4 @@
+import datetime
 import pprint
 import traceback
 
@@ -66,31 +67,40 @@ class TextHandler(Handler):
             user = await self.db.get_user_by_tg_id(message.chat.id)
             promocode = await self.db.get_promocode_by_tg_id(message.chat.id)
 
-            anketa_questions = await check_user_anket(
-                message=message,
-                user=user
-            )
-            if anketa_questions:
-                await get_user_answers_for_anketa(
-                    message=message,
-                    state=state,
-                    questions=anketa_questions
+            if promocode.end_at <= datetime.datetime.now():
+                courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode.id)
+                await message.answer(
+                    MESSAGES['YOUR_PROMOCODE_IS_EXPIRED'],
+                    reply_markup=await self.kb.start_btn(courses_and_quizes)
                 )
+
             else:
-                if promocode:
-                    await show_main_menu(
+
+                anketa_questions = await check_user_anket(
+                    message=message,
+                    user=user
+                )
+                if anketa_questions:
+                    await get_user_answers_for_anketa(
                         message=message,
                         state=state,
-                        self=self,
-                        promocode=promocode,
-                        user=user
+                        questions=anketa_questions
                     )
-
                 else:
-                    await message.answer(
-                        MESSAGES['ERROR_PROMOCODE'],
-                        reply_markup=await self.kb.menu_btn()
-                    )
+                    if promocode:
+                        await show_main_menu(
+                            message=message,
+                            state=state,
+                            self=self,
+                            promocode=promocode,
+                            user=user
+                        )
+
+                    else:
+                        await message.answer(
+                            MESSAGES['ERROR_PROMOCODE'],
+                            reply_markup=await self.kb.menu_btn()
+                        )
 
         @self.router.callback_query(F.data.startswith('menu'))
         async def get_menus(callback: CallbackQuery, state: FSMContext):
@@ -108,21 +118,30 @@ class TextHandler(Handler):
             logger.debug(
                 f"Пользователь {callback.message.chat.id} перешел в меню по INLINE")
             promocode = await self.db.get_promocode_by_tg_id(callback.message.chat.id)
-            user = await self.db.get_user_by_tg_id(callback.message.chat.id)
-            if promocode:
-                await show_main_menu(
-                    message=callback.message,
-                    state=state,
-                    self=self,
-                    promocode=promocode,
-                    user=user
-                )
 
-            else:
+            if promocode.end_at <= datetime.datetime.now():
+                courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode.id)
                 await callback.message.answer(
-                    MESSAGES['ERROR_PROMOCODE'],
-                    reply_markup=await self.kb.menu_btn()
+                    MESSAGES['YOUR_PROMOCODE_IS_EXPIRED'],
+                    reply_markup=await self.kb.start_btn(courses_and_quizes)
                 )
+            else:
+
+                user = await self.db.get_user_by_tg_id(callback.message.chat.id)
+                if promocode:
+                    await show_main_menu(
+                        message=callback.message,
+                        state=state,
+                        self=self,
+                        promocode=promocode,
+                        user=user
+                    )
+
+                else:
+                    await callback.message.answer(
+                        MESSAGES['ERROR_PROMOCODE'],
+                        reply_markup=await self.kb.menu_btn()
+                    )
 
         @self.router.message(F.text == BUTTONS['HELP'])
         async def help_user(message: Message, state: FSMContext):
@@ -220,28 +239,34 @@ class TextHandler(Handler):
             await state.update_data(chat_id=message.chat.id)
 
             promocode = await self.db.get_promocode_by_tg_id(message.chat.id)
-            user = await self.db.get_user_by_tg_id(message.chat.id)
 
-            if promocode.is_test:
-                if is_valid_test_promo(user):
-                    await message.answer(
-                        MESSAGES['TEST_PROMO_MENU'],
-                        reply_markup=await self.test_promo_kb.test_promo_menu()
-                    )
-
-                else:
-                    await message.answer(
-                        MESSAGES['END_TEST_PERIOD'],
-                        reply_markup=await self.test_promo_kb.test_promo_menu()
-                    )
-                    await state.set_state(state=None)
-
-            else:
+            if promocode.end_at <= datetime.datetime.now():
                 courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode.id)
                 await message.answer(
-                    MESSAGES['ANY_TEXT'],
+                    MESSAGES['YOUR_PROMOCODE_IS_EXPIRED'],
                     reply_markup=await self.kb.start_btn(courses_and_quizes)
                 )
+            else:
 
+                user = await self.db.get_user_by_tg_id(message.chat.id)
 
+                if promocode.is_test:
+                    if is_valid_test_promo(user):
+                        await message.answer(
+                            MESSAGES['TEST_PROMO_MENU'],
+                            reply_markup=await self.test_promo_kb.test_promo_menu()
+                        )
 
+                    else:
+                        await message.answer(
+                            MESSAGES['END_TEST_PERIOD'],
+                            reply_markup=await self.test_promo_kb.test_promo_menu()
+                        )
+                        await state.set_state(state=None)
+
+                else:
+                    courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode.id)
+                    await message.answer(
+                        MESSAGES['ANY_TEXT'],
+                        reply_markup=await self.kb.start_btn(courses_and_quizes)
+                    )

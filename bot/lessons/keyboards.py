@@ -5,6 +5,7 @@ from loguru import logger
 from bot.lessons.models import Lessons
 from bot.lessons.service import LessonService
 from bot.users.models import Promocodes
+from bot.utils.answers import check_new_added_lessons
 from bot.utils.buttons import BUTTONS
 from bot.utils.messages import MESSAGES
 
@@ -55,21 +56,26 @@ class LessonKeyboard:
 
         builder = InlineKeyboardBuilder()
         lessons_from_db = await self.db.get_all_lesson(course_id, user_id)
+        lessons_by_course = await self.db.get_lessons_without_history(course_id)
         lessons_from_db = list(set(lessons_from_db))
-        lessons_from_db.sort(key=lambda elem: elem.get('order_num'))
-        if promocode.is_test:
-            lessons_from_db = await self.db.get_all_lesson(course_id, user_id, promocode.lesson_cnt)
-            lessons_from_db = list(set(lessons_from_db))
-            lessons_from_db.sort(key=lambda elem: elem.get('order_num'))
 
         if int(course_id) == 4:
             lessons_from_db = await self.db.get_all_lesson_for_soul()
-            lessons_from_db.sort(key=lambda elem: elem.get('order_num'))
 
         if promocode.type_id == 3:
             lessons_from_db = await self.db.get_all_lesson_by_owner(course_id)
             lessons_from_db = list(set(lessons_from_db))
-            lessons_from_db.sort(key=lambda elem: elem.get('order_num'))
+
+        if promocode.is_test:
+            lessons_from_db = await self.db.get_all_lesson(course_id, user_id, promocode.lesson_cnt)
+            lessons_from_db = list(set(lessons_from_db))
+
+        lessons_from_db = await check_new_added_lessons(
+            lessons_by_user=lessons_from_db,
+            lessons_by_course=lessons_by_course,
+            user_id=user_id
+        )
+        lessons_from_db.sort(key=lambda elem: elem.get('order_num'))
 
         if not lessons_from_db:
             # получаем первый урок, чтобы не отображать весь список уроков
@@ -106,7 +112,7 @@ class LessonKeyboard:
                 )
             else:
                 builder.button(
-                    text=lesson['title'],
+                    text=lesson['title'] + '🆕',
                     callback_data=f'lesson_{lesson["id"]}'
                 )
 

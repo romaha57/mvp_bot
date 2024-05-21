@@ -1,3 +1,4 @@
+import datetime
 import pprint
 import traceback
 
@@ -44,104 +45,113 @@ class CourseHandler(Handler):
             await state.update_data(chat_id=message.chat.id)
 
             promocode = await self.db.get_promocode_by_tg_id(message.chat.id)
-            courses_by_bot = await self.db.get_courses_by_bot(message.chat.id)
-            courses_by_promo = await self.db.get_courses_by_promo(message.chat.id)
-            all_courses = list(set(courses_by_bot + courses_by_promo))
-            all_courses.sort(key=lambda elem: elem.get('order_num'))
 
-            user = await self.db.get_user_by_tg_id(message.chat.id)
-
-            # ---------------------Логика для перехода сразу к списку уроков, если курс всего 1-----------------
-            if len(all_courses) == 1:
-                course = await self.db.get_course_by_name(all_courses[0].get('title'))
-                logger.debug(f"Пользователь {message.from_user.id} перешел на курс: {course}")
-                await state.update_data(course_id=course.id)
-                course_history = await self.db.get_or_create_history(
-                    user=user,
-                    course_id=course.id,
+            if promocode.end_at <= datetime.datetime.now():
+                courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode.id)
+                await message.answer(
+                    MESSAGES['YOUR_PROMOCODE_IS_EXPIRED'],
+                    reply_markup=await self.base_kb.start_btn(courses_and_quizes)
                 )
+            else:
 
-                if course_history.is_show_description:
-                    await show_course_intro_first_time(
-                        course=course,
-                        message=message,
-                        self=self,
-                        state=state,
-                        course_history=course_history,
-                        user_id=user.id,
-                        promocode=promocode
+                courses_by_bot = await self.db.get_courses_by_bot(message.chat.id)
+                courses_by_promo = await self.db.get_courses_by_promo(message.chat.id)
+                all_courses = list(set(courses_by_bot + courses_by_promo))
+                all_courses.sort(key=lambda elem: elem.get('order_num'))
+
+                user = await self.db.get_user_by_tg_id(message.chat.id)
+
+                # ---------------------Логика для перехода сразу к списку уроков, если курс всего 1-----------------
+                if len(all_courses) == 1:
+                    course = await self.db.get_course_by_name(all_courses[0].get('title'))
+                    logger.debug(f"Пользователь {message.from_user.id} перешел на курс: {course}")
+                    await state.update_data(course_id=course.id)
+                    course_history = await self.db.get_or_create_history(
+                        user=user,
+                        course_id=course.id,
                     )
 
-                    # устанавливаем отлов состояния на название урока
-                    await state.set_state(LessonChooseState.lesson)
-
-                    await message.answer(
-                        MESSAGES['GO_TO_MENU'],
-                        reply_markup=await self.base_kb.menu_btn()
-                    )
-                else:
-                    lesson = await self.lesson_db.get_last_passed_lesson(
-                        tg_id=message.from_user.id,
-                        course_id=course.id
-                    )
-                    await state.update_data(lesson=lesson)
-                    if isinstance(lesson, Lessons):
-                        await state.update_data(lesson_id=lesson.id)
-
-                    if lesson == 'all_lesson_done':
-
-                        msg = await message.answer(
-                            course.outro,
-                            reply_markup=await self.lesson_kb.lessons_btn(course.id, user.id, promocode)
+                    if course_history.is_show_description:
+                        await show_course_intro_first_time(
+                            course=course,
+                            message=message,
+                            self=self,
+                            state=state,
+                            course_history=course_history,
+                            user_id=user.id,
+                            promocode=promocode
                         )
 
                         # устанавливаем отлов состояния на название урока
                         await state.set_state(LessonChooseState.lesson)
-                        await state.update_data(msg=msg.message_id)
-
-                        menu_msg = await message.answer(
-                            MESSAGES['GO_TO_MENU'],
-                            reply_markup=await self.base_kb.menu_btn(course.certificate_img)
-                        )
-
-                        await state.update_data(menu_msg=menu_msg.message_id)
-
-                    else:
-                        # создаем запись истории прохождения урока
-                        await self.lesson_db.create_history(
-                            lesson_id=lesson.id,
-                            user_id=user.id,
-                            course_history_id=course_history.id
-                        )
-
-                        await show_lesson_info(
-                            self=self,
-                            lesson=lesson,
-                            state=state,
-                            message=message,
-                            user_id=user.id
-                        )
 
                         await message.answer(
                             MESSAGES['GO_TO_MENU'],
                             reply_markup=await self.base_kb.menu_btn()
                         )
+                    else:
+                        lesson = await self.lesson_db.get_last_passed_lesson(
+                            tg_id=message.from_user.id,
+                            course_id=course.id
+                        )
+                        await state.update_data(lesson=lesson)
+                        if isinstance(lesson, Lessons):
+                            await state.update_data(lesson_id=lesson.id)
 
-            # -------------------------Логика если курсов больше 1----------------------------------
+                        if lesson == 'all_lesson_done':
 
-            else:
-                msg = await message.answer(
-                    MESSAGES['CHOOSE_COURSE'],
-                    reply_markup=await self.kb.courses_btn(all_courses)
-                )
+                            msg = await message.answer(
+                                course.outro,
+                                reply_markup=await self.lesson_kb.lessons_btn(course.id, user.id, promocode)
+                            )
 
-                await state.update_data(msg=msg.message_id)
-                await state.set_state(CourseChooseState.course)
+                            # устанавливаем отлов состояния на название урока
+                            await state.set_state(LessonChooseState.lesson)
+                            await state.update_data(msg=msg.message_id)
 
-                await message.answer(
-                    MESSAGES['GO_TO_MENU'],
-                    reply_markup=await self.base_kb.menu_btn()
-                )
+                            menu_msg = await message.answer(
+                                MESSAGES['GO_TO_MENU'],
+                                reply_markup=await self.base_kb.menu_btn(course.certificate_img)
+                            )
+
+                            await state.update_data(menu_msg=menu_msg.message_id)
+
+                        else:
+                            # создаем запись истории прохождения урока
+                            await self.lesson_db.create_history(
+                                lesson_id=lesson.id,
+                                user_id=user.id,
+                                course_history_id=course_history.id
+                            )
+
+                            await show_lesson_info(
+                                self=self,
+                                lesson=lesson,
+                                state=state,
+                                message=message,
+                                user_id=user.id
+                            )
+
+                            await message.answer(
+                                MESSAGES['GO_TO_MENU'],
+                                reply_markup=await self.base_kb.menu_btn()
+                            )
+
+                # -------------------------Логика если курсов больше 1----------------------------------
+
+                else:
+                    msg = await message.answer(
+                        MESSAGES['CHOOSE_COURSE'],
+                        reply_markup=await self.kb.courses_btn(all_courses)
+                    )
+
+                    await state.update_data(msg=msg.message_id)
+                    await state.set_state(CourseChooseState.course)
+
+                    await message.answer(
+                        MESSAGES['GO_TO_MENU'],
+                        reply_markup=await self.base_kb.menu_btn()
+                    )
 
         @self.router.callback_query(CourseChooseState.course)
         async def get_lesson(callback: CallbackQuery, state: FSMContext):
@@ -155,59 +165,67 @@ class CourseHandler(Handler):
             course = await self.db.get_course_by_id(course_id)
             promocode = await self.db.get_promocode_by_tg_id(callback.message.chat.id)
 
-            await delete_messages(
-                src=callback.message,
-                data=data,
-                state=state
-            )
-
-            if course:
-                course_history = await self.db.get_or_create_history(
-                    course_id=course.id,
-                    user=user
+            if promocode.end_at <= datetime.datetime.now():
+                courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode.id)
+                await callback.message.answer(
+                    MESSAGES['YOUR_PROMOCODE_IS_EXPIRED'],
+                    reply_markup=await self.base_kb.start_btn(courses_and_quizes)
                 )
-                if course_history.is_show_description:
-                    await show_course_intro_first_time(
-                        course=course,
-                        message=callback.message,
-                        self=self,
-                        state=state,
-                        course_history=course_history,
-                        user_id=user.id,
-                        promocode=promocode
+            else:
+
+                await delete_messages(
+                    src=callback.message,
+                    data=data,
+                    state=state
+                )
+
+                if course:
+                    course_history = await self.db.get_or_create_history(
+                        course_id=course.id,
+                        user=user
+                    )
+                    if course_history.is_show_description:
+                        await show_course_intro_first_time(
+                            course=course,
+                            message=callback.message,
+                            self=self,
+                            state=state,
+                            course_history=course_history,
+                            user_id=user.id,
+                            promocode=promocode
+                        )
+
+                        # устанавливаем отлов состояния на название урока
+                        await state.set_state(LessonChooseState.lesson)
+
+                    else:
+                        msg = await callback.message.answer(
+                            MESSAGES['LESSONS_LIST'].format(
+                                course.title
+                            ),
+                            reply_markup=await self.lesson_kb.lessons_btn(course.id, user.id, promocode)
+                        )
+                        await state.update_data(msg=msg.message_id)
+
+                    certificate = None
+                    if promocode.type_id == 3:
+                        certificate = course.certificate_img
+
+                    await callback.message.answer(
+                        MESSAGES['GO_TO_MENU'],
+                        reply_markup=await self.base_kb.menu_btn(certificate)
                     )
 
                     # устанавливаем отлов состояния на название урока
                     await state.set_state(LessonChooseState.lesson)
 
                 else:
-                    msg = await callback.message.answer(
-                        MESSAGES['LESSONS_LIST'].format(
-                            course.title
-                        ),
-                        reply_markup=await self.lesson_kb.lessons_btn(course.id, user.id, promocode)
+                    promocode = await self.db.get_promocode_by_tg_id(callback.message.chat.id)
+                    courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode.id)
+                    await callback.message.answer(
+                        MESSAGES['MENU'],
+                        reply_markup=await self.base_kb.start_btn(courses_and_quizes)
                     )
-                    await state.update_data(msg=msg.message_id)
-
-                certificate = None
-                if promocode.type_id == 3:
-                    certificate = course.certificate_img
-
-                await callback.message.answer(
-                    MESSAGES['GO_TO_MENU'],
-                    reply_markup=await self.base_kb.menu_btn(certificate)
-                )
-
-                # устанавливаем отлов состояния на название урока
-                await state.set_state(LessonChooseState.lesson)
-
-            else:
-                promocode = await self.db.get_promocode_by_tg_id(callback.message.chat.id)
-                courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode.id)
-                await callback.message.answer(
-                    MESSAGES['MENU'],
-                    reply_markup=await self.base_kb.start_btn(courses_and_quizes)
-                )
 
         @self.router.message(F.text == BUTTONS['GET_CERTIFICATE'])
         async def get_certificate(message: Message, state: FSMContext):

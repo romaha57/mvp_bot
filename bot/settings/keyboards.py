@@ -120,3 +120,15 @@ class BaseKeyboard:
             resize_keyboard=True,
             one_time_keyboard=True
         )
+
+    async def politics_btn(self) -> InlineKeyboardMarkup:
+        builder = InlineKeyboardBuilder()
+        builder.button(
+            text='Продолжить ✅',
+            callback_data=f'accept_politics'
+        )
+
+        return builder.as_markup(
+            resize_keyboard=True,
+            one_time_keyboard=True
+        )

@@ -1,3 +1,5 @@
+import datetime
+
 from sqlalchemy import func, insert, select, update
 from sqlalchemy.sql.functions import count
 
@@ -164,7 +166,8 @@ class UserService(BaseService, metaclass=Singleton):
                     name=name,
                     code=code,
                     is_test=True,
-                    account_id=account_id
+                    account_id=account_id,
+                    end_at=datetime.datetime.now() + datetime.timedelta(days=3000)
                 )
                 await session.execute(query)
                 await session.commit()
@@ -251,6 +254,17 @@ class UserService(BaseService, metaclass=Singleton):
             query = insert(Reports).values(
                 tg_id=tg_id,
                 text=text
+            )
+
+            await session.execute(query)
+            await session.commit()
+
+    @classmethod
+    async def accept_politics(cls, tg_id: int):
+
+        async with async_session() as session:
+            query = update(Users).where(Users.external_id == tg_id).values(
+                accept_politics=True
             )
 
             await session.execute(query)

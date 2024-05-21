@@ -1,3 +1,4 @@
+import datetime
 import hashlib
 import traceback
 import uuid
@@ -16,9 +17,11 @@ from bot.quiz.keyboads import QuizKeyboard
 from bot.quiz.service import QuizService
 from bot.quiz.states import QuizState
 from bot.settings.keyboards import BaseKeyboard
+from bot.test_promocode.keyboards import TestPromoKeyboard
+from bot.test_promocode.utils import is_valid_test_promo
 from bot.users.keyboards import UserKeyboard
 from bot.users.service import UserService
-from bot.users.states import GeneratePromocodeState, UserReport
+from bot.users.states import GeneratePromocodeState, UserReport, Politics
 from bot.utils.answers import (format_created_promocodes_text,
                                generate_promocode)
 from bot.utils.buttons import BUTTONS
@@ -38,6 +41,7 @@ class UserHandler(Handler):
         self.base_kb = BaseKeyboard()
         self.quiz_kb = QuizKeyboard()
         self.course_kb = CourseKeyboard()
+        self.test_promo_kb = TestPromoKeyboard()
 
     def handle(self):
         @self.router.message(F.text == BUTTONS['REFERAL'])
@@ -59,25 +63,33 @@ class UserHandler(Handler):
 
             count_users = await self.db.get_connected_users(account.id)
             promocode = await self.db.get_promocode_by_tg_id(message.chat.id)
-            courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode.id)
+            if promocode.end_at <= datetime.datetime.now():
+                courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode.id)
+                await message.answer(
+                    MESSAGES['YOUR_PROMOCODE_IS_EXPIRED'],
+                    reply_markup=await self.base_kb.start_btn(courses_and_quizes)
+                )
+            else:
 
-            await message.bot.send_document(
-                chat_id=data.get('chat_id'),
-                document=qrcode
-            )
+                courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode.id)
 
-            await message.answer(
-                MESSAGES['START_REFERAL'].format(
-                    referal_link,
-                    count_users
-                ),
-                reply_markup=await self.base_kb.start_btn(courses_and_quizes)
-            )
-            await self.db.create_promocode(
-                name=f'{account.first_name} {account.last_name}/ {account.email}',
-                code=referal_code,
-                account_id=account.id
-            )
+                await message.bot.send_document(
+                    chat_id=data.get('chat_id'),
+                    document=qrcode
+                )
+
+                await message.answer(
+                    MESSAGES['START_REFERAL'].format(
+                        referal_link,
+                        count_users
+                    ),
+                    reply_markup=await self.base_kb.start_btn(courses_and_quizes)
+                )
+                await self.db.create_promocode(
+                    name=f'{account.first_name} {account.last_name}/ {account.email}',
+                    code=referal_code,
+                    account_id=account.id,
+                )
 
         @self.router.message(F.text == BUTTONS['BALANCE'])
         async def get_balance(message: Message, state: FSMContext):
@@ -148,3 +160,43 @@ class UserHandler(Handler):
                 MESSAGES['GO_TO_MENU'],
                 reply_markup=await self.base_kb.menu_btn()
             )
+
+        @self.router.message(Politics.accept)
+        async def empty_answer(message: Message):
+            pass
+
+        @self.router.callback_query(F.data.startswith('accept_politics'), Politics.accept)
+        async def accept_politics(callback: CallbackQuery, state: FSMContext):
+
+            await state.update_data(chat_id=callback.message.chat.id)
+            data = await state.get_data()
+            await delete_messages(
+                src=callback.message,
+                data=data,
+                state=state
+            )
+
+            promocode = await self.db.get_promocode_by_tg_id(callback.message.chat.id)
+            user = await self.db.get_user_by_tg_id(callback.message.chat.id)
+            await self.db.accept_politics(callback.message.chat.id)
+
+            if promocode.is_test:
+                if is_valid_test_promo(user):
+                    await callback.message.answer(
+                        MESSAGES['TEST_PROMO_MENU'],
+                        reply_markup=await self.test_promo_kb.test_promo_menu()
+                    )
+
+                else:
+                    await callback.message.answer(
+                        MESSAGES['END_TEST_PERIOD'],
+                        reply_markup=await self.test_promo_kb.test_promo_menu()
+                    )
+                    await state.set_state(state=None)
+
+            else:
+                courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode.id)
+                await callback.message.answer(
+                    MESSAGES['MENU'],
+                    reply_markup=await self.base_kb.start_btn(courses_and_quizes)
+                )

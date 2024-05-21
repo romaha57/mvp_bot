@@ -34,6 +34,7 @@ async def delete_messages(data: dict, state: FSMContext, src: Union[Message, Bot
                 message_id=data.get('msg'),
             )
             await state.update_data(msg=None)
+
     if data.get('msg1'):
         await src.delete_message(
             chat_id=data.get('chat_id'),

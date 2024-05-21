@@ -1,3 +1,4 @@
+import datetime
 import json
 import traceback
 from typing import Union
@@ -48,56 +49,60 @@ class LessonHandler(Handler):
             await state.update_data(chat_id=callback.message.chat.id)
             data = await state.get_data()
 
-            lesson_id = callback.data.split('_')[1]
-            lesson = await self.db.get_lesson_by_id(lesson_id)
-
-            user = await self.db.get_user_by_tg_id(callback.message.chat.id)
-            logger.debug(f'Пользователь: {callback.message.chat.id} выбрал lesson: id-{lesson.id}/{lesson.title}')
-
-            course_history = await self.course_db.get_or_create_history(
-                course_id=lesson.course_id,
-                user=user
-            )
-
-            await delete_messages(
-                src=callback.message,
-                data=data,
-                state=state
-            )
-
-            if lesson:
-                await self.db.create_history(
-                    lesson_id=lesson.id,
-                    user_id=user.id,
-                    course_history_id=course_history.id
-                )
-
-                await send_image(
-                    lesson=lesson,
-                    message=callback.message
-                )
-
-                await show_lesson_info(
-                    message=callback.message,
-                    state=state,
-                    self=self,
-                    lesson=lesson,
-                    user_id=user.id
-                )
-
-            else:
-                promocode = await self.db.get_promocode_by_tg_id(callback.message.chat.id)
+            promocode = await self.db.get_promocode_by_tg_id(callback.message.chat.id)
+            if promocode.end_at <= datetime.datetime.now():
                 courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode.id)
                 await callback.message.answer(
-                    MESSAGES['NOT_FOUND_LESSON'],
+                    MESSAGES['YOUR_PROMOCODE_IS_EXPIRED'],
                     reply_markup=await self.base_kb.start_btn(courses_and_quizes)
                 )
+            else:
 
-            # состояние на прохождение теста после урока
-            await state.set_state(LessonChooseState.start_task)
+                lesson_id = callback.data.split('_')[1]
+                lesson = await self.db.get_lesson_by_id(lesson_id)
 
-            await state.update_data(lesson=lesson)
-            await state.update_data(lesson_id=lesson.id)
+                user = await self.db.get_user_by_tg_id(callback.message.chat.id)
+                logger.debug(f'Пользователь: {callback.message.chat.id} выбрал lesson: id-{lesson.id}/{lesson.title}')
+
+                course_history = await self.course_db.get_or_create_history(
+                    course_id=lesson.course_id,
+                    user=user
+                )
+
+                await delete_messages(
+                    src=callback.message,
+                    data=data,
+                    state=state
+                )
+
+                if lesson:
+                    await self.db.create_history(
+                        lesson_id=lesson.id,
+                        user_id=user.id,
+                        course_history_id=course_history.id
+                    )
+
+                    await show_lesson_info(
+                        message=callback.message,
+                        state=state,
+                        self=self,
+                        lesson=lesson,
+                        user_id=user.id
+                    )
+
+                else:
+                    promocode = await self.db.get_promocode_by_tg_id(callback.message.chat.id)
+                    courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode.id)
+                    await callback.message.answer(
+                        MESSAGES['NOT_FOUND_LESSON'],
+                        reply_markup=await self.base_kb.start_btn(courses_and_quizes)
+                    )
+
+                # состояние на прохождение теста после урока
+                await state.set_state(LessonChooseState.start_task)
+
+                await state.update_data(lesson=lesson)
+                await state.update_data(lesson_id=lesson.id)
 
         @self.router.callback_query(F.data.startswith('back'))
         async def back_to_lesson_list(callback: CallbackQuery, state: FSMContext):
@@ -114,22 +119,26 @@ class LessonHandler(Handler):
 
             user = await self.db.get_user_by_tg_id(callback.message.chat.id)
             promocode = await self.db.get_promocode_by_tg_id(callback.message.chat.id)
-            # получаем id курса для отображения кнопок с уроками курса
-            course_id = callback.data.split('_')[-1]
-            msg = await callback.message.answer(
-                MESSAGES['CHOOSE_LESSONS'],
-                reply_markup=await self.kb.lessons_btn(course_id, user.id, promocode))
+            if promocode.end_at <= datetime.datetime.now():
+                courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode.id)
+                await callback.message.answer(
+                    MESSAGES['YOUR_PROMOCODE_IS_EXPIRED'],
+                    reply_markup=await self.base_kb.start_btn(courses_and_quizes)
+                )
+            else:
 
-            await callback.message.answer(
-                MESSAGES['GO_TO_MENU'],
-                reply_markup=await self.base_kb.menu_btn()
-            )
+                course_id = callback.data.split('_')[-1]
+                msg = await callback.message.answer(
+                    MESSAGES['CHOOSE_LESSONS'],
+                    reply_markup=await self.kb.lessons_btn(course_id, user.id, promocode))
 
-            # состояние на отлов выбора урока
-            await state.set_state(LessonChooseState.lesson)
+                await callback.message.answer(
+                    MESSAGES['GO_TO_MENU'],
+                    reply_markup=await self.base_kb.menu_btn()
+                )
 
-            # сохраняем id сообщения для последующего удаления
-            await state.update_data(msg=msg.message_id)
+                await state.set_state(LessonChooseState.lesson)
+                await state.update_data(msg=msg.message_id)
 
         @self.router.callback_query(F.data.startswith('start_task'))
         async def start_task_after_lesson(callback: CallbackQuery, state: FSMContext):
@@ -148,7 +157,8 @@ class LessonHandler(Handler):
             # отправка доп. изображений к уроку
             await send_image(
                 lesson=lesson,
-                message=callback.message
+                message=callback.message,
+                place='before_work'
             )
 
             # получаем тип задания к уроку
@@ -443,7 +453,8 @@ class LessonHandler(Handler):
 
             await send_image(
                 lesson=lesson,
-                message=src
+                message=src,
+                place='after_work'
             )
 
             if additional_task:
