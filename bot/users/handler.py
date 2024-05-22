@@ -53,7 +53,10 @@ class UserHandler(Handler):
             account = await self.db.get_account_by_tg_id(message.chat.id)
             account_id = str(account.id).encode()
             referal_code = hashlib.md5(account_id).hexdigest()[:7]
-            referal_link = f't.me/Realogika_bot?start={referal_code}'
+            # referal_link = f't.me/Realogika_bot?start={referal_code}'
+
+            referal_link = f't.me/TestWorkRuBot?start={referal_code}'
+
 
             qr_path = f'/app/static/qr/qr_{referal_code}.png'
             qr_code = segno.make(referal_link, micro=False)

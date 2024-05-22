@@ -170,12 +170,13 @@ async def show_lesson_info(message: Message, state: FSMContext, lesson: Lessons,
                 reply_markup=await self.kb.lesson_menu_btn(lesson, self.emoji_list)
             )
 
-        except TelegramBadRequest:
+        except TelegramBadRequest as e:
             msg = await message.answer(
                 MESSAGES['VIDEO_ERROR'],
                 reply_markup=await self.kb.lesson_menu_btn(lesson)
             )
             self.emoji_list = None
+            logger.warning(f'Не удалось отправить видео: {e}')
 
         await state.update_data(msg_edit=msg.message_id)
 
