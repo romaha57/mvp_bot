@@ -179,4 +179,3 @@ class CommandHandler(Handler):
 
             user_id = str(message.from_user.id)
             await message.answer(f'Ваш id - <b>{user_id}</b>')
-
