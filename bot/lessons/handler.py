@@ -514,10 +514,16 @@ class LessonHandler(Handler):
                         await src.answer_video(
                             video=course.outro_video
                         )
-                except TelegramBadRequest:
-                    await src.answer(
-                        MESSAGES['VIDEO_ERROR']
-                    )
+                except TelegramBadRequest as e:
+                    if 'VOICE_MESSAGES_FORBIDDEN' in e.message:
+                        await src.answer(
+                            MESSAGES['VIDEO_ERROR_FORBIDDEN']
+                        )
+                    else:
+                        await src.answer(
+                            MESSAGES['VIDEO_ERROR']
+                        )
+                        logger.warning(f'Не удалось отправить видео {src.chat.id} -- {e.message}')
 
                 if course.certificate_img:
                     await src.answer(

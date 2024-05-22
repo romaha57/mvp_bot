@@ -3,6 +3,7 @@ import traceback
 
 import pytz
 from aiogram import Bot, Router
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
@@ -38,6 +39,7 @@ class CommandHandler(Handler):
 
             promocode_in_msg = message.text.split()[1:]
             logger.debug(f"Пользователь {message.chat.id} ввел промокод {promocode_in_msg}")
+
             if promocode_in_msg:
                 promocode = await self.db.check_promocode(promocode_in_msg[0])
                 if promocode and promocode.actual:

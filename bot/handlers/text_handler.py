@@ -38,6 +38,7 @@ class TextHandler(Handler):
             """При отправке медиа файла пользователю возвращается тип документа и его file_id"""
 
             file_id, file_type_id, label = await get_file_id_by_content_type(message)
+            print(file_id)
             await self.db.save_file_id(
                 label=label,
                 file_id=file_id,

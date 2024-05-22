@@ -201,10 +201,16 @@ async def show_course_intro_first_time(course: Course, message: Message, state: 
             await message.answer_video(
                 video=course.intro_video
             )
-        except TelegramBadRequest:
-            await message.answer(
-                MESSAGES['VIDEO_ERROR']
-            )
+        except TelegramBadRequest as e:
+            if 'VOICE_MESSAGES_FORBIDDEN' in e.message:
+                await message.answer(
+                    MESSAGES['VIDEO_ERROR_FORBIDDEN']
+                )
+            else:
+                await message.answer(
+                    MESSAGES['VIDEO_ERROR']
+                )
+                logger.warning(f'Не удалось отправить видео {message.chat.id} -- {e.message}')
 
     await message.answer(course.title)
     msg = await message.answer(
