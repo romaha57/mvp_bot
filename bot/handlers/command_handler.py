@@ -80,7 +80,13 @@ class CommandHandler(Handler):
                         logger.debug(f"Пользователь {message.from_user.id} активировал промокод {promocode.code}")
 
                         promocode_from_db = await self.db.get_promocode(user.promocode_id)
-                        if promocode.is_test and user.promocode_id:
+
+                        if promocode_from_db.type_id == 3:
+                            await message.answer(
+                                MESSAGES['START_PROMOCODE_OWNER'],
+                                reply_markup=await self.kb.start_btn(promocode_from_db))
+
+                        elif promocode.is_test and user.promocode_id:
                             courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode_from_db.id)
                             await message.answer(
                                 MESSAGES['MENU'],
