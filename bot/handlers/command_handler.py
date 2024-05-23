@@ -81,6 +81,11 @@ class CommandHandler(Handler):
 
                         promocode_from_db = await self.db.get_promocode(user.promocode_id)
 
+                        if promocode.type_id == 3:
+                            await message.answer(
+                                MESSAGES['START_PROMOCODE_OWNER'],
+                                reply_markup=await self.kb.start_btn(promocode))
+
                         if promocode_from_db.type_id == 3:
                             await message.answer(
                                 MESSAGES['START_PROMOCODE_OWNER'],
@@ -91,11 +96,6 @@ class CommandHandler(Handler):
                             await message.answer(
                                 MESSAGES['MENU'],
                                 reply_markup=await self.kb.start_btn(courses_and_quizes))
-
-                        elif promocode_from_db.type_id == 3:
-                            await message.answer(
-                                MESSAGES['START_PROMOCODE_OWNER'],
-                                reply_markup=await self.kb.start_btn(promocode_from_db))
 
                         else:
                             await self.db.add_promocode_to_user(
