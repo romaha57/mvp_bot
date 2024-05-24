@@ -37,8 +37,8 @@ class TextHandler(Handler):
         async def any_media(message: Message):
             """При отправке медиа файла пользователю возвращается тип документа и его file_id"""
 
+            pprint.pprint(message)
             file_id, file_type_id, label = await get_file_id_by_content_type(message)
-            print(file_id)
             await self.db.save_file_id(
                 label=label,
                 file_id=file_id,

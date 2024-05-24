@@ -72,8 +72,18 @@ class UserHandler(Handler):
                     reply_markup=await self.base_kb.start_btn(courses_and_quizes)
                 )
             else:
+                await self.db.create_promocode(
+                    name=f'{account.first_name} {account.last_name}/ {account.email}',
+                    code=referal_code,
+                    account_id=account.id,
+                )
 
-                courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode.id)
+                if promocode.type_id == 3:
+                    kb = await self.base_kb.start_btn(promocode)
+
+                else:
+                    courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode.id)
+                    kb = await self.base_kb.start_btn(courses_and_quizes)
 
                 await message.bot.send_document(
                     chat_id=data.get('chat_id'),
@@ -85,13 +95,9 @@ class UserHandler(Handler):
                         referal_link,
                         count_users
                     ),
-                    reply_markup=await self.base_kb.start_btn(courses_and_quizes)
+                    reply_markup=kb
                 )
-                await self.db.create_promocode(
-                    name=f'{account.first_name} {account.last_name}/ {account.email}',
-                    code=referal_code,
-                    account_id=account.id,
-                )
+
 
         @self.router.message(F.text == BUTTONS['BALANCE'])
         async def get_balance(message: Message, state: FSMContext):
