@@ -66,3 +66,13 @@ class SettingsService(BaseService):
 
             return result.mappings().all()
 
+
+    @classmethod
+    async def delete_all_from_course_bot(cls):
+        async with async_session() as session:
+            query = text("""
+                TRUNCATE TABLE $_course_bots;
+            """)
+            await session.execute(query)
+            await session.commit()
+

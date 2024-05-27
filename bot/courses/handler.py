@@ -144,6 +144,7 @@ class CourseHandler(Handler):
                         MESSAGES['CHOOSE_COURSE'],
                         reply_markup=await self.kb.courses_btn(all_courses)
                     )
+                    logger.debug(f"Пользователь {message.from_user.id} получил на курсы: {all_courses}")
 
                     await state.update_data(msg=msg.message_id)
                     await state.set_state(CourseChooseState.course)
