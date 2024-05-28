@@ -37,7 +37,7 @@ class CourseService(BaseService, metaclass=Singleton):
             query = select(Course.id, Course.title, Course.order_num).\
                 join(PromocodeCourses, PromocodeCourses.course_id== Course.id).\
                 join(Users, Users.promocode_id == PromocodeCourses.promocode_id).\
-                where(Users.external_id == tg_id, Course.is_public == True)
+                where(Users.external_id == tg_id)
             result = await session.execute(query)
 
             return result.mappings().all()
