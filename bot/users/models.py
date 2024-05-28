@@ -37,7 +37,6 @@ class Users(Base):
     test_lesson_history = relationship('TestLessonHistory', back_populates='user')
     promocode = relationship('Promocodes', back_populates='user')
     lesson_additional_history_task = relationship('LessonAdditionalTaskHistory', back_populates='user')
-    rating = relationship('RatingLesson', back_populates='user')
 
     def __str__(self):
         return f'{self.username} - {self.external_id}'
@@ -152,24 +151,6 @@ class BonusRewardsTypes(Base):
 
     def __str__(self):
         return f'{self.name}'
-
-
-class RatingLesson(Base):
-    __tablename__ = '$_rating_lesson'
-    __tableargs__ = {
-        'comment': 'Оценки пользователей к уроку'
-    }
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    lesson_id = Column(Integer, ForeignKey('$_lessons.id'))
-    user_id = Column(Integer, ForeignKey('$_users.id'))
-    rating = Column(Text)
-
-    lesson = relationship('Lessons', back_populates='rating')
-    user = relationship('Users', back_populates='rating')
-
-    def __str__(self):
-        return f'{self.rating}'
 
 
 class PromocodeCourses(Base):

@@ -265,6 +265,11 @@ class TextHandler(Handler):
                         )
                         await state.set_state(state=None)
 
+                elif promocode.type_id == 3:
+                    await message.answer(
+                        MESSAGES['START_PROMOCODE_OWNER'],
+                        reply_markup=await self.kb.start_btn(promocode))
+
                 else:
                     courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode.id)
                     await message.answer(

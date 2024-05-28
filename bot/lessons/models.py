@@ -35,7 +35,6 @@ class Lessons(Base):
     test_lesson_history = relationship('TestLessonHistory', back_populates='lesson')
     additional_task = relationship('LessonAdditionalTasks', back_populates='lesson')
     video_type = relationship('VideoTypes', back_populates='lesson')
-    rating = relationship('RatingLesson', back_populates='lesson')
 
     def __str__(self):
         return f'{self.title}'

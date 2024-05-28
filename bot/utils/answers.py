@@ -325,3 +325,21 @@ async def check_new_added_lessons(lessons_by_user: list[dict], lessons_by_course
         )
 
     return lessons_by_user
+
+
+async def catch_menu_btn_in_answers(self: 'LessonHandler', message: Message, state: FSMContext, tg_id: int):
+    promocode = await self.db.get_promocode_by_tg_id(tg_id)
+
+    await state.set_state(state=None)
+
+    if promocode.type_id == 3:
+        await message.answer(
+            MESSAGES['MENU'],
+            reply_markup=await self.kb.start_btn(promocode))
+
+    else:
+        courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode.id)
+        await message.answer(
+            MESSAGES['MENU'],
+            reply_markup=await self.kb.start_btn(courses_and_quizes)
+        )

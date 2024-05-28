@@ -20,7 +20,7 @@ from bot.test_promocode.keyboards import TestPromoKeyboard
 from bot.test_promocode.utils import is_valid_test_promo
 from bot.users.service import UserService
 from bot.utils.answers import (format_answers_text, get_images_by_place,
-                               send_user_answers_to_group, show_lesson_info, send_image)
+                               send_user_answers_to_group, show_lesson_info, send_image, catch_menu_btn_in_answers)
 from bot.utils.buttons import BUTTONS
 from bot.utils.certificate import build_certificate
 from bot.utils.delete_messages import delete_messages
@@ -587,9 +587,13 @@ class LessonHandler(Handler):
                     await state.set_state(state=None)
 
             else:
-                await message.answer(
-                    MESSAGES['INCORRECT_FULLNAME']
+                await catch_menu_btn_in_answers(
+                    self=self,
+                    state=state,
+                    message=message,
+                    tg_id=message.chat.id
                 )
+
 
         async def start_text_task_after_lesson(message: Message, state: FSMContext):
 
@@ -617,7 +621,7 @@ class LessonHandler(Handler):
                 lesson_id=lesson.id
             )
 
-            if message.content_type == ContentType.TEXT:
+            if message.content_type == ContentType.TEXT and message.text != BUTTONS['MENU']:
                 await state.set_state(state=None)
                 await self.db.save_user_answer(
                     answer=message.text,
@@ -633,6 +637,14 @@ class LessonHandler(Handler):
                     name=message.from_user.full_name,
                     lesson_name=lesson.title,
                     homework=lesson.work_description
+                )
+
+            elif message.text == BUTTONS['MENU']:
+                await catch_menu_btn_in_answers(
+                    self=self,
+                    state=state,
+                    message=message,
+                    tg_id=message.chat.id
                 )
 
             else:
@@ -682,6 +694,14 @@ class LessonHandler(Handler):
                     homework=lesson.work_description
                 )
 
+            elif message.text == BUTTONS['MENU']:
+                await catch_menu_btn_in_answers(
+                    self=self,
+                    state=state,
+                    message=message,
+                    tg_id=message.chat.id
+                )
+
             else:
                 await message.answer(MESSAGES['PLEASE_WRITE_CORRECT_ANSWER'])
 
@@ -727,6 +747,14 @@ class LessonHandler(Handler):
                     name=message.from_user.full_name,
                     lesson_name=lesson.title,
                     homework=lesson.work_description
+                )
+
+            elif message.text == BUTTONS['MENU']:
+                await catch_menu_btn_in_answers(
+                    self=self,
+                    state=state,
+                    message=message,
+                    tg_id=message.chat.id
                 )
 
             else:
@@ -776,6 +804,14 @@ class LessonHandler(Handler):
                     homework=lesson.work_description
                 )
 
+            elif message.text == BUTTONS['MENU']:
+                await catch_menu_btn_in_answers(
+                    self=self,
+                    state=state,
+                    message=message,
+                    tg_id=message.chat.id
+                )
+
             else:
                 await message.answer(MESSAGES['PLEASE_WRITE_CORRECT_ANSWER'])
 
@@ -822,6 +858,14 @@ class LessonHandler(Handler):
                     name=message.from_user.full_name,
                     lesson_name=lesson.title,
                     homework=lesson.work_description
+                )
+
+            elif message.text == BUTTONS['MENU']:
+                await catch_menu_btn_in_answers(
+                    self=self,
+                    state=state,
+                    message=message,
+                    tg_id=message.chat.id
                 )
 
             else:
