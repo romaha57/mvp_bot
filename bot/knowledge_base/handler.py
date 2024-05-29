@@ -74,7 +74,7 @@ class KnowledgeHandler(Handler):
             data = await state.get_data()
 
             promocode = await self.db.get_promocode_by_tg_id(callback.message.chat.id)
-            if promocode.end_at >= datetime.datetime.now():
+            if promocode.end_at <= datetime.datetime.now():
                 courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode.id)
                 await callback.message.answer(
                     MESSAGES['YOUR_PROMOCODE_IS_EXPIRED'],
