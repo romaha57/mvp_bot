@@ -22,6 +22,7 @@ class Course(Base):
     certificate_img = Column(Text)
     intro_video = Column(Text)
     outro_video = Column(Text)
+    show_all_lessons = Column(Boolean)
     intro_video_type_id = Column(Integer, ForeignKey('$_video_types.id'))
     outro_video_type_id = Column(Integer, ForeignKey('$_video_types.id'))
     created_at = Column(DateTime, server_default=func.now())

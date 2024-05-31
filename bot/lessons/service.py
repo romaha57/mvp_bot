@@ -38,14 +38,15 @@ class LessonService(BaseService, metaclass=Singleton):
             result = await session.execute(query)
             return result.mappings().all()
 
+
     @classmethod
-    async def get_all_lesson_for_soul(cls):
+    async def get_all_lesson_for_special_course(cls, course_id: str):
         async with async_session() as session:
-            query = text("""
-                SELECT $_lessons.id, $_lessons.title, 9 as status_id, 9 as user_id, $_lessons.order_num
-                FROM $_lessons
-                WHERE course_id = 4
-            """)
+            query = text(f"""
+                  SELECT $_lessons.id, $_lessons.title, 9 as status_id, 9 as user_id, $_lessons.order_num
+                  FROM $_lessons
+                  WHERE course_id = {course_id}
+              """)
 
             result = await session.execute(query)
             return result.mappings().all()

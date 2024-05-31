@@ -2,6 +2,7 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from loguru import logger
 
+from bot.courses.service import CourseService
 from bot.lessons.models import Lessons
 from bot.lessons.service import LessonService
 from bot.users.models import Promocodes
@@ -13,6 +14,7 @@ from bot.utils.messages import MESSAGES
 class LessonKeyboard:
     def __init__(self):
         self.db = LessonService()
+        self.course_db = CourseService()
 
     async def lesson_menu_btn(self, lesson: Lessons, emoji_list: list = None) -> InlineKeyboardMarkup:
         """Кнопки меню для урока"""
@@ -59,8 +61,9 @@ class LessonKeyboard:
         lessons_by_course = await self.db.get_lessons_without_history(course_id)
         lessons_from_db = list(set(lessons_from_db))
 
-        if int(course_id) == 4:
-            lessons_from_db = await self.db.get_all_lesson_for_soul()
+        course = await self.course_db.get_course_by_id(course_id)
+        if course.show_all_lessons:
+            lessons_from_db = await self.db.get_all_lesson_for_special_course(course_id)
 
         if promocode.type_id == 3:
             lessons_from_db = await self.db.get_all_lesson_by_owner(course_id)
