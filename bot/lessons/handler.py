@@ -58,8 +58,11 @@ class LessonHandler(Handler):
                 )
             else:
 
-                lesson_id = callback.data.split('_')[1]
+                lesson_id = callback.data.split('_')[-1]
                 lesson = await self.db.get_lesson_by_id(lesson_id)
+
+                await state.update_data(lesson=lesson)
+                await state.update_data(lesson_id=lesson.id)
 
                 user = await self.db.get_user_by_tg_id(callback.message.chat.id)
                 logger.debug(f'Пользователь: {callback.message.chat.id} выбрал lesson: id-{lesson.id}/{lesson.title}')
@@ -90,6 +93,9 @@ class LessonHandler(Handler):
                         user_id=user.id
                     )
 
+                    # состояние на прохождение задания после урока
+                    await state.set_state(LessonChooseState.start_task)
+
                 else:
                     promocode = await self.db.get_promocode_by_tg_id(callback.message.chat.id)
                     courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode.id)
@@ -97,12 +103,6 @@ class LessonHandler(Handler):
                         MESSAGES['NOT_FOUND_LESSON'],
                         reply_markup=await self.base_kb.start_btn(courses_and_quizes)
                     )
-
-                # состояние на прохождение теста после урока
-                await state.set_state(LessonChooseState.start_task)
-
-                await state.update_data(lesson=lesson)
-                await state.update_data(lesson_id=lesson.id)
 
         @self.router.callback_query(F.data.startswith('back'))
         async def back_to_lesson_list(callback: CallbackQuery, state: FSMContext):
@@ -153,7 +153,9 @@ class LessonHandler(Handler):
                 state=state
             )
 
-            lesson = data.get('lesson')
+            lesson_id = data.get('lesson_id')
+            lesson = await self.db.get_lesson_by_id(lesson_id)
+
             # отправка доп. изображений к уроку
             await send_image(
                 lesson=lesson,
@@ -433,7 +435,8 @@ class LessonHandler(Handler):
             )
             user = await self.user_db.get_user_by_tg_id(src.chat.id)
             promocode = await self.db.get_promocode_by_tg_id(src.chat.id)
-            lesson = data.get('lesson')
+            lesson_id = data.get('lesson_id')
+            lesson = await self.db.get_lesson_by_id(lesson_id)
             lesson_history = await self.db.get_actual_lesson_history(
                 user_id=user.id,
                 lesson_id=lesson.id
@@ -965,7 +968,8 @@ class LessonHandler(Handler):
 
             emoji_from_user = callback.data.split('_')[-1]
 
-            lesson = data.get('lesson')
+            lesson_id = data.get('lesson_id')
+            lesson = await self.db.get_lesson_by_id(lesson_id)
 
             lessons_ratings = lesson.buttons_rates
             if lessons_ratings:
