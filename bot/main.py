@@ -77,7 +77,15 @@ class MainBot:
 
                 else:
                     courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode.id)
-                    if promocode and courses_and_quizes:
+                    if promocode.type_id == 3:
+                        await self.bot.send_message(
+                            chat_id=chat_id,
+                            text=MESSAGES['ERROR_IN_HANDLER'].format(
+                                chat_id
+                            ),
+                            reply_markup=await self.kb.start_btn(promocode))
+
+                    elif promocode and courses_and_quizes:
                         await self.bot.send_message(
                             chat_id=chat_id,
                             text=MESSAGES['ERROR_IN_HANDLER'].format(
@@ -85,6 +93,7 @@ class MainBot:
                             ),
                             reply_markup=await self.kb.start_btn(courses_and_quizes)
                         )
+
                     else:
                         await self.bot.send_message(
                             chat_id=chat_id,
