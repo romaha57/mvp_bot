@@ -30,7 +30,7 @@ sys.path.append("bot/")
 class MainBot:
 
     def __init__(self):
-        self.bot = Bot(token=settings.bot_token, parse_mode=ParseMode.HTML, protect_content=True)
+        self.bot = Bot(token=settings.bot_token, parse_mode=ParseMode.HTML)
         if settings.debug:
             storage = MemoryStorage()
         else:

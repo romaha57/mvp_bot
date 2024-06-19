@@ -208,7 +208,7 @@ class TextHandler(Handler):
 
             except (IndexError, AttributeError):
                 await state.set_state(state=None)
-                promocode = await self.db.get_promocode_by_tg_id(message.from_user.id)
+                promocode = await self.db.get_promocode_by_tg_id(message.chat.id)
                 user = await self.db.get_user_by_tg_id(message.chat.id)
 
                 if promocode.is_test:

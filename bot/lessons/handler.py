@@ -579,7 +579,7 @@ class LessonHandler(Handler):
 
                     await self.user_db.save_fullname(
                         fullname=fio,
-                        tg_id=message.from_user.id
+                        tg_id=message.chat.id
                     )
 
                     await message.answer(

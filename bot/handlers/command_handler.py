@@ -92,7 +92,7 @@ class CommandHandler(Handler):
                                     courses_titles
                                 )
                             )
-                        logger.debug(f"Пользователь {message.from_user.id} активировал промокод {promocode.code}")
+                        logger.debug(f"Пользователь {message.chat.id} активировал промокод {promocode.code}")
 
                         if promocode.is_test and user.promocode_id and not promocode_from_db.is_test:
                             courses_and_quizes = await self.db.get_promocode_courses_and_quizes(user.promocode_id)
@@ -147,7 +147,7 @@ class CommandHandler(Handler):
                                     else:
                                         courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode.id)
                                         await self.user_db.add_promocode_to_user(
-                                            tg_id=message.from_user.id,
+                                            tg_id=message.chat.id,
                                             promocode_id=promocode.id
                                         )
                                         await message.answer(
@@ -194,5 +194,5 @@ class CommandHandler(Handler):
         async def get_tg_id(message: Message):
             """Отправляем telegram_id пользователя"""
 
-            user_id = str(message.from_user.id)
+            user_id = str(message.chat.id)
             await message.answer(f'Ваш id - <b>{user_id}</b>')
