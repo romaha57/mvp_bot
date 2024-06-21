@@ -293,7 +293,7 @@ class CourseHandler(Handler):
 
             await callback.bot.edit_message_reply_markup(
                 chat_id=callback.message.chat.id,
-                message_id=callback.message.id,
+                message_id=callback.message.message_id,
                 reply_markup=None
             )
 
