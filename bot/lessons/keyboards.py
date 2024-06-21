@@ -1,5 +1,7 @@
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-from aiogram.utils.keyboard import InlineKeyboardBuilder
+from typing import Union
+
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
+from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
 from loguru import logger
 
 from bot.courses.service import CourseService
@@ -240,6 +242,50 @@ class LessonKeyboard:
             callback_data='done_additional_task'
         )
         builder.adjust(1)
+
+        return builder.as_markup(
+            resize_keyboard=True,
+            one_time_keyboard=True
+        )
+
+    async def start_btn(self, data: Union[dict, Promocodes]) -> ReplyKeyboardMarkup:
+        """Стартовое меню бота"""
+
+        builder = ReplyKeyboardBuilder()
+
+        if isinstance(data, Promocodes):
+            builder.row(
+                # KeyboardButton(text=await self._get_button('OWNER_QUIZ')),
+                KeyboardButton(text=await self._get_button('OWNER_EDUCATION')),
+            )
+        else:
+
+            if data.get('courses') and data.get('quizes'):
+                builder.row(
+                    # KeyboardButton(text=await self._get_button('QUIZ')),
+                    KeyboardButton(text=await self._get_button('EDUCATION')),
+                )
+
+            # if data.get('quizes') and not data.get('courses'):
+            #     builder.row(
+            #         KeyboardButton(text=await self._get_button('QUIZ')),
+            #     )
+
+            elif data.get('courses') and not data.get('quizes'):
+                builder.row(
+                    KeyboardButton(text=await self._get_button('EDUCATION')),
+                )
+
+        builder.row(
+            KeyboardButton(text=await self._get_button('KNOWLEDGE_BASE'))
+        )
+
+        builder.add(
+            KeyboardButton(text=await self._get_button('REFERAL')),
+        )
+        builder.add(
+            KeyboardButton(text=await self._get_button('BALANCE')),
+        )
 
         return builder.as_markup(
             resize_keyboard=True,
