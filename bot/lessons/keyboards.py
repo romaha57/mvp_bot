@@ -256,14 +256,14 @@ class LessonKeyboard:
         if isinstance(data, Promocodes):
             builder.row(
                 # KeyboardButton(text=await self._get_button('OWNER_QUIZ')),
-                KeyboardButton(text=await self._get_button('OWNER_EDUCATION')),
+                KeyboardButton(text=BUTTONS['OWNER_EDUCATION']),
             )
         else:
 
             if data.get('courses') and data.get('quizes'):
                 builder.row(
                     # KeyboardButton(text=await self._get_button('QUIZ')),
-                    KeyboardButton(text=await self._get_button('EDUCATION')),
+                    KeyboardButton(text=BUTTONS['EDUCATION']),
                 )
 
             # if data.get('quizes') and not data.get('courses'):
@@ -273,18 +273,18 @@ class LessonKeyboard:
 
             elif data.get('courses') and not data.get('quizes'):
                 builder.row(
-                    KeyboardButton(text=await self._get_button('EDUCATION')),
+                    KeyboardButton(text=BUTTONS['EDUCATION']),
                 )
 
         builder.row(
-            KeyboardButton(text=await self._get_button('KNOWLEDGE_BASE'))
+            KeyboardButton(text=BUTTONS['KNOWLEDGE_BASE'])
         )
 
         builder.add(
-            KeyboardButton(text=await self._get_button('REFERAL')),
+            KeyboardButton(text=BUTTONS['REFERAL']),
         )
         builder.add(
-            KeyboardButton(text=await self._get_button('BALANCE')),
+            KeyboardButton(text=BUTTONS['BALANCE']),
         )
 
         return builder.as_markup(
