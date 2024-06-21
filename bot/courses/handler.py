@@ -60,6 +60,11 @@ class CourseHandler(Handler):
                 all_courses = list(set(courses_by_bot + courses_by_promo))
                 all_courses.sort(key=lambda elem: elem.get('order_num'))
 
+                if promocode.type_id == 3:
+                    all_courses = await self.db.get_all_courses()
+                    all_courses = list(set(all_courses))
+                    all_courses.sort(key=lambda elem: elem.get('order_num'))
+
                 user = await self.db.get_user_by_tg_id(message.chat.id)
 
                 # ---------------------Логика для перехода сразу к списку уроков, если курс всего 1-----------------
@@ -314,6 +319,11 @@ class CourseHandler(Handler):
                 courses_by_promo = await self.db.get_courses_by_promo(callback.message.chat.id)
                 all_courses = list(set(courses_by_bot + courses_by_promo))
                 all_courses.sort(key=lambda elem: elem.get('order_num'))
+
+                if promocode.type_id == 3:
+                    all_courses = await self.db.get_all_courses()
+                    all_courses = list(set(all_courses))
+                    all_courses.sort(key=lambda elem: elem.get('order_num'))
 
                 user = await self.db.get_user_by_tg_id(callback.message.chat.id)
 
