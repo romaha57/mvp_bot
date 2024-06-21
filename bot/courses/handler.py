@@ -281,6 +281,12 @@ class CourseHandler(Handler):
 
             await state.update_data(chat_id=callback.message.chat.id)
 
+            await callback.bot.edit_message_reply_markup(
+                chat_id=callback.message.chat.id,
+                message_id=callback.message.id,
+                reply_markup=None
+            )
+
             promocode = await self.db.get_promocode_by_tg_id(callback.message.chat.id)
 
             if promocode.end_at <= datetime.datetime.now():
