@@ -3,6 +3,7 @@ import pprint
 import traceback
 
 from aiogram import Bot, F, Router
+from aiogram.filters import or_f
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, FSInputFile, Message
 from loguru import logger
@@ -154,7 +155,7 @@ class CourseHandler(Handler):
                         reply_markup=await self.base_kb.menu_btn()
                     )
 
-        @self.router.callback_query(CourseChooseState.course)
+        @self.router.callback_query(or_f(CourseChooseState.course, F.data.startswith('course')))
         async def get_lesson(callback: CallbackQuery, state: FSMContext):
             """Отлавливаем выбранный пользователем курс"""
 
