@@ -160,6 +160,16 @@ class CourseHandler(Handler):
             """Отлавливаем выбранный пользователем курс"""
 
             await state.update_data(chat_id=callback.message.chat.id)
+
+            try:
+                await callback.bot.edit_message_reply_markup(
+                    chat_id=callback.message.chat.id,
+                    message_id=callback.message.message_id,
+                    reply_markup=None
+                )
+            except Exception:
+                pass
+
             data = await state.get_data()
             user = await self.db.get_user_by_tg_id(callback.message.chat.id)
             course_id = callback.data.split('_')[-1]
