@@ -21,7 +21,7 @@ services:
     image: redis:7
     container_name: redis
     volumes:
-      - redis_data:/data
+      - redis_data:/data1
     network_mode: host
 #    networks:
 #      - realogica_network
