@@ -291,11 +291,14 @@ class CourseHandler(Handler):
 
             await state.update_data(chat_id=callback.message.chat.id)
 
-            await callback.bot.edit_message_reply_markup(
-                chat_id=callback.message.chat.id,
-                message_id=callback.message.message_id,
-                reply_markup=None
-            )
+            try:
+                await callback.bot.edit_message_reply_markup(
+                    chat_id=callback.message.chat.id,
+                    message_id=callback.message.message_id,
+                    reply_markup=None
+                )
+            except Exception:
+                pass
 
             promocode = await self.db.get_promocode_by_tg_id(callback.message.chat.id)
 
