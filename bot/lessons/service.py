@@ -1,6 +1,8 @@
+import datetime
 from typing import Union
 
-from sqlalchemy import desc, insert, select, update, func, text
+import pytz
+from sqlalchemy import desc, insert, select, update, func, text, or_
 from sqlalchemy.exc import MultipleResultsFound
 
 from bot.courses.models import Course
@@ -14,6 +16,8 @@ from bot.lessons.models import (LessonAdditionalTaskHistory,
 from bot.services.base_service import BaseService, Singleton
 from bot.users.models import BonusRewards, BonusRewardsTypes, Users
 
+moscow_timezone = pytz.timezone('Europe/Moscow')
+
 
 class LessonService(BaseService, metaclass=Singleton):
 
@@ -21,7 +25,7 @@ class LessonService(BaseService, metaclass=Singleton):
     async def get_lessons_without_history(cls, course_id: str):
         async with async_session() as session:
             query = select(Lessons.id, Lessons.title, Lessons.order_num). \
-                where(Lessons.course_id == course_id)
+                where(Lessons.course_id == course_id, or_(Lessons.available_at == None, Lessons.available_at <= datetime.datetime.now(moscow_timezone)))
 
             result = await session.execute(query)
             return result.mappings().all()
@@ -32,10 +36,11 @@ class LessonService(BaseService, metaclass=Singleton):
             query = select(Lessons.id, Lessons.title, func.max(LessonHistory.status_id).label('status_id'), func.max(LessonHistory.user_id).label('user_id'), func.max(Lessons.order_num).label('order_num')). \
                     join(LessonHistory, LessonHistory.lesson_id == Lessons.id, isouter=True).\
                     join(Users, LessonHistory.user_id == Users.id, isouter=True).\
-                    where(Lessons.course_id == course_id,  LessonHistory.user_id == user_id).group_by(Lessons.id, Lessons.title). \
+                    where(Lessons.course_id == course_id,  LessonHistory.user_id == user_id, or_(Lessons.available_at == None, Lessons.available_at <= datetime.datetime.now(moscow_timezone))).group_by(Lessons.id, Lessons.title). \
                     order_by('order_num').limit(limit)
 
             result = await session.execute(query)
+
             return result.mappings().all()
 
 
@@ -45,7 +50,7 @@ class LessonService(BaseService, metaclass=Singleton):
             query = text(f"""
                   SELECT $_lessons.id, $_lessons.title, 9 as status_id, 9 as user_id, $_lessons.order_num
                   FROM $_lessons
-                  WHERE course_id = {course_id}
+                  WHERE course_id = {course_id} AND ($_lessons.available_at is NULL or $_lessons.available_at <= {datetime.datetime.now(moscow_timezone)})
               """)
 
             result = await session.execute(query)
@@ -57,7 +62,7 @@ class LessonService(BaseService, metaclass=Singleton):
             query = text(f"""
                        SELECT $_lessons.id, $_lessons.title, 9 as status_id, 9 as user_id, $_lessons.order_num
                        FROM $_lessons
-                       WHERE course_id = {course_id}
+                       WHERE course_id = {course_id} AND ($_lessons.available_at is NULL or $_lessons.available_at <= {datetime.datetime.now(moscow_timezone)})
                    """)
 
             result = await session.execute(query)

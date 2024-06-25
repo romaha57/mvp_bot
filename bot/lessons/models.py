@@ -26,6 +26,7 @@ class Lessons(Base):
     title = Column(String, nullable=False)
     video = Column(String)
     images = Column(Text)
+    available_at = Column(DateTime)
     updated_at = Column(DateTime, onupdate=func.now)
     created_at = Column(DateTime, server_default=func.now())
 
