@@ -50,7 +50,7 @@ class LessonService(BaseService, metaclass=Singleton):
             query = text(f"""
                   SELECT $_lessons.id, $_lessons.title, 9 as status_id, 9 as user_id, $_lessons.order_num
                   FROM $_lessons
-                  WHERE course_id = {course_id} AND ($_lessons.available_at is NULL or $_lessons.available_at <= {datetime.datetime.now(moscow_timezone)})
+                  WHERE course_id = {course_id} AND ($_lessons.available_at is NULL or $_lessons.available_at <= '{datetime.datetime.now(moscow_timezone)}')
               """)
 
             result = await session.execute(query)
@@ -62,7 +62,7 @@ class LessonService(BaseService, metaclass=Singleton):
             query = text(f"""
                        SELECT $_lessons.id, $_lessons.title, 9 as status_id, 9 as user_id, $_lessons.order_num
                        FROM $_lessons
-                       WHERE course_id = {course_id} AND ($_lessons.available_at is NULL or $_lessons.available_at <= {datetime.datetime.now(moscow_timezone)})
+                       WHERE course_id = {course_id} AND ($_lessons.available_at is NULL or $_lessons.available_at <= '{datetime.datetime.now(moscow_timezone)}')
                    """)
 
             result = await session.execute(query)
