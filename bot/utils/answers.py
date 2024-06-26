@@ -312,6 +312,8 @@ async def check_new_added_lessons(lessons_by_user: list[dict], lessons_by_course
         for lesson in lessons_by_course]
 
     new_lessons = set(lessons_by_course_list) - set(lessons_by_user_list)
+    logger.debug(f'{lessons_by_course_list=}')
+    logger.debug(f'{lessons_by_user_list=}')
 
     for new_l in new_lessons:
         lessons_by_user.append(
