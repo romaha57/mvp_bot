@@ -45,24 +45,26 @@ class LessonService(BaseService, metaclass=Singleton):
 
 
     @classmethod
-    async def get_all_lesson_for_special_course(cls, course_id: str):
+    async def get_all_lesson_for_special_course(cls, course_id: str, user_id: int):
         async with async_session() as session:
             query = text(f"""
-                  SELECT $_lessons.id, $_lessons.title, 9 as status_id, 9 as user_id, $_lessons.order_num
-                  FROM $_lessons
-                  WHERE course_id = {course_id} AND ($_lessons.available_at is NULL or $_lessons.available_at <= '{datetime.datetime.now(moscow_timezone)}')
+                 SELECT $_lessons.id, $_lessons.title, $_lesson_history.status_id as status_id, $_lesson_history.user_id as user_id, $_lessons.order_num
+                       FROM $_lessons
+                       LEFT JOIN $_lesson_history on $_lesson_history.lesson_id = $_lessons.id
+                       WHERE course_id = {course_id} AND $_lesson_history.user_id = {user_id} AND ($_lessons.available_at is NULL or $_lessons.available_at <= '{datetime.datetime.now(moscow_timezone)}')
               """)
 
             result = await session.execute(query)
             return result.mappings().all()
 
     @classmethod
-    async def get_all_lesson_by_owner(cls, course_id: str):
+    async def get_all_lesson_by_owner(cls, course_id: str, user_id: int):
         async with async_session() as session:
             query = text(f"""
-                       SELECT $_lessons.id, $_lessons.title, 9 as status_id, 9 as user_id, $_lessons.order_num
+                       SELECT $_lessons.id, $_lessons.title, $_lesson_history.status_id as status_id, $_lesson_history.user_id as user_id, $_lessons.order_num
                        FROM $_lessons
-                       WHERE course_id = {course_id} AND ($_lessons.available_at is NULL or $_lessons.available_at <= '{datetime.datetime.now(moscow_timezone)}')
+                       LEFT JOIN $_lesson_history on $_lesson_history.lesson_id = $_lessons.id
+                       WHERE course_id = {course_id} AND $_lesson_history.user_id = {user_id} AND ($_lessons.available_at is NULL or $_lessons.available_at <= '{datetime.datetime.now(moscow_timezone)}')
                    """)
 
             result = await session.execute(query)

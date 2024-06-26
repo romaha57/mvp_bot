@@ -66,10 +66,10 @@ class LessonKeyboard:
 
         course = await self.course_db.get_course_by_id(course_id)
         if course.show_all_lessons:
-            lessons_from_db = await self.db.get_all_lesson_for_special_course(course_id)
+            lessons_from_db = await self.db.get_all_lesson_for_special_course(course_id, user_id)
 
         if promocode.type_id == 3:
-            lessons_from_db = await self.db.get_all_lesson_by_owner(course_id)
+            lessons_from_db = await self.db.get_all_lesson_by_owner(course_id, user_id)
             lessons_from_db = list(set(lessons_from_db))
 
         if promocode.is_test:
