@@ -76,12 +76,7 @@ class LessonKeyboard:
             lessons_from_db = await self.db.get_all_lesson(course_id, user_id, promocode.lesson_cnt)
             lessons_from_db = list(set(lessons_from_db))
 
-        lessons_from_db = await check_new_added_lessons(
-            lessons_by_user=lessons_from_db,
-            lessons_by_course=lessons_by_course,
-            user_id=user_id
-        )
-        lessons_from_db.sort(key=lambda elem: elem.get('order_num'))
+        logger.debug(f'Уроки у {user_id} получены: {lessons_from_db}')
 
         if not lessons_from_db:
             # получаем первый урок, чтобы не отображать весь список уроков
@@ -98,7 +93,15 @@ class LessonKeyboard:
                 input_field_placeholder=MESSAGES['CHOOSE_LESSONS'],
                 one_time_keyboard=True
             )
-        logger.debug(f'Уроки у {user_id} получены: {lessons_from_db}')
+
+        else:
+            lessons_from_db = await check_new_added_lessons(
+                lessons_by_user=lessons_from_db,
+                lessons_by_course=lessons_by_course,
+                user_id=user_id
+            )
+            lessons_from_db.sort(key=lambda elem: elem.get('order_num'))
+
         logger.debug(f'Пользователь {user_id} получил список уроков: {[(i.get("id"), i.get("title")) for i in lessons_from_db]}')
         for lesson in lessons_from_db:
             if lesson['status_id'] == 4:

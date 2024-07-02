@@ -309,22 +309,23 @@ async def check_new_added_lessons(lessons_by_user: list[dict], lessons_by_course
             lesson.get('title'),
             lesson.get('order_num')
         )
-        for lesson in lessons_by_course]
+        for lesson in lessons_by_course
+    ]
+    _max_user_lessons = sorted(lessons_by_user_list, key=lambda lesson: lesson[2], reverse=True)
+    max_user_lesson_order_num = _max_user_lessons[0][2]
 
-    new_lessons = set(lessons_by_course_list) - set(lessons_by_user_list)
-    logger.debug(f'{lessons_by_course_list=}')
-    logger.debug(f'{lessons_by_user_list=}')
-
+    new_lessons = list(set(lessons_by_course_list) - set(lessons_by_user_list))
     for new_l in new_lessons:
-        lessons_by_user.append(
-            {
-                'id': new_l[0],
-                'title': new_l[1],
-                'order_num': new_l[2],
-                'user_id': user_id,
-                'status_id': 0
-            }
-        )
+        if new_l[2] < max_user_lesson_order_num:
+            lessons_by_user.append(
+                {
+                    'id': new_l[0],
+                    'title': new_l[1],
+                    'order_num': new_l[2],
+                    'user_id': user_id,
+                    'status_id': 0
+                }
+            )
 
     return lessons_by_user
 
