@@ -59,6 +59,7 @@ class LessonKeyboard:
     async def lessons_btn(self, course_id: str, user_id: int, promocode: Promocodes) -> InlineKeyboardMarkup:
         """Кнопки со списком уроков"""
 
+        all_lesson = False
         builder = InlineKeyboardBuilder()
         lessons_from_db = await self.db.get_all_lesson(course_id, user_id)
         lessons_by_course = await self.db.get_lessons_without_history(course_id)
@@ -67,10 +68,12 @@ class LessonKeyboard:
         course = await self.course_db.get_course_by_id(course_id)
         if course.show_all_lessons:
             lessons_from_db = await self.db.get_all_lesson_for_special_course(course_id, user_id)
+            all_lesson = True
 
         if promocode.type_id == 3:
             lessons_from_db = await self.db.get_all_lesson_by_owner(course_id, user_id)
             lessons_from_db = list(set(lessons_from_db))
+            all_lesson = True
 
         if promocode.is_test:
             lessons_from_db = await self.db.get_all_lesson(course_id, user_id, promocode.lesson_cnt)
@@ -98,7 +101,8 @@ class LessonKeyboard:
             lessons_from_db = await check_new_added_lessons(
                 lessons_by_user=lessons_from_db,
                 lessons_by_course=lessons_by_course,
-                user_id=user_id
+                user_id=user_id,
+                all_lesson=all_lesson
             )
             lessons_from_db.sort(key=lambda elem: elem.get('order_num'))
 

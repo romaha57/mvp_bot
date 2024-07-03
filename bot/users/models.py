@@ -290,3 +290,73 @@ class Attachments(Base):
 
     def __str__(self):
         return f'{self.file_id}'
+
+
+class PartnerRoles(Base):
+    __tablename__ = '$_partner_roles'
+    __table_args__ = {
+        'comment': 'Виды ролей'
+    }
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String)
+    description = Column(Text)
+    royalty = Column(Boolean)
+
+    updated_at = Column(DateTime, onupdate=func.now)
+    created_at = Column(DateTime, server_default=func.now())
+
+    def __str__(self):
+        return f'{self.name}'
+
+
+class AccountPartnerRoles(Base):
+    __tablename__ = '$_account_partner_roles'
+    __table_args__ = {
+        'comment': 'Привязка роли к аккаунту'
+    }
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    account_id = Column(Integer, ForeignKey('$_user_accounts.id'))
+    role_id = Column(Integer, ForeignKey('$_partner_roles.id'))
+    end_at = Column(DateTime)
+
+    updated_at = Column(DateTime, onupdate=func.now)
+    created_at = Column(DateTime, server_default=func.now())
+
+    def __str__(self):
+        return f'account: {self.account_id} - role: {self.role_id}'
+
+
+class PartnerPermissions(Base):
+    __tablename__ = '$_partner_permissions'
+    __table_args__ = {
+        'comment': 'Права доступа к функционалу'
+    }
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String)
+    description = Column(Text)
+
+    updated_at = Column(DateTime, onupdate=func.now)
+    created_at = Column(DateTime, server_default=func.now())
+
+    def __str__(self):
+        return f'{self.name}'
+
+
+class PartnerRolePermissions(Base):
+    __tablename__ = '$_partner_role_permissions'
+    __table_args__ = {
+        'comment': 'Связь между ролью и правами доступа к функционалу'
+    }
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    role_id = Column(Integer, ForeignKey('$_partner_roles.id'))
+    permission_id = Column(Integer, ForeignKey('$_partner_permissions.id'))
+
+    updated_at = Column(DateTime, onupdate=func.now)
+    created_at = Column(DateTime, server_default=func.now())
+
+    def __str__(self):
+        return f'role: {self.role_id}'

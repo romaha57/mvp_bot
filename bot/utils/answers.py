@@ -293,7 +293,7 @@ async def show_main_menu(promocode: Promocodes, user: Users, message: Message, s
         await state.update_data(msg=msg.message_id)
 
 
-async def check_new_added_lessons(lessons_by_user: list[dict], lessons_by_course: list[dict], user_id: int) -> list[dict]:
+async def check_new_added_lessons(lessons_by_user: list[dict], lessons_by_course: list[dict], user_id: int, all_lesson: bool = False) -> list[dict]:
     lessons_by_user_list = [
         (
             lesson.get('id'),
@@ -311,12 +311,10 @@ async def check_new_added_lessons(lessons_by_user: list[dict], lessons_by_course
         )
         for lesson in lessons_by_course
     ]
-    _max_user_lessons = sorted(lessons_by_user_list, key=lambda lesson: lesson[2], reverse=True)
-    max_user_lesson_order_num = _max_user_lessons[0][2]
-
     new_lessons = list(set(lessons_by_course_list) - set(lessons_by_user_list))
-    for new_l in new_lessons:
-        if new_l[2] < max_user_lesson_order_num:
+
+    if all_lesson:
+        for new_l in new_lessons:
             lessons_by_user.append(
                 {
                     'id': new_l[0],
@@ -326,6 +324,21 @@ async def check_new_added_lessons(lessons_by_user: list[dict], lessons_by_course
                     'status_id': 0
                 }
             )
+
+    else:
+        _max_user_lessons = sorted(lessons_by_user_list, key=lambda lesson: lesson[2], reverse=True)
+        max_user_lesson_order_num = _max_user_lessons[0][2]
+        for new_l in new_lessons:
+            if new_l[2] < max_user_lesson_order_num:
+                lessons_by_user.append(
+                    {
+                        'id': new_l[0],
+                        'title': new_l[1],
+                        'order_num': new_l[2],
+                        'user_id': user_id,
+                        'status_id': 0
+                    }
+                )
 
     return lessons_by_user
 
