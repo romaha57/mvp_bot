@@ -13,6 +13,7 @@ from loguru import logger
 from bot.courses.service import CourseService
 from bot.handlers.base_handler import Handler
 from bot.lessons.keyboards import LessonKeyboard
+from bot.lessons.models import Lessons
 from bot.lessons.service import LessonService
 from bot.lessons.states import Certificate, LessonChooseState
 from bot.settings.keyboards import BaseKeyboard
@@ -191,6 +192,7 @@ class LessonHandler(Handler):
                 user_id=user.id,
                 lesson_id=lesson.id
             )
+
 
             # получаем все тестовые вопросы по данному уроку и переворачиваем список, чтобы начиналось с №1
             self.test_questions = json.loads(lesson.questions)
@@ -994,3 +996,72 @@ class LessonHandler(Handler):
                         )
                 except TelegramBadRequest:
                     pass
+
+        @self.router.callback_query(F.data.startswith('new_lesson'))
+        async def new_lesson_notify(callback: CallbackQuery, state: FSMContext):
+            try:
+                await callback.bot.edit_message_reply_markup(
+                    chat_id=callback.message.chat.id,
+                    message_id=callback.message.message_id,
+                    reply_markup=None
+                )
+            except Exception:
+                pass
+
+            promocode = await self.db.get_promocode_by_tg_id(callback.message.chat.id)
+            user = await self.db.get_user_by_tg_id(callback.message.chat.id)
+            course_id = callback.data.split('_')[-1]
+            course = await self.course_db.get_course_by_id(course_id)
+            course_history = await self.course_db.get_or_create_history(
+                user=user,
+                course_id=course.id,
+            )
+
+            lesson = await self.db.get_last_passed_lesson(
+                tg_id=callback.message.chat.id,
+                course_id=course.id
+            )
+            logger.debug(f'Пользователь: {callback.message.chat.id}///{promocode.id} получил урок из уведомления new_lesson: {lesson.title}')
+
+            await state.update_data(lesson=lesson)
+            if isinstance(lesson, Lessons):
+                await state.update_data(lesson_id=lesson.id)
+
+            if lesson == 'all_lesson_done':
+
+                msg = await callback.message.answer(
+                    course.outro,
+                    reply_markup=await self.kb.lessons_btn(course.id, user.id, promocode)
+                )
+
+                # устанавливаем отлов состояния на название урока
+                await state.set_state(LessonChooseState.lesson)
+                await state.update_data(msg=msg.message_id)
+
+                menu_msg = await callback.message.answer(
+                    MESSAGES['GO_TO_MENU'],
+                    reply_markup=await self.base_kb.menu_btn(course.certificate_img)
+                )
+
+                await state.update_data(menu_msg=menu_msg.message_id)
+
+            else:
+                # создаем запись истории прохождения урока
+                await self.db.create_history(
+                    lesson_id=lesson.id,
+                    user_id=user.id,
+                    course_history_id=course_history.id
+                )
+
+                await show_lesson_info(
+                    self=self,
+                    lesson=lesson,
+                    state=state,
+                    message=callback.message,
+                    user_id=user.id
+                )
+
+                await callback.message.answer(
+                    MESSAGES['GO_TO_MENU'],
+                    reply_markup=await self.base_kb.menu_btn()
+                )

@@ -1,5 +1,6 @@
 import datetime
 import pprint
+import random
 import traceback
 
 from aiogram import Bot, F, Router
@@ -327,96 +328,82 @@ class CourseHandler(Handler):
 
                 user = await self.db.get_user_by_tg_id(callback.message.chat.id)
 
+                if len(all_courses) > 1:
+                    all_courses = [random.choice(all_courses)]
+
                 # ---------------------Логика для перехода сразу к списку уроков, если курс всего 1-----------------
-                if len(all_courses) == 1:
-                    course = await self.db.get_course_by_name(all_courses[0].get('title'))
-                    logger.debug(f"Пользователь {callback.message.chat.id} перешел на курс: {course}")
-                    await state.update_data(course_id=course.id)
-                    course_history = await self.db.get_or_create_history(
-                        user=user,
-                        course_id=course.id,
+                course = await self.db.get_course_by_name(all_courses[0].get('title'))
+                logger.debug(f"Пользователь {callback.message.chat.id} перешел на курс: {course}")
+                await state.update_data(course_id=course.id)
+                course_history = await self.db.get_or_create_history(
+                    user=user,
+                    course_id=course.id,
+                )
+
+                if course_history.is_show_description:
+                    await show_course_intro_first_time(
+                        course=course,
+                        message=callback.message,
+                        self=self,
+                        state=state,
+                        course_history=course_history,
+                        user_id=user.id,
+                        promocode=promocode
                     )
 
-                    if course_history.is_show_description:
-                        await show_course_intro_first_time(
-                            course=course,
-                            message=callback.message,
-                            self=self,
-                            state=state,
-                            course_history=course_history,
-                            user_id=user.id,
-                            promocode=promocode
-                        )
-
-                        # устанавливаем отлов состояния на название урока
-                        await state.set_state(LessonChooseState.lesson)
-
-                        await callback.message.answer(
-                            MESSAGES['GO_TO_MENU'],
-                            reply_markup=await self.base_kb.menu_btn()
-                        )
-                    else:
-                        lesson = await self.lesson_db.get_last_passed_lesson(
-                            tg_id=callback.message.chat.id,
-                            course_id=course.id
-                        )
-                        await state.update_data(lesson=lesson)
-                        if isinstance(lesson, Lessons):
-                            await state.update_data(lesson_id=lesson.id)
-
-                        if lesson == 'all_lesson_done':
-
-                            msg = await callback.message.answer(
-                                course.outro,
-                                reply_markup=await self.lesson_kb.lessons_btn(course.id, user.id, promocode)
-                            )
-
-                            # устанавливаем отлов состояния на название урока
-                            await state.set_state(LessonChooseState.lesson)
-                            await state.update_data(msg=msg.message_id)
-
-                            menu_msg = await callback.message.answer(
-                                MESSAGES['GO_TO_MENU'],
-                                reply_markup=await self.base_kb.menu_btn(course.certificate_img)
-                            )
-
-                            await state.update_data(menu_msg=menu_msg.message_id)
-
-                        else:
-                            # создаем запись истории прохождения урока
-                            await self.lesson_db.create_history(
-                                lesson_id=lesson.id,
-                                user_id=user.id,
-                                course_history_id=course_history.id
-                            )
-
-                            await show_lesson_info(
-                                self=self,
-                                lesson=lesson,
-                                state=state,
-                                message=callback.message,
-                                user_id=user.id
-                            )
-
-                            await callback.message.answer(
-                                MESSAGES['GO_TO_MENU'],
-                                reply_markup=await self.base_kb.menu_btn()
-                            )
-
-                # -------------------------Логика если курсов больше 1----------------------------------
-
-                else:
-                    msg = await callback.message.answer(
-                        MESSAGES['CHOOSE_COURSE'],
-                        reply_markup=await self.kb.courses_btn(all_courses)
-                    )
-                    logger.debug(f"Пользователь {callback.message.chat.id} получил на курсы: {all_courses}")
-
-                    await state.update_data(msg=msg.message_id)
-                    await state.set_state(CourseChooseState.course)
+                    # устанавливаем отлов состояния на название урока
+                    await state.set_state(LessonChooseState.lesson)
 
                     await callback.message.answer(
                         MESSAGES['GO_TO_MENU'],
                         reply_markup=await self.base_kb.menu_btn()
                     )
+                else:
+                    lesson = await self.lesson_db.get_last_passed_lesson(
+                        tg_id=callback.message.chat.id,
+                        course_id=course.id
+                    )
+                    await state.update_data(lesson=lesson)
+                    if isinstance(lesson, Lessons):
+                        await state.update_data(lesson_id=lesson.id)
+
+                    if lesson == 'all_lesson_done':
+
+                        msg = await callback.message.answer(
+                            course.outro,
+                            reply_markup=await self.lesson_kb.lessons_btn(course.id, user.id, promocode)
+                        )
+
+                        # устанавливаем отлов состояния на название урока
+                        await state.set_state(LessonChooseState.lesson)
+                        await state.update_data(msg=msg.message_id)
+
+                        menu_msg = await callback.message.answer(
+                            MESSAGES['GO_TO_MENU'],
+                            reply_markup=await self.base_kb.menu_btn(course.certificate_img)
+                        )
+
+                        await state.update_data(menu_msg=menu_msg.message_id)
+
+                    else:
+                        # создаем запись истории прохождения урока
+                        await self.lesson_db.create_history(
+                            lesson_id=lesson.id,
+                            user_id=user.id,
+                            course_history_id=course_history.id
+                        )
+
+                        await show_lesson_info(
+                            self=self,
+                            lesson=lesson,
+                            state=state,
+                            message=callback.message,
+                            user_id=user.id
+                        )
+
+                        await callback.message.answer(
+                            MESSAGES['GO_TO_MENU'],
+                            reply_markup=await self.base_kb.menu_btn()
+                        )
+
 

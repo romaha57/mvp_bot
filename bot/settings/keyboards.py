@@ -132,3 +132,15 @@ class BaseKeyboard:
             resize_keyboard=True,
             one_time_keyboard=True
         )
+
+    async def test_btn(self) -> InlineKeyboardMarkup:
+        builder = InlineKeyboardBuilder()
+        builder.button(
+            text='Новый урок',
+            callback_data=f'new_lesson_3'
+        )
+
+        return builder.as_markup(
+            resize_keyboard=True,
+            one_time_keyboard=True
+        )
