@@ -36,12 +36,6 @@ class CommandHandler(Handler):
             """Отлов команды /start"""
 
             await state.update_data(chat_id=message.chat.id)
-
-            await message.answer(
-                'Продолжить обучение',
-                reply_markup=await self.kb.test_btn()
-            )
-
             promocode_in_msg = message.text.split()[1:]
             logger.debug(f"Пользователь {message.chat.id} ввел промокод {promocode_in_msg}")
 
