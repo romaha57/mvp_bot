@@ -7,7 +7,7 @@ from bot.courses.models import (Course, CourseBots, CourseHistory,
 from bot.db_connect import async_session
 from bot.lessons.models import LessonHistory
 from bot.services.base_service import BaseService, Singleton
-from bot.users.models import Users, PromocodeQuizes, PromocodeCourses
+from bot.users.models import Users, PromocodeQuizes, PromocodeCourses, Promocodes
 
 
 class CourseService(BaseService, metaclass=Singleton):
@@ -38,6 +38,19 @@ class CourseService(BaseService, metaclass=Singleton):
                 join(PromocodeCourses, PromocodeCourses.course_id== Course.id).\
                 join(Users, Users.promocode_id == PromocodeCourses.promocode_id).\
                 where(Users.external_id == tg_id)
+            result = await session.execute(query)
+
+            return result.mappings().all()
+
+    @classmethod
+    async def get_not_completed_course(cls, promocode: str, user_id: int):
+        async with async_session() as session:
+            query = select(Course.id, Course.title, Course.order_num). \
+                join(PromocodeCourses, PromocodeCourses.course_id == Course.id). \
+                join(Promocodes, Promocodes.id == PromocodeCourses.promocode_id). \
+                join(CourseHistory, CourseHistory.course_id == Course.id).\
+                where(CourseHistory.user_id == user_id, CourseHistory.status_id == 1, Promocodes.code == promocode)
+
             result = await session.execute(query)
 
             return result.mappings().all()

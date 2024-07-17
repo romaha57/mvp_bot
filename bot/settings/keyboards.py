@@ -137,7 +137,7 @@ class BaseKeyboard:
         builder = InlineKeyboardBuilder()
         builder.button(
             text='Новый урок',
-            callback_data=f'new_lesson_3'
+            callback_data=f'continue_'
         )
 
         return builder.as_markup(

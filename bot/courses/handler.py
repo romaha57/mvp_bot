@@ -307,6 +307,7 @@ class CourseHandler(Handler):
                 pass
 
             promocode = await self.db.get_promocode_by_tg_id(callback.message.chat.id)
+            user = await self.db.get_user_by_tg_id(callback.message.chat.id)
 
             if promocode.end_at <= datetime.datetime.now():
                 courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode.id)
@@ -326,9 +327,11 @@ class CourseHandler(Handler):
                     all_courses = list(set(all_courses))
                     all_courses.sort(key=lambda elem: elem.get('order_num'))
 
-                user = await self.db.get_user_by_tg_id(callback.message.chat.id)
-
                 if len(all_courses) > 1:
+                    all_courses = await self.db.get_not_completed_course(
+                        user_id=user.id,
+                        promocode=promocode.code
+                    )
                     all_courses = [random.choice(all_courses)]
 
                 # ---------------------Логика для перехода сразу к списку уроков, если курс всего 1-----------------
