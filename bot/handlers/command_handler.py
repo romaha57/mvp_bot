@@ -35,11 +35,6 @@ class CommandHandler(Handler):
         async def start(message: Message, state: FSMContext):
             """Отлов команды /start"""
 
-            await message.answer(
-                'test',
-                reply_markup=await self.kb.test_btn()
-            )
-
             await state.update_data(chat_id=message.chat.id)
             promocode_in_msg = message.text.split()[1:]
             logger.debug(f"Пользователь {message.chat.id} ввел промокод {promocode_in_msg}")
