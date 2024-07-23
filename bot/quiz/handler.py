@@ -50,14 +50,15 @@ class QuizHandler(Handler):
             promocode = await self.db.get_promocode_by_tg_id(message.chat.id)
             if promocode.end_at <= datetime.datetime.now():
                 courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode.id)
+                msg_text = await self.db.get_msg_by_key('YOUR_PROMOCODE_IS_EXPIRED')
                 await message.answer(
-                    MESSAGES['YOUR_PROMOCODE_IS_EXPIRED'],
+                    msg_text,
                     reply_markup=await self.base_kb.start_btn(courses_and_quizes)
                 )
             else:
-
+                msg_text = await self.db.get_msg_by_key('QUIZ_SELECTION')
                 await message.answer(
-                    MESSAGES['QUIZ_SELECTION'],
+                    msg_text,
                     reply_markup=await self.kb.quiz_menu_btn(promocode)
                 )
 
@@ -80,8 +81,9 @@ class QuizHandler(Handler):
 
             if promocode.end_at <= datetime.datetime.now():
                 courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode.id)
+                msg_text = await self.db.get_msg_by_key('YOUR_PROMOCODE_IS_EXPIRED')
                 await message.answer(
-                    MESSAGES['YOUR_PROMOCODE_IS_EXPIRED'],
+                    msg_text,
                     reply_markup=await self.base_kb.start_btn(courses_and_quizes)
                 )
             else:
@@ -98,14 +100,16 @@ class QuizHandler(Handler):
                     quizes_by_bot = await self.db.get_quizes_by_bot(message.chat.id)
                     all_quizes = list(set(quizes_by_promo + quizes_by_bot))
 
+                msg_text = await self.db.get_msg_by_key('GO_TO_MENU')
                 await message.answer(
-                    MESSAGES['GO_TO_MENU'],
+                    msg_text,
                     reply_markup=await self.base_kb.menu_btn()
                 )
 
                 if len(all_quizes) > 1:
+                    msg_text = await self.db.get_msg_by_key('CHOOSE_QUIZ')
                     msg = await message.answer(
-                        MESSAGES['CHOOSE_QUIZ'],
+                        msg_text,
                         reply_markup=await self.kb.quizes_list_btn(all_quizes)
                     )
                     await state.set_state(QuizState.quiz)
@@ -151,14 +155,16 @@ class QuizHandler(Handler):
             promocode = await self.db.get_promocode_by_tg_id(callback.message.chat.id)
             if promocode.end_at <= datetime.datetime.now():
                 courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode.id)
+                msg_text = await self.db.get_msg_by_key('YOUR_PROMOCODE_IS_EXPIRED')
                 await callback.message.answer(
-                    MESSAGES['YOUR_PROMOCODE_IS_EXPIRED'],
+                    msg_text,
                     reply_markup=await self.base_kb.start_btn(courses_and_quizes)
                 )
             else:
                 if promocode.is_test and not is_valid_test_promo(user):
+                    msg_text = await self.db.get_msg_by_key('END_TEST_PERIOD')
                     await callback.message.answer(
-                        MESSAGES['END_TEST_PERIOD'],
+                        msg_text,
                         reply_markup=await self.test_promo_kb.test_promo_menu()
                     )
                 else:
@@ -332,7 +338,8 @@ class QuizHandler(Handler):
 
             except IndexError:
                 self.index = None
+                msg_text = await self.db.get_msg_by_key('MENU')
                 await message.answer(
-                    MESSAGES['MENU'],
+                    msg_text,
                     reply_markup=await self.base_kb.menu_btn()
                 )

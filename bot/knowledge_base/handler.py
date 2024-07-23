@@ -37,16 +37,18 @@ class KnowledgeHandler(Handler):
             promocode = await self.db.get_promocode_by_tg_id(message.chat.id)
 
             if promocode.is_test:
+                msg_text = await self.db.get_msg_by_key('KNOWLEDGE_BASE_CLOSED')
                 await message.answer(
-                    MESSAGES['KNOWLEDGE_BASE_CLOSED'],
+                    msg_text,
                     reply_markup=await self.promo_kb.test_promo_menu()
                 )
             else:
 
                 if promocode.end_at <= datetime.datetime.now():
                     courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode.id)
+                    msg_text = await self.db.get_msg_by_key('YOUR_PROMOCODE_IS_EXPIRED')
                     await message.answer(
-                        MESSAGES['YOUR_PROMOCODE_IS_EXPIRED'],
+                        msg_text,
                         reply_markup=await self.base_kb.start_btn(courses_and_quizes)
                     )
                 else:
@@ -59,8 +61,9 @@ class KnowledgeHandler(Handler):
 
                     root_divides = await self.db.get_root_divides()
 
+                    msg_text = await self.db.get_msg_by_key('KNOWLEDGE_MENU')
                     msg = await message.answer(
-                        MESSAGES['KNOWLEDGE_MENU'],
+                        msg_text,
                         reply_markup=self.kb.divides_menu(root_divides)
                     )
                     await state.update_data(base_msg=msg.message_id)
@@ -76,8 +79,9 @@ class KnowledgeHandler(Handler):
             promocode = await self.db.get_promocode_by_tg_id(callback.message.chat.id)
             if promocode.end_at <= datetime.datetime.now():
                 courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode.id)
+                msg_text = await self.db.get_msg_by_key('YOUR_PROMOCODE_IS_EXPIRED')
                 await callback.message.answer(
-                    MESSAGES['YOUR_PROMOCODE_IS_EXPIRED'],
+                    msg_text,
                     reply_markup=await self.base_kb.start_btn(courses_and_quizes)
                 )
             else:
@@ -103,8 +107,9 @@ class KnowledgeHandler(Handler):
             promocode = await self.db.get_promocode_by_tg_id(callback.message.chat.id)
             if promocode.end_at <= datetime.datetime.now():
                 courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode.id)
+                msg_text = await self.db.get_msg_by_key('YOUR_PROMOCODE_IS_EXPIRED')
                 await callback.message.answer(
-                    MESSAGES['YOUR_PROMOCODE_IS_EXPIRED'],
+                    msg_text,
                     reply_markup=await self.base_kb.start_btn(courses_and_quizes)
                 )
             else:
@@ -138,8 +143,9 @@ class KnowledgeHandler(Handler):
             promocode = await self.db.get_promocode_by_tg_id(callback.message.chat.id)
             if promocode.end_at <= datetime.datetime.now():
                 courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode.id)
+                msg_text = await self.db.get_msg_by_key('YOUR_PROMOCODE_IS_EXPIRED')
                 await callback.message.answer(
-                    MESSAGES['YOUR_PROMOCODE_IS_EXPIRED'],
+                    msg_text,
                     reply_markup=await self.base_kb.start_btn(courses_and_quizes)
                 )
             else:

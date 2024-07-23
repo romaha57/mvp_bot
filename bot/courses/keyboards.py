@@ -4,6 +4,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from bot.courses.service import CourseService
 from bot.lessons.models import Lessons
 from bot.lessons.service import LessonService
+from bot.services.base_service import BaseService
 from bot.utils.buttons import BUTTONS
 from bot.utils.messages import MESSAGES
 
@@ -18,16 +19,30 @@ class CourseKeyboard:
 
         builder = InlineKeyboardBuilder()
         for course in courses:
-            builder.button(
-                text=course.get('title'),
-                callback_data=f"course_{course.get('id')}"
-            )
+            course_status = course.get('status_id')
+            if course_status == 2:
+                builder.button(
+                    text=f"{course.get('title')} ✅",
+                    callback_data=f"course_{course.get('id')}"
+                )
+
+            elif course_status == 1:
+                builder.button(
+                    text=f"{course.get('title')} 👀",
+                    callback_data=f"course_{course.get('id')}"
+                )
+
+            else:
+                builder.button(
+                    text=course.get('title'),
+                    callback_data=f"course_{course.get('id')}"
+                )
 
         builder.adjust(1)
-
+        msg_text = await BaseService.get_msg_by_key('CHOOSE_COURSE')
         return builder.as_markup(
             resize_keyboard=True,
-            input_field_placeholder=MESSAGES['CHOOSE_COURSE'],
+            input_field_placeholder=msg_text,
             one_time_keyboard=True
         )
 

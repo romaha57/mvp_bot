@@ -14,6 +14,7 @@ from bot.courses.models import Course, CourseHistory
 from bot.courses.service import CourseService
 from bot.lessons.models import Lessons
 from bot.quiz.models import QuizAnswers
+from bot.services.base_service import BaseService
 from bot.test_promocode.utils import is_valid_test_promo
 from bot.users.models import Promocodes, Users
 from bot.users.service import UserService
@@ -102,9 +103,10 @@ async def send_user_answers_to_group(bot: Bot, course_id: int, name: str, lesson
     """Отправляем ответ пользователя в соответствующую группу круса"""
 
     group_id = await CourseService.get_group_id(course_id)
+    msg_text = await BaseService.get_msg_by_key('MENU')
 
     if group_id:
-        text = MESSAGES['USER_ANSWER_IN_GROUP'].format(
+        text = msg_text.format(
             name,
             lesson_name,
             homework
@@ -171,8 +173,9 @@ async def show_lesson_info(message: Message, state: FSMContext, lesson: Lessons,
             )
 
         except TelegramBadRequest as e:
+            msg_text = await BaseService.get_msg_by_key('VIDEO_ERROR')
             msg = await message.answer(
-                MESSAGES['VIDEO_ERROR'],
+                msg_text,
                 reply_markup=await self.kb.lesson_menu_btn(lesson)
             )
             self.emoji_list = None
@@ -203,12 +206,14 @@ async def show_course_intro_first_time(course: Course, message: Message, state: 
             )
         except TelegramBadRequest as e:
             if 'VOICE_MESSAGES_FORBIDDEN' in e.message:
+                msg_text = await BaseService.get_msg_by_key('VIDEO_ERROR_FORBIDDEN')
                 await message.answer(
-                    MESSAGES['VIDEO_ERROR_FORBIDDEN']
+                    msg_text
                 )
             else:
+                msg_text = await BaseService.get_msg_by_key('VIDEO_ERROR')
                 await message.answer(
-                    MESSAGES['VIDEO_ERROR']
+                    msg_text
                 )
                 logger.warning(f'Не удалось отправить видео {message.chat.id} -- {e.message}')
 
@@ -260,33 +265,38 @@ async def show_main_menu(promocode: Promocodes, user: Users, message: Message, s
 
         if promocode.is_test:
             if is_valid_test_promo(user):
+                msg_text = await BaseService.get_msg_by_key('TEST_PROMO_MENU')
                 await message.answer(
-                    MESSAGES['TEST_PROMO_MENU'],
+                    msg_text,
                     reply_markup=await self.test_promo_kb.test_promo_menu()
                 )
 
             else:
+                msg_text = await BaseService.get_msg_by_key('END_TEST_PERIOD')
                 await message.answer(
-                    MESSAGES['END_TEST_PERIOD'],
+                    msg_text,
                     reply_markup=await self.test_promo_kb.test_promo_menu()
                 )
                 await state.set_state(state=None)
 
         elif promocode.type_id == 3:
+            msg_text = await BaseService.get_msg_by_key('MENU')
             await message.answer(
-                MESSAGES['MENU'],
+                msg_text,
                 reply_markup=await self.kb.start_btn(promocode))
 
         else:
             courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode.id)
+            msg_text = await BaseService.get_msg_by_key('ANY_TEXT')
             await message.answer(
-                MESSAGES['ANY_TEXT'],
+                msg_text,
                 reply_markup=await self.kb.start_btn(courses_and_quizes)
             )
 
     else:
+        msg_text = await BaseService.get_msg_by_key('ACCEPT_POLITICS')
         msg = await message.answer(
-            MESSAGES['ACCEPT_POLITICS'],
+            msg_text,
             reply_markup=await self.kb.politics_btn()
         )
         await state.set_state(Politics.accept)
@@ -349,13 +359,45 @@ async def catch_menu_btn_in_answers(self: 'LessonHandler', message: Message, sta
     await state.set_state(state=None)
 
     if promocode.type_id == 3:
+        msg_text = await BaseService.get_msg_by_key('MENU')
         await message.answer(
-            MESSAGES['MENU'],
+            msg_text,
             reply_markup=await self.kb.start_btn(promocode))
 
     else:
         courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode.id)
+        msg_text = await BaseService.get_msg_by_key('MENU')
         await message.answer(
-            MESSAGES['MENU'],
+            msg_text,
             reply_markup=await self.kb.start_btn(courses_and_quizes)
         )
+
+
+def add_course_without_history(
+    all_courses: list[dict],
+    courses_with_history: list[dict]
+):
+    all_courses_result = []
+    courses_names_with_history = [c.get('title') for c in courses_with_history]
+    for course in all_courses:
+        course_title = course.get('title')
+        if course_title in courses_names_with_history:
+            all_courses_result.append(
+                {
+                    'id': course.get('id'),
+                    'title': course.get('title'),
+                    'order_num': course.get('order_num'),
+                    'status_id': [c.get('status_id') for c in courses_with_history if course_title == c.get('title')][0]
+                }
+            )
+        else:
+            all_courses_result.append(
+                {
+                    'id': course.get('id'),
+                    'title': course.get('title'),
+                    'order_num': course.get('order_num'),
+                    'status_id': 0
+                }
+            )
+
+    return all_courses_result

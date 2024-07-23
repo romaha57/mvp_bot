@@ -13,6 +13,7 @@ from loguru import logger
 
 from bot.db_connect import Base, engine
 from bot.handlers.main_handler import MainHandler
+from bot.services.base_service import BaseService
 from bot.settings.keyboards import BaseKeyboard
 from bot.settings_bot import settings
 from bot.test_promocode.utils import is_valid_test_promo
@@ -69,35 +70,39 @@ class MainBot:
 
                 promocode = await self.db.get_promocode_by_tg_id(chat_id)
                 if promocode.is_test:
+                    msg_text = await BaseService.get_msg_by_key('TEST_PROMO_MENU')
                     await self.bot.send_message(
                         chat_id=chat_id,
-                        text=MESSAGES['TEST_PROMO_MENU'],
+                        text=msg_text,
                         reply_markup=await self.kb.test_promo_menu()
                     )
 
                 else:
                     courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode.id)
                     if promocode.type_id == 3:
+                        msg_text = await BaseService.get_msg_by_key('ERROR_IN_HANDLER')
                         await self.bot.send_message(
                             chat_id=chat_id,
-                            text=MESSAGES['ERROR_IN_HANDLER'].format(
+                            text=msg_text.format(
                                 chat_id
                             ),
                             reply_markup=await self.kb.start_btn(promocode))
 
                     elif promocode and courses_and_quizes:
+                        msg_text = await BaseService.get_msg_by_key('ERROR_IN_HANDLER')
                         await self.bot.send_message(
                             chat_id=chat_id,
-                            text=MESSAGES['ERROR_IN_HANDLER'].format(
+                            text=msg_text.format(
                                 chat_id
                             ),
                             reply_markup=await self.kb.start_btn(courses_and_quizes)
                         )
 
                     else:
+                        msg_text = await BaseService.get_msg_by_key('ERROR_IN_HANDLER')
                         await self.bot.send_message(
                             chat_id=chat_id,
-                            text=MESSAGES['ERROR_IN_HANDLER'].format(
+                            text=msg_text.format(
                                 chat_id
                             ),
                             reply_markup=await self.kb.menu_btn()

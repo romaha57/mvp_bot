@@ -55,8 +55,6 @@ class UserHandler(Handler):
             referal_code = hashlib.md5(account_id).hexdigest()[:7]
             referal_link = f't.me/Realogika_bot?start={referal_code}'
 
-
-
             qr_path = f'/app/static/qr/qr_{referal_code}.png'
             qr_code = segno.make(referal_link, micro=False)
             qr_code.save(qr_path, scale=5)
@@ -67,8 +65,9 @@ class UserHandler(Handler):
             promocode = await self.db.get_promocode_by_tg_id(message.chat.id)
             if promocode.end_at <= datetime.datetime.now():
                 courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode.id)
+                msg_text = await self.db.get_msg_by_key('YOUR_PROMOCODE_IS_EXPIRED')
                 await message.answer(
-                    MESSAGES['YOUR_PROMOCODE_IS_EXPIRED'],
+                    msg_text,
                     reply_markup=await self.base_kb.start_btn(courses_and_quizes)
                 )
             else:
@@ -90,8 +89,9 @@ class UserHandler(Handler):
                     document=qrcode
                 )
 
+                msg_text = await self.db.get_msg_by_key('START_REFERAL')
                 await message.answer(
-                    MESSAGES['START_REFERAL'].format(
+                    msg_text.format(
                         referal_link,
                         count_users
                     ),
@@ -118,8 +118,9 @@ class UserHandler(Handler):
 
             promocode = await self.db.get_promocode_by_tg_id(message.chat.id)
             courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode.id)
+            msg_text = await self.db.get_msg_by_key('BALANCE')
             await message.answer(
-                MESSAGES['BALANCE'],
+                msg_text,
                 reply_markup=await self.base_kb.start_btn(courses_and_quizes)
             )
 
@@ -135,8 +136,9 @@ class UserHandler(Handler):
             )
 
             promocode = await self.db.get_promocode_by_tg_id(message.chat.id)
+            msg_text = await self.db.get_msg_by_key('QUIZ_SELECTION')
             await message.answer(
-                MESSAGES['QUIZ_SELECTION'],
+                msg_text,
                 reply_markup=await self.quiz_kb.quiz_menu_btn(promocode)
             )
 
@@ -156,16 +158,18 @@ class UserHandler(Handler):
             all_courses = list(set(courses_by_bot + courses_by_db))
             all_courses.sort(key=lambda elem: elem.get('order_num'))
 
+            msg_text = await self.db.get_msg_by_key('CHOOSE_COURSE')
             msg = await message.answer(
-                MESSAGES['CHOOSE_COURSE'],
+                msg_text,
                 reply_markup=await self.course_kb.courses_btn(all_courses)
             )
 
             await state.update_data(msg=msg.message_id)
             await state.set_state(CourseChooseState.course)
 
+            msg_text = await self.db.get_msg_by_key('GO_TO_MENU')
             await message.answer(
-                MESSAGES['GO_TO_MENU'],
+                msg_text,
                 reply_markup=await self.base_kb.menu_btn()
             )
 
@@ -190,21 +194,24 @@ class UserHandler(Handler):
 
             if promocode.is_test:
                 if is_valid_test_promo(user):
+                    msg_text = await self.db.get_msg_by_key('TEST_PROMO_MENU')
                     await callback.message.answer(
-                        MESSAGES['TEST_PROMO_MENU'],
+                        msg_text,
                         reply_markup=await self.test_promo_kb.test_promo_menu()
                     )
 
                 else:
+                    msg_text = await self.db.get_msg_by_key('END_TEST_PERIOD')
                     await callback.message.answer(
-                        MESSAGES['END_TEST_PERIOD'],
+                        msg_text,
                         reply_markup=await self.test_promo_kb.test_promo_menu()
                     )
                     await state.set_state(state=None)
 
             else:
                 courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode.id)
+                msg_text = await self.db.get_msg_by_key('MENU')
                 await callback.message.answer(
-                    MESSAGES['MENU'],
+                    msg_text,
                     reply_markup=await self.base_kb.start_btn(courses_and_quizes)
                 )

@@ -3,6 +3,7 @@ import datetime
 import requests
 
 from bot.lessons.service import LessonService
+from bot.services.base_service import BaseService
 from bot.settings_bot import settings
 from bot.utils.messages import MESSAGES
 
@@ -15,7 +16,7 @@ async def send_message_after_30_minutes():
 
     for record in users_data:
         if record['created_at'] + datetime.timedelta(minutes=2) <= datetime.datetime.now():
-            msg = MESSAGES['CHECK_ADDITIONAL_TASK']
+            msg = await BaseService.get_msg_by_key('CHECK_ADDITIONAL_TASK')
             url = f'https://api.telegram.org/bot{settings.bot_token}/sendMessage?chat_id={record["external_id"]}&parse_mode=Markdown&text={msg}'
             requests.get(url)
 

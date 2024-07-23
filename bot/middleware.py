@@ -3,6 +3,7 @@ from typing import Any, Awaitable, Callable
 from aiogram import BaseMiddleware
 from aiogram.types import TelegramObject
 
+from bot.services.base_service import BaseService
 from bot.users.service import UserService
 from bot.utils.delete_messages import delete_messages
 from bot.utils.messages import MESSAGES
@@ -38,7 +39,8 @@ class CheckPromocodeMiddleware(BaseMiddleware):
                 state=data['state'],
                 src=data['bot']
             )
+            msg_text = await BaseService.get_msg_by_key('WRONG_PROMOCODE')
             await event.answer(
-                MESSAGES['WRONG_PROMOCODE'],
+                msg_text,
                 show_alert=True
             )

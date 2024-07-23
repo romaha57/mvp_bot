@@ -8,6 +8,7 @@ from loguru import logger
 from bot.courses.service import CourseService
 from bot.lessons.models import Lessons
 from bot.lessons.service import LessonService
+from bot.services.base_service import BaseService
 from bot.users.models import Promocodes
 from bot.utils.answers import check_new_added_lessons
 from bot.utils.buttons import BUTTONS
@@ -90,10 +91,10 @@ class LessonKeyboard:
             )
 
             builder.adjust(1)
-
+            msg_text = await BaseService.get_msg_by_key('CHOOSE_LESSONS')
             return builder.as_markup(
                 resize_keyboard=True,
-                input_field_placeholder=MESSAGES['CHOOSE_LESSONS'],
+                input_field_placeholder=msg_text,
                 one_time_keyboard=True
             )
 
@@ -130,10 +131,11 @@ class LessonKeyboard:
                 )
 
         builder.adjust(1)
+        msg_text = await BaseService.get_msg_by_key('CHOOSE_LESSONS')
 
         return builder.as_markup(
             resize_keyboard=True,
-            input_field_placeholder=MESSAGES['CHOOSE_LESSONS'],
+            input_field_placeholder=msg_text,
             one_time_keyboard=True
         )
 
@@ -200,11 +202,11 @@ class LessonKeyboard:
         )
 
         builder.adjust(1)
-
+        msg_text = await BaseService.get_msg_by_key('NEXT_LESSON')
         return builder.as_markup(
             resize_keyboard=True,
             one_time_keyboard=True,
-            input_field_placeholder=MESSAGES['NEXT_LESSON'],
+            input_field_placeholder=msg_text,
         )
 
     async def close_lesson_btn(self, lesson: Lessons) -> InlineKeyboardMarkup:

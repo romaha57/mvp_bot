@@ -46,19 +46,22 @@ class CommandHandler(Handler):
             promocode_from_db = await self.db.get_promocode_by_tg_id(message.chat.id)
             if not promocode_in_msg and promocode_from_db:
                 if promocode_from_db.type_id == 3:
+                    msg_text = await self.db.get_msg_by_key('START_PROMOCODE_OWNER')
                     await message.answer(
-                        MESSAGES['START_PROMOCODE_OWNER'],
+                        msg_text,
                         reply_markup=await self.kb.start_btn(promocode_from_db))
 
                 elif promocode_from_db.is_test:
+                    msg_text = await self.db.get_msg_by_key('GO_TO_TEST_PROMOCODE')
                     await message.answer(
-                        MESSAGES['GO_TO_TEST_PROMOCODE'],
+                        msg_text,
                         reply_markup=await self.test_promo_kb.test_promo_menu())
 
                 else:
                     courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode_from_db.id)
+                    msg_text = await self.db.get_msg_by_key('MENU')
                     await message.answer(
-                        MESSAGES['MENU'],
+                        msg_text,
                         reply_markup=await self.kb.start_btn(courses_and_quizes))
 
             # ------------------------------------------------------------------------------------------------------
@@ -86,8 +89,9 @@ class CommandHandler(Handler):
 
                         if courses_by_promo:
                             courses_titles = '\n'.join([f" - {course.get('title')}" for course in courses_by_promo])
+                            msg_text = await self.db.get_msg_by_key('START_PROMOCODE')
                             await message.answer(
-                                MESSAGES['START_PROMOCODE'].format(
+                                msg_text.format(
                                     courses_titles
                                 )
                             )
@@ -95,8 +99,9 @@ class CommandHandler(Handler):
 
                         if promocode.is_test and user.promocode_id and not promocode_from_db.is_test:
                             courses_and_quizes = await self.db.get_promocode_courses_and_quizes(user.promocode_id)
+                            msg_text = await self.db.get_msg_by_key('MENU')
                             await message.answer(
-                                MESSAGES['MENU'],
+                                msg_text,
                                 reply_markup=await self.kb.start_btn(courses_and_quizes))
 
                         else:
@@ -134,13 +139,15 @@ class CommandHandler(Handler):
                                             promocode=promocode,
                                             user=user
                                         )
+                                        msg_text = await self.db.get_msg_by_key('GO_TO_TEST_PROMOCODE')
                                         await message.answer(
-                                            MESSAGES['GO_TO_TEST_PROMOCODE'],
+                                            msg_text,
                                             reply_markup=await self.test_promo_kb.test_promo_menu())
 
                                     elif promocode.type_id == 3:
+                                        msg_text = await self.db.get_msg_by_key('START_PROMOCODE_OWNER')
                                         await message.answer(
-                                            MESSAGES['START_PROMOCODE_OWNER'],
+                                            msg_text,
                                             reply_markup=await self.kb.start_btn(promocode))
 
                                     else:
@@ -149,12 +156,14 @@ class CommandHandler(Handler):
                                             tg_id=message.chat.id,
                                             promocode_id=promocode.id
                                         )
+                                        msg_text = await self.db.get_msg_by_key('MENU')
                                         await message.answer(
-                                            MESSAGES['MENU'],
+                                            msg_text,
                                             reply_markup=await self.kb.start_btn(courses_and_quizes))
                             else:
+                                msg_text = await self.db.get_msg_by_key('ACCEPT_POLITICS')
                                 msg = await message.answer(
-                                    MESSAGES['ACCEPT_POLITICS'],
+                                    msg_text,
                                     reply_markup=await self.kb.politics_btn()
                                 )
                                 await state.set_state(Politics.accept)
@@ -170,22 +179,25 @@ class CommandHandler(Handler):
                     await message.answer(msg)
 
         async def get_user_answers_for_anketa(message: Message, state: FSMContext, questions: list[dict]):
+            msg_text = await self.db.get_msg_by_key('START_ANKETA')
             await message.answer(
-                MESSAGES['START_ANKETA']
+                msg_text
             )
 
             self.anketa_questions = questions
             first_question = self.anketa_questions.pop()
+            msg_text = await self.db.get_msg_by_key('ANKETA_QUESTION')
             await message.answer(
-                MESSAGES['ANKETA_QUESTION'].format(
+                msg_text.format(
                     first_question.get('title')
                 )
             )
             await state.update_data(anketa_question_id=first_question.get('id'))
             await state.set_state(Anketa.answer)
 
+            msg_text = await self.db.get_msg_by_key('GO_TO_MENU')
             await message.answer(
-                MESSAGES['GO_TO_MENU'],
+                msg_text,
                 reply_markup=await self.kb.menu_btn()
             )
 

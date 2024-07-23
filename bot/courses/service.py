@@ -1,6 +1,6 @@
 from typing import Union
 
-from sqlalchemy import desc, insert, or_, select, update
+from sqlalchemy import desc, insert, or_, select, update, text
 
 from bot.courses.models import (Course, CourseBots, CourseHistory,
                                 CourseHistoryStatuses)
@@ -86,6 +86,22 @@ class CourseService(BaseService, metaclass=Singleton):
             result = await session.execute(query)
 
             return result.scalars().one_or_none()
+
+    @classmethod
+    async def get_courses_by_ids(cls, user_id: int, courses_ids: list[int]) -> Union[list[dict]]:
+        """Получаем курсы по списку айдишников"""
+
+        async with async_session() as session:
+            query = text(f"""
+                SELECT $_courses.id, $_courses.title, $_course_history.status_id, $_courses.order_num
+                FROM $_courses 
+                LEFT OUTER JOIN $_course_history ON $_course_history.course_id = $_courses.id 
+                WHERE $_courses.id IN {tuple(courses_ids)} AND $_course_history.user_id = {user_id}
+            """)
+
+            result = await session.execute(query)
+
+            return result.mappings().all()
 
     @classmethod
     async def get_course_id_by_name(cls, course_name: str) -> Union[Course, None]:

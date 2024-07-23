@@ -19,7 +19,7 @@ from bot.lessons.service import LessonService
 from bot.lessons.states import LessonChooseState
 from bot.settings.keyboards import BaseKeyboard
 from bot.users.service import UserService
-from bot.utils.answers import show_lesson_info, show_course_intro_first_time
+from bot.utils.answers import show_lesson_info, show_course_intro_first_time, add_course_without_history
 from bot.utils.buttons import BUTTONS
 from bot.utils.certificate import build_certificate
 from bot.utils.delete_messages import delete_messages
@@ -50,8 +50,9 @@ class CourseHandler(Handler):
 
             if promocode.end_at <= datetime.datetime.now():
                 courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode.id)
+                msg_text = await self.db.get_msg_by_key('YOUR_PROMOCODE_IS_EXPIRED')
                 await message.answer(
-                    MESSAGES['YOUR_PROMOCODE_IS_EXPIRED'],
+                    msg_text,
                     reply_markup=await self.base_kb.start_btn(courses_and_quizes)
                 )
             else:
@@ -92,8 +93,9 @@ class CourseHandler(Handler):
                         # устанавливаем отлов состояния на название урока
                         await state.set_state(LessonChooseState.lesson)
 
+                        msg_text = await self.db.get_msg_by_key('GO_TO_MENU')
                         await message.answer(
-                            MESSAGES['GO_TO_MENU'],
+                            msg_text,
                             reply_markup=await self.base_kb.menu_btn()
                         )
                     else:
@@ -116,8 +118,9 @@ class CourseHandler(Handler):
                             await state.set_state(LessonChooseState.lesson)
                             await state.update_data(msg=msg.message_id)
 
+                            msg_text = await self.db.get_msg_by_key('GO_TO_MENU')
                             menu_msg = await message.answer(
-                                MESSAGES['GO_TO_MENU'],
+                                msg_text,
                                 reply_markup=await self.base_kb.menu_btn(course.certificate_img)
                             )
 
@@ -139,16 +142,29 @@ class CourseHandler(Handler):
                                 user_id=user.id
                             )
 
+                            msg_text = await self.db.get_msg_by_key('GO_TO_MENU')
                             await message.answer(
-                                MESSAGES['GO_TO_MENU'],
+                                msg_text,
                                 reply_markup=await self.base_kb.menu_btn()
                             )
 
                 # -------------------------Логика если курсов больше 1----------------------------------
 
                 else:
+                    user = await self.db.get_user_by_tg_id(message.chat.id)
+                    courses_ids = [course.get('id') for course in all_courses]
+                    courses_with_history = await self.db.get_courses_by_ids(
+                        user_id=user.id,
+                        courses_ids=courses_ids
+                    )
+                    all_courses = add_course_without_history(
+                        all_courses=all_courses,
+                        courses_with_history=courses_with_history
+                    )
+                    all_courses.sort(key=lambda elem: elem.get('order_num'))
+                    msg_text = await self.db.get_msg_by_key('CHOOSE_COURSE')
                     msg = await message.answer(
-                        MESSAGES['CHOOSE_COURSE'],
+                        msg_text,
                         reply_markup=await self.kb.courses_btn(all_courses)
                     )
                     logger.debug(f"Пользователь {message.chat.id} получил на курсы: {all_courses}")
@@ -156,8 +172,9 @@ class CourseHandler(Handler):
                     await state.update_data(msg=msg.message_id)
                     await state.set_state(CourseChooseState.course)
 
+                    msg_text = await self.db.get_msg_by_key('GO_TO_MENU')
                     await message.answer(
-                        MESSAGES['GO_TO_MENU'],
+                        msg_text,
                         reply_markup=await self.base_kb.menu_btn()
                     )
 
@@ -185,8 +202,9 @@ class CourseHandler(Handler):
 
             if promocode.end_at <= datetime.datetime.now():
                 courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode.id)
+                msg_text = await self.db.get_msg_by_key('YOUR_PROMOCODE_IS_EXPIRED')
                 await callback.message.answer(
-                    MESSAGES['YOUR_PROMOCODE_IS_EXPIRED'],
+                    msg_text,
                     reply_markup=await self.base_kb.start_btn(courses_and_quizes)
                 )
             else:
@@ -217,8 +235,9 @@ class CourseHandler(Handler):
                         await state.set_state(LessonChooseState.lesson)
 
                     else:
+                        msg_text = await self.db.get_msg_by_key('LESSONS_LIST')
                         msg = await callback.message.answer(
-                            MESSAGES['LESSONS_LIST'].format(
+                            msg_text.format(
                                 course.title
                             ),
                             reply_markup=await self.lesson_kb.lessons_btn(course.id, user.id, promocode)
@@ -229,8 +248,9 @@ class CourseHandler(Handler):
                     if promocode.type_id == 3:
                         certificate = course.certificate_img
 
+                    msg_text = await self.db.get_msg_by_key('GO_TO_MENU')
                     await callback.message.answer(
-                        MESSAGES['GO_TO_MENU'],
+                        msg_text,
                         reply_markup=await self.base_kb.menu_btn(certificate)
                     )
 
@@ -240,8 +260,9 @@ class CourseHandler(Handler):
                 else:
                     promocode = await self.db.get_promocode_by_tg_id(callback.message.chat.id)
                     courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode.id)
+                    msg_text = await self.db.get_msg_by_key('MENU')
                     await callback.message.answer(
-                        MESSAGES['MENU'],
+                        msg_text,
                         reply_markup=await self.base_kb.start_btn(courses_and_quizes)
                     )
 
@@ -259,9 +280,9 @@ class CourseHandler(Handler):
 
             course_id = data.get('course_id')
             course = await self.db.get_course_by_id(course_id)
-
+            msg_text = await self.db.get_msg_by_key('CERTIFICATE')
             await message.answer(
-                MESSAGES['CERTIFICATE']
+                msg_text
             )
 
             fullname = await self.user_db.get_fullname_by_tg_id(message.chat.id)
@@ -286,8 +307,9 @@ class CourseHandler(Handler):
                 document=certificate
             )
 
+            msg_text = await self.db.get_msg_by_key('GO_TO_MENU')
             await message.answer(
-                MESSAGES['GO_TO_MENU'],
+                msg_text,
                 reply_markup=await self.base_kb.menu_btn()
             )
 
@@ -311,8 +333,9 @@ class CourseHandler(Handler):
 
             if promocode.end_at <= datetime.datetime.now():
                 courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode.id)
+                msg_text = await self.db.get_msg_by_key('YOUR_PROMOCODE_IS_EXPIRED')
                 await callback.message.answer(
-                    MESSAGES['YOUR_PROMOCODE_IS_EXPIRED'],
+                    msg_text,
                     reply_markup=await self.base_kb.start_btn(courses_and_quizes)
                 )
             else:
@@ -357,8 +380,9 @@ class CourseHandler(Handler):
                     # устанавливаем отлов состояния на название урока
                     await state.set_state(LessonChooseState.lesson)
 
+                    msg_text = await self.db.get_msg_by_key('GO_TO_MENU')
                     await callback.message.answer(
-                        MESSAGES['GO_TO_MENU'],
+                        msg_text,
                         reply_markup=await self.base_kb.menu_btn()
                     )
                 else:
@@ -381,8 +405,9 @@ class CourseHandler(Handler):
                         await state.set_state(LessonChooseState.lesson)
                         await state.update_data(msg=msg.message_id)
 
+                        msg_text = await self.db.get_msg_by_key('GO_TO_MENU')
                         menu_msg = await callback.message.answer(
-                            MESSAGES['GO_TO_MENU'],
+                            msg_text,
                             reply_markup=await self.base_kb.menu_btn(course.certificate_img)
                         )
 
@@ -404,9 +429,8 @@ class CourseHandler(Handler):
                             user_id=user.id
                         )
 
+                        msg_text = await self.db.get_msg_by_key('GO_TO_MENU')
                         await callback.message.answer(
-                            MESSAGES['GO_TO_MENU'],
+                            msg_text,
                             reply_markup=await self.base_kb.menu_btn()
                         )
-
-

@@ -3,6 +3,7 @@ from aiogram.types import (InlineKeyboardMarkup, KeyboardButton,
 from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
 
 from bot.quiz.service import QuizService
+from bot.services.base_service import BaseService
 from bot.users.models import Promocodes
 from bot.utils.buttons import BUTTONS
 from bot.utils.messages import MESSAGES
@@ -39,10 +40,10 @@ class QuizKeyboard:
                 callback_data=f'answer_{answer.id}'
             )
         builder.adjust(1)
-
+        msg_text = await BaseService.get_msg_by_key('QUIZ_ANSWERS')
         return builder.as_markup(
             resize_keyboard=True,
-            input_field_placeholder=MESSAGES['QUIZ_ANSWERS'],
+            input_field_placeholder=msg_text,
             one_time_keyboard=True
         )
 

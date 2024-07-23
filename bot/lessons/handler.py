@@ -53,8 +53,9 @@ class LessonHandler(Handler):
             promocode = await self.db.get_promocode_by_tg_id(callback.message.chat.id)
             if promocode.end_at <= datetime.datetime.now():
                 courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode.id)
+                msg_text = await self.db.get_msg_by_key('YOUR_PROMOCODE_IS_EXPIRED')
                 await callback.message.answer(
-                    MESSAGES['YOUR_PROMOCODE_IS_EXPIRED'],
+                    msg_text,
                     reply_markup=await self.base_kb.start_btn(courses_and_quizes)
                 )
             else:
@@ -100,8 +101,9 @@ class LessonHandler(Handler):
                 else:
                     promocode = await self.db.get_promocode_by_tg_id(callback.message.chat.id)
                     courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode.id)
+                    msg_text = await self.db.get_msg_by_key('NOT_FOUND_LESSON')
                     await callback.message.answer(
-                        MESSAGES['NOT_FOUND_LESSON'],
+                        msg_text,
                         reply_markup=await self.base_kb.start_btn(courses_and_quizes)
                     )
 
@@ -122,19 +124,22 @@ class LessonHandler(Handler):
             promocode = await self.db.get_promocode_by_tg_id(callback.message.chat.id)
             if promocode.end_at <= datetime.datetime.now():
                 courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode.id)
+                msg_text = await self.db.get_msg_by_key('YOUR_PROMOCODE_IS_EXPIRED')
                 await callback.message.answer(
-                    MESSAGES['YOUR_PROMOCODE_IS_EXPIRED'],
+                    msg_text,
                     reply_markup=await self.base_kb.start_btn(courses_and_quizes)
                 )
             else:
 
                 course_id = callback.data.split('_')[-1]
+                msg_text = await self.db.get_msg_by_key('CHOOSE_LESSONS')
                 msg = await callback.message.answer(
-                    MESSAGES['CHOOSE_LESSONS'],
+                    msg_text,
                     reply_markup=await self.kb.lessons_btn(course_id, user.id, promocode))
 
+                msg_text = await self.db.get_msg_by_key('GO_TO_MENU')
                 await callback.message.answer(
-                    MESSAGES['GO_TO_MENU'],
+                    msg_text,
                     reply_markup=await self.base_kb.menu_btn()
                 )
 
@@ -216,8 +221,9 @@ class LessonHandler(Handler):
             )
             await state.set_state(LessonChooseState.test_answer)
 
+            msg_text = await self.db.get_msg_by_key('GO_TO_MENU')
             await callback.message.answer(
-                MESSAGES['GO_TO_MENU'],
+                msg_text,
                 reply_markup=await self.base_kb.menu_btn()
             )
 
@@ -286,8 +292,9 @@ class LessonHandler(Handler):
 
                 if correct_answers == selected:
                     self.result_count += 1
+                    msg_text = await self.db.get_msg_by_key('CORRECT_ANSWER')
                     msg = await callback.message.answer(
-                        MESSAGES['CORRECT_ANSWER'],
+                        msg_text,
                         reply_markup=await self.kb.next_question_btn(self.test_questions)
                     )
                     await state.update_data(msg=msg.message_id)
@@ -298,8 +305,10 @@ class LessonHandler(Handler):
                     for correct_answer_index in correct_answers:
                         answer += f'\n{letter_list[correct_answer_index]}. ' + \
                                   question['questions'][correct_answer_index - 1]['title']
+
+                    msg_text = await self.db.get_msg_by_key('INCORRECT_ANSWER')
                     await callback.message.answer(
-                        MESSAGES['INCORRECT_ANSWER'].format(
+                        msg_text.format(
                             answer
                         ),
                         reply_markup=await self.kb.next_question_btn(self.test_questions)
@@ -317,7 +326,8 @@ class LessonHandler(Handler):
                 )
 
             else:
-                await callback.answer(MESSAGES['NO_CHOOSE_ANSWER'], show_alert=True)
+                msg_text = await self.db.get_msg_by_key('NO_CHOOSE_ANSWER')
+                await callback.answer(msg_text, show_alert=True)
 
         @self.router.callback_query(F.data.startswith('next_question'))
         async def next_question_in_test_after_lesson(callback: CallbackQuery, state: FSMContext):
@@ -354,8 +364,9 @@ class LessonHandler(Handler):
                     text,
                     reply_markup=await self.kb.test_answers_btn(count_questions))
 
+                msg_text = await self.db.get_msg_by_key('GO_TO_MENU')
                 menu_msg = await callback.message.answer(
-                    MESSAGES['GO_TO_MENU'],
+                    msg_text,
                     reply_markup=await self.base_kb.menu_btn()
                 )
 
@@ -380,8 +391,9 @@ class LessonHandler(Handler):
 
                 # если пользователь набрал нужный % прохождения
                 if user_percent_answer >= lesson.questions_percent:
+                    msg_text = await self.db.get_msg_by_key('SUCCESS_TEST')
                     await callback.message.edit_text(
-                        MESSAGES['SUCCESS_TEST'].format(
+                        msg_text.format(
                             user_percent_answer
                         ),
                     )
@@ -401,8 +413,9 @@ class LessonHandler(Handler):
                     )
 
                 else:
+                    msg_text = await self.db.get_msg_by_key('FAIL_TEST')
                     msg = await callback.message.edit_text(
-                        MESSAGES['FAIL_TEST'].format(
+                        msg_text.format(
                             user_percent_answer,
                             lesson.questions_percent
                         ),
@@ -482,22 +495,25 @@ class LessonHandler(Handler):
                 if (promocode.is_test and next_lesson.order_num > promocode.lesson_cnt) or \
                         (promocode.is_test and not is_valid_test_promo(user)):
 
+                    msg_text = await self.db.get_msg_by_key('END_TEST_PERIOD')
                     await src.answer(
-                        MESSAGES['END_TEST_PERIOD'],
+                        msg_text,
                         reply_markup=await self.test_promo_kb.test_promo_menu()
                     )
                     await state.set_state(state=None)
 
                 else:
+                    msg_text = await self.db.get_msg_by_key('NEXT_LESSON')
                     msg1 = await src.answer(
-                        MESSAGES['NEXT_LESSON'],
+                        msg_text,
                         reply_markup=await self.kb.next_lesson_btn(next_lesson)
                     )
                     await state.set_state(LessonChooseState.lesson)
                     await state.update_data(msg1=msg1.message_id)
 
+                msg_text = await self.db.get_msg_by_key('GO_TO_MENU')
                 await src.answer(
-                    MESSAGES['GO_TO_MENU'],
+                    msg_text,
                     reply_markup=await self.base_kb.menu_btn()
                 )
 
@@ -521,24 +537,28 @@ class LessonHandler(Handler):
                         )
                 except TelegramBadRequest as e:
                     if 'VOICE_MESSAGES_FORBIDDEN' in e.message:
+                        msg_text = await self.db.get_msg_by_key('VIDEO_ERROR_FORBIDDEN')
                         await src.answer(
-                            MESSAGES['VIDEO_ERROR_FORBIDDEN']
+                            msg_text
                         )
                     else:
+                        msg_text = await self.db.get_msg_by_key('VIDEO_ERROR')
                         await src.answer(
-                            MESSAGES['VIDEO_ERROR']
+                            msg_text
                         )
                         logger.warning(f'Не удалось отправить видео {src.chat.id} -- {e.message}')
 
                 if course.certificate_img:
+                    msg_text = await self.db.get_msg_by_key('ADD_YOUR_FULLNAME')
                     await src.answer(
-                        MESSAGES['ADD_YOUR_FULLNAME']
+                        msg_text
                     )
                     await state.set_state(Certificate.fullname)
 
                 else:
+                    msg_text = await self.db.get_msg_by_key('ALL_LESSONS_DONE')
                     await src.answer(
-                        MESSAGES['ALL_LESSONS_DONE'],
+                        msg_text,
                         reply_markup=await self.base_kb.menu_btn())
 
         @self.router.message(Certificate.fullname)
@@ -560,8 +580,9 @@ class LessonHandler(Handler):
             if fio != BUTTONS['MENU']:
                 if course.certificate_img:
                     # собираем сертификат для текущего пользователя
+                    msg_text = await self.db.get_msg_by_key('CERTIFICATE')
                     await message.answer(
-                        MESSAGES['CERTIFICATE']
+                        msg_text
                     )
 
                     # формируем сертификат
@@ -584,8 +605,9 @@ class LessonHandler(Handler):
                         tg_id=message.chat.id
                     )
 
+                    msg_text = await self.db.get_msg_by_key('GO_TO_MENU')
                     await message.answer(
-                        MESSAGES['GO_TO_MENU'],
+                        msg_text,
                         reply_markup=await self.base_kb.menu_btn()
                     )
 
@@ -632,7 +654,8 @@ class LessonHandler(Handler):
                     answer=message.text,
                     lesson_history_id=lesson_history.id
                 )
-                await message.answer(MESSAGES['YOUR_ANSWER_SAVE'])
+                msg_text = await self.db.get_msg_by_key('YOUR_ANSWER_SAVE')
+                await message.answer(msg_text)
                 await close_lesson(src=message, state=state)
 
                 # отправляем отчет в группу курса
@@ -653,7 +676,8 @@ class LessonHandler(Handler):
                 )
 
             else:
-                await message.answer(MESSAGES['PLEASE_WRITE_CORRECT_ANSWER'])
+                msg_text = await self.db.get_msg_by_key('PLEASE_WRITE_CORRECT_ANSWER')
+                await message.answer(msg_text)
 
         async def start_image_task_after_lesson(message: Message, state: FSMContext):
 
@@ -687,7 +711,8 @@ class LessonHandler(Handler):
                     answer=answer,
                     lesson_history_id=lesson_history.id
                 )
-                await message.answer(MESSAGES['YOUR_ANSWER_SAVE'])
+                msg_text = await self.db.get_msg_by_key('YOUR_ANSWER_SAVE')
+                await message.answer(msg_text)
                 await close_lesson(src=message, state=state)
 
                 # отправляем отчет в группу курса
@@ -708,7 +733,8 @@ class LessonHandler(Handler):
                 )
 
             else:
-                await message.answer(MESSAGES['PLEASE_WRITE_CORRECT_ANSWER'])
+                msg_text = await self.db.get_msg_by_key('PLEASE_WRITE_CORRECT_ANSWER')
+                await message.answer(msg_text)
 
         async def start_video_task_after_lesson(message: Message, state: FSMContext):
 
@@ -742,7 +768,8 @@ class LessonHandler(Handler):
                     answer=answer,
                     lesson_history_id=lesson_history.id
                 )
-                await message.answer(MESSAGES['YOUR_ANSWER_SAVE'])
+                msg_text = await self.db.get_msg_by_key('YOUR_ANSWER_SAVE')
+                await message.answer(msg_text)
                 await close_lesson(src=message, state=state)
 
                 # отправляем отчет в группу курса
@@ -763,7 +790,8 @@ class LessonHandler(Handler):
                 )
 
             else:
-                await message.answer(MESSAGES['PLEASE_WRITE_CORRECT_ANSWER'])
+                msg_text = await self.db.get_msg_by_key('PLEASE_WRITE_CORRECT_ANSWER')
+                await message.answer(msg_text)
 
         async def start_file_task_after_lesson(message: Message, state: FSMContext):
 
@@ -797,7 +825,8 @@ class LessonHandler(Handler):
                     answer=answer,
                     lesson_history_id=lesson_history.id
                 )
-                await message.answer(MESSAGES['YOUR_ANSWER_SAVE'])
+                msg_text = await self.db.get_msg_by_key('YOUR_ANSWER_SAVE')
+                await message.answer(msg_text)
                 await close_lesson(src=message, state=state)
 
                 # отправляем отчет в группу курса
@@ -818,7 +847,8 @@ class LessonHandler(Handler):
                 )
 
             else:
-                await message.answer(MESSAGES['PLEASE_WRITE_CORRECT_ANSWER'])
+                msg_text = await self.db.get_msg_by_key('PLEASE_WRITE_CORRECT_ANSWER')
+                await message.answer(msg_text)
 
         async def start_circle_task_after_lesson(message: Message, state: FSMContext):
 
@@ -853,7 +883,8 @@ class LessonHandler(Handler):
                     answer=answer,
                     lesson_history_id=lesson_history.id
                 )
-                await message.answer(MESSAGES['YOUR_ANSWER_SAVE'])
+                msg_text = await self.db.get_msg_by_key('YOUR_ANSWER_SAVE')
+                await message.answer(msg_text)
                 await close_lesson(src=message, state=state)
 
                 # отправляем отчет в группу курса
@@ -874,7 +905,8 @@ class LessonHandler(Handler):
                 )
 
             else:
-                await message.answer(MESSAGES['PLEASE_WRITE_CORRECT_ANSWER'])
+                msg_text = await self.db.get_msg_by_key('PLEASE_WRITE_CORRECT_ANSWER')
+                await message.answer(msg_text)
 
         @self.router.callback_query(LessonChooseState.lesson, F.data.startswith('skip_additional_task'))
         async def skip_additional_task(callback: CallbackQuery, state: FSMContext):
@@ -922,9 +954,9 @@ class LessonHandler(Handler):
                     reward=additional_task.reward,
                     comment=f'Начислено за доп задание: {additional_task.title}'
                 )
-
+                msg_text = await self.db.get_msg_by_key('REWARDS_WAS_ADDED')
                 await callback.message.answer(
-                    MESSAGES['REWARDS_WAS_ADDED']
+                    msg_text
                 )
             else:
                 # меняем статус прохождения доп задания на 'Ожидает проверки'
@@ -932,8 +964,9 @@ class LessonHandler(Handler):
                     additional_task_history_id=additional_task_history_id
                 )
 
+                msg_text = await self.db.get_msg_by_key('ADD_REWARD_AFTER_TIME')
                 await callback.message.answer(
-                    MESSAGES['ADD_REWARD_AFTER_TIME']
+                    msg_text
                 )
 
             lesson_history = await self.db.get_actual_lesson_history(
@@ -947,8 +980,9 @@ class LessonHandler(Handler):
                 order_num=lesson.order_num + 1
             )
             if next_lesson:
+                msg_text = await self.db.get_msg_by_key('NEXT_LESSON')
                 msg = await callback.message.answer(
-                    MESSAGES['NEXT_LESSON'],
+                    msg_text,
                     reply_markup=await self.kb.next_lesson_btn(next_lesson)
                 )
                 await state.set_state(LessonChooseState.lesson)
@@ -1038,8 +1072,9 @@ class LessonHandler(Handler):
                 await state.set_state(LessonChooseState.lesson)
                 await state.update_data(msg=msg.message_id)
 
+                msg_text = await self.db.get_msg_by_key('GO_TO_MENU')
                 menu_msg = await callback.message.answer(
-                    MESSAGES['GO_TO_MENU'],
+                    msg_text,
                     reply_markup=await self.base_kb.menu_btn(course.certificate_img)
                 )
 
@@ -1061,7 +1096,8 @@ class LessonHandler(Handler):
                     user_id=user.id
                 )
 
+                msg_text = await self.db.get_msg_by_key('GO_TO_MENU')
                 await callback.message.answer(
-                    MESSAGES['GO_TO_MENU'],
+                    msg_text,
                     reply_markup=await self.base_kb.menu_btn()
                 )

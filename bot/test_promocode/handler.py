@@ -51,21 +51,24 @@ class TestPromoHandler(Handler):
                 all_quizes = list(set(quizes_by_bot + quizes_by_db))
                 all_quizes.sort(key=lambda elem: elem.get('id'))
 
+                msg_text = await self.db.get_msg_by_key('GO_TO_MENU')
                 await message.answer(
-                    MESSAGES['GO_TO_MENU'],
+                    msg_text,
                     reply_markup=await self.base_kb.menu_btn()
                 )
 
+                msg_text = await self.db.get_msg_by_key('CHOOSE_QUIZ')
                 msg = await message.answer(
-                    MESSAGES['CHOOSE_QUIZ'],
+                    msg_text,
                     reply_markup=await self.quiz_kb.quizes_list_btn(all_quizes)
                 )
                 await state.set_state(QuizState.quiz)
                 await state.update_data(msg=msg.message_id)
 
             else:
+                msg_text = await self.db.get_msg_by_key('END_TEST_PERIOD')
                 await message.answer(
-                    MESSAGES['END_TEST_PERIOD'],
+                    msg_text,
                     reply_markup=await self.kb.test_promo_menu()
                 )
 
@@ -86,8 +89,9 @@ class TestPromoHandler(Handler):
                 all_courses = list(set(courses_by_bot + courses_by_db))
                 all_courses.sort(key=lambda elem: elem.get('id'))
 
+                msg_text = await self.db.get_msg_by_key('CHOOSE_COURSE')
                 msg = await message.answer(
-                    MESSAGES['CHOOSE_COURSE'],
+                    msg_text,
                     reply_markup=await self.course_kb.courses_btn(all_courses)
                 )
 
@@ -95,7 +99,8 @@ class TestPromoHandler(Handler):
                 await state.set_state(CourseChooseState.course)
 
             else:
+                msg_text = await self.db.get_msg_by_key('END_TEST_PERIOD')
                 await message.answer(
-                    MESSAGES['END_TEST_PERIOD'],
+                    msg_text,
                     reply_markup=await self.kb.test_promo_menu()
                 )
