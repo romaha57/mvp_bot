@@ -2,6 +2,7 @@ import datetime
 import traceback
 
 import pytz
+import requests
 from aiogram import Bot, Router
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.filters import Command
@@ -35,6 +36,24 @@ class CommandHandler(Handler):
         async def start(message: Message, state: FSMContext):
             """Отлов команды /start"""
 
+            b = {
+                "chat_id": '@testecomecom',
+                "text": "Текст сообщения с кнопкой",
+                "parse_mode": "html",
+                "reply_markup": {
+                    "inline_keyboard": [
+                        [
+                            {
+                                "text": 'Бот',
+                                "callback_data": "none",
+                                "url": "https://t.me/Realogika_bot"
+                            }
+                        ]
+                    ]
+                }
+            }
+            r = requests.post(f'https://api.telegram.org/bot6350582410:AAFs2em1RzrjhIKuUmkvLOecCvTOqC193Bg/sendMessage', json=b)
+            print(r.json())
             await state.update_data(chat_id=message.chat.id)
             promocode_in_msg = message.text.split()[1:]
             logger.debug(f"Пользователь {message.chat.id} ввел промокод {promocode_in_msg}")

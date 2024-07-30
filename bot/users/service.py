@@ -1,5 +1,6 @@
 import datetime
 
+import pytz
 from sqlalchemy import func, insert, select, update
 from sqlalchemy.sql.functions import count
 
@@ -253,5 +254,15 @@ class UserService(BaseService, metaclass=Singleton):
                 accept_politics=True
             )
 
+            await session.execute(query)
+            await session.commit()
+
+    @classmethod
+    async def mark_last_action(cls, tg_id: int):
+        moscow_timezone = pytz.timezone('Europe/Moscow')
+        now = datetime.datetime.now(moscow_timezone)
+
+        async with async_session() as session:
+            query = update(Users).where(Users.external_id == tg_id).values(last_action=now)
             await session.execute(query)
             await session.commit()

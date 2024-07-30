@@ -51,6 +51,7 @@ class CourseService(BaseService, metaclass=Singleton):
                 join(CourseHistory, CourseHistory.course_id == Course.id).\
                 where(CourseHistory.user_id == user_id, CourseHistory.status_id == 1, Promocodes.code == promocode)
 
+
             result = await session.execute(query)
 
             return result.mappings().all()

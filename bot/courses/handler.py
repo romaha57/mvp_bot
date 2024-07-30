@@ -351,11 +351,12 @@ class CourseHandler(Handler):
                     all_courses.sort(key=lambda elem: elem.get('order_num'))
 
                 if len(all_courses) > 1:
-                    all_courses = await self.db.get_not_completed_course(
+                    all_courses_not_completed = await self.db.get_not_completed_course(
                         user_id=user.id,
                         promocode=promocode.code
                     )
-                    all_courses = [random.choice(all_courses)]
+                    if all_courses_not_completed:
+                        all_courses = [random.choice(all_courses_not_completed)]
 
                 # ---------------------Логика для перехода сразу к списку уроков, если курс всего 1-----------------
                 course = await self.db.get_course_by_name(all_courses[0].get('title'))

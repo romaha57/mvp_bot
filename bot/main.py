@@ -13,6 +13,7 @@ from loguru import logger
 
 from bot.db_connect import Base, engine
 from bot.handlers.main_handler import MainHandler
+from bot.middleware import MarkUserLastActionMiddleware
 from bot.services.base_service import BaseService
 from bot.settings.keyboards import BaseKeyboard
 from bot.settings_bot import settings
@@ -37,7 +38,7 @@ class MainBot:
         else:
             storage = RedisStorage.from_url('redis://redis:6379/0')
         self.dp = Dispatcher(storage=storage)
-        # self.dp.message.middleware(CheckPromocodeMiddleware())
+        self.dp.message.middleware(MarkUserLastActionMiddleware())
         self.handler = MainHandler(self.bot)
         self.kb = BaseKeyboard()
         self.db = UserService()
