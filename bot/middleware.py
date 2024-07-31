@@ -12,7 +12,7 @@ from bot.utils.messages import MESSAGES
 
 class MarkUserLastActionMiddleware(BaseMiddleware):
     """
-    Отмечаем каждое действие пользотваеля
+    Отмечаем каждое действие пользотваеля (last_action)
 
     """
 

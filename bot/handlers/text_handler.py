@@ -251,7 +251,7 @@ class TextHandler(Handler):
 
             promocode = await self.db.get_promocode_by_tg_id(message.chat.id)
 
-            if promocode.end_at <= datetime.datetime.now():
+            if promocode and promocode.end_at <= datetime.datetime.now():
                 courses_and_quizes = await self.db.get_promocode_courses_and_quizes(promocode.id)
                 msg_text = await self.db.get_msg_by_key('YOUR_PROMOCODE_IS_EXPIRED')
                 await message.answer(

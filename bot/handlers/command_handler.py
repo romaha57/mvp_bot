@@ -36,24 +36,65 @@ class CommandHandler(Handler):
         async def start(message: Message, state: FSMContext):
             """Отлов команды /start"""
 
-            b = {
-                "chat_id": '@testecomecom',
-                "text": "Текст сообщения с кнопкой",
-                "parse_mode": "html",
-                "reply_markup": {
-                    "inline_keyboard": [
-                        [
-                            {
-                                "text": 'Бот',
-                                "callback_data": "none",
-                                "url": "https://t.me/Realogika_bot"
-                            }
-                        ]
-                    ]
-                }
-            }
-            r = requests.post(f'https://api.telegram.org/bot6350582410:AAFs2em1RzrjhIKuUmkvLOecCvTOqC193Bg/sendMessage', json=b)
-            print(r.json())
+#             b = {
+#                 "chat_id": '6718255302',
+#                 "text": """
+#                 <b>Переход в Бот Собственника</b>
+# Уважаемые партнеры, для вашего удобства мы сделали доступным переход в бот прямо из этого чата. Нажимая на кнопку-переход у вас откроется бот “Реалогика” на активном курсе.
+# Теперь переходить в бот к актуальным урокам будет проще!
+#
+#                 """,
+#                 "parse_mode": "html",
+#                 "reply_markup": {
+#                     "inline_keyboard": [
+#                         [
+#                             {
+#                                 "text": 'Бот Реалогика',
+#                                 "callback_data": "none",
+#                                 "url": "https://t.me/Realogika_bot"
+#                             }
+#                         ]
+#                     ]
+#                 }
+#             }
+#             r = requests.post(f'https://api.telegram.org/bot6350582410:AAFs2em1RzrjhIKuUmkvLOecCvTOqC193Bg/sendMessage', json=b)
+#             print(r.json())
+#
+#             b = {
+#                 "chat_id": '@ecomtesttest',
+#                 "text": """
+#                              <b>Переход в Бот Реалогика</b>
+# Для вашего удобства мы сделали доступным переход в бот прямо из этого чата. Нажимая на кнопку-переход у вас откроется бот “Реалогика” на активном курсе.
+# Теперь переходить в бот к актуальным урокам будет проще!
+#
+#                             """,
+#                 "parse_mode": "html",
+#                 "reply_markup": {
+#                     "inline_keyboard": [
+#                         [
+#                             {
+#                                 "text": 'Бот Реалогика',
+#                                 "callback_data": "none",
+#                                 "url": "https://t.me/Realogika_bot"
+#                             }
+#                         ]
+#                     ]
+#                 }
+#             }
+#             r = requests.post(f'https://api.telegram.org/bot6350582410:AAFs2em1RzrjhIKuUmkvLOecCvTOqC193Bg/sendMessage',
+#                               json=b)
+#             print(r.json())
+
+
+
+
+
+
+
+
+
+
+
             await state.update_data(chat_id=message.chat.id)
             promocode_in_msg = message.text.split()[1:]
             logger.debug(f"Пользователь {message.chat.id} ввел промокод {promocode_in_msg}")
@@ -114,7 +155,9 @@ class CommandHandler(Handler):
                                     courses_titles
                                 )
                             )
-                        logger.debug(f"Пользователь {message.chat.id} активировал промокод {promocode.code}")
+
+                        logger.debug(f'{promocode_from_db=}')
+                        logger.debug(f'{user.promocode_id=}')
 
                         if promocode.is_test and user.promocode_id and not promocode_from_db.is_test:
                             courses_and_quizes = await self.db.get_promocode_courses_and_quizes(user.promocode_id)
@@ -128,6 +171,7 @@ class CommandHandler(Handler):
                                 tg_id=message.chat.id,
                                 promocode_id=promocode.id
                             )
+                            logger.debug(f"Пользователь {message.chat.id} активировал промокод {promocode.code}")
 
                             user_account = await self.db.get_account_by_tg_id(message.chat.id)
                             if promocode.account_id and user_account.id != promocode.account_id:
