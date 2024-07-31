@@ -129,8 +129,6 @@ class CommandHandler(Handler):
                 if promocode_in_msg:
                     promocode = await self.db.check_promocode(promocode_in_msg[0])
                     if promocode and promocode.actual:
-                        courses_by_promo = await self.db.get_courses_by_promo(promocode.id)
-
                         # увеличиваем счетчик активированных пользователей на этом промокоде
                         await self.db.increment_count_promocode(
                             promocode
@@ -147,18 +145,6 @@ class CommandHandler(Handler):
 
                         user = await self.db.get_user_by_tg_id(message.chat.id)
 
-                        if courses_by_promo:
-                            courses_titles = '\n'.join([f" - {course.get('title')}" for course in courses_by_promo])
-                            msg_text = await self.db.get_msg_by_key('START_PROMOCODE')
-                            await message.answer(
-                                msg_text.format(
-                                    courses_titles
-                                )
-                            )
-
-                        logger.debug(f'{promocode_from_db=}')
-                        logger.debug(f'{user.promocode_id=}')
-
                         if promocode.is_test and user.promocode_id and not promocode_from_db.is_test:
                             courses_and_quizes = await self.db.get_promocode_courses_and_quizes(user.promocode_id)
                             msg_text = await self.db.get_msg_by_key('MENU')
@@ -171,6 +157,16 @@ class CommandHandler(Handler):
                                 tg_id=message.chat.id,
                                 promocode_id=promocode.id
                             )
+                            courses_by_promo = await self.db.get_courses_by_promo(promocode.id)
+                            if courses_by_promo:
+                                courses_titles = '\n'.join([f" - {course.get('title')}" for course in courses_by_promo])
+                                msg_text = await self.db.get_msg_by_key('START_PROMOCODE')
+                                await message.answer(
+                                    msg_text.format(
+                                        courses_titles
+                                    )
+                                )
+
                             logger.debug(f"Пользователь {message.chat.id} активировал промокод {promocode.code}")
 
                             user_account = await self.db.get_account_by_tg_id(message.chat.id)
